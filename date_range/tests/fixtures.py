@@ -1,6 +1,7 @@
 from typing import Optional
 
 from date_range import Day, DateRange
+from date_range.month import Month
 from utils import RandomNumberGenerator
 
 __all__ = [
@@ -27,3 +28,7 @@ def random_day(
     if last_day_inclusive is not None:
         return last_day_inclusive - rng.randint(1000)
     return random_day(rng, first_day_inclusive=Day(2020, 1, 1), last_day_inclusive=Day(2020, 12, 31))
+
+
+def random_month(rng: RandomNumberGenerator) -> Month:
+    return Month.containing(random_day(rng))

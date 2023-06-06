@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 __all__ = ["DateRange"]
 
 
@@ -12,3 +13,12 @@ class DateRange(ABC):
     @abstractmethod
     def last_day(self) -> 'Day':
         raise NotImplementedError()
+
+
+class ContiguousDateRange(DateRange, ABC):
+    @abstractmethod
+    def __add__(self, n) -> 'ContiguousDateRange':
+        raise NotImplementedError()
+
+    def __sub__(self, n) -> 'ContiguousDateRange':
+        return self + (-n)

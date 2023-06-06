@@ -1,11 +1,22 @@
-from date_range import DateRange, Day
+from datetime import date
+from functools import total_ordering
+
+from date_range import Day
+from date_range.date_range import ContiguousDateRange
 from utils import checked_type
 
 
-class Month(DateRange):
+@total_ordering
+class Month(ContiguousDateRange):
     def __init__(self, y: int, m: int):
         self.y: int = checked_type(y, int)
         self.m: int = checked_type(m, int)
+
+    def __eq__(self, other):
+        return isinstance(other, Month) and self.y == other.y and self.m == other.m
+
+    def __lt__(self, other):
+        return self.y < other.y or (self.y == other.y and self.m < other.m)
 
     def __add__(self, n: int) -> 'Month':
         y = self.y
@@ -26,3 +37,10 @@ class Month(DateRange):
     def last_day(self) -> 'Day':
         return (self + 1).first_day - 1
 
+    @property
+    def tab_name(self):
+        return date(self.y, self.m, 1).strftime("%b %y")
+
+    @staticmethod
+    def containing(day: Day) -> 'Month':
+        return Month(day.y, day.m)

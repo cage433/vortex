@@ -1,14 +1,19 @@
 from datetime import date, timedelta
 from functools import total_ordering
 
-from date_range.date_range import DateRange
+from date_range.date_range import ContiguousDateRange
 
 __all__ = ["Day"]
 
+from utils import checked_type
+
 
 @total_ordering
-class Day(DateRange):
+class Day(ContiguousDateRange):
     def __init__(self, y: int, m: int, d: int):
+        self.y: int = checked_type(y, int)
+        self.m: int = checked_type(m, int)
+        self.d: int = checked_type(d, int)
         self._date: date = date(y, m, d)
 
     @property
@@ -31,9 +36,6 @@ class Day(DateRange):
     @staticmethod
     def from_date(d: date) -> 'Day':
         return Day(d.year, d.month, d.day)
-
-    def __sub__(self, n) -> 'Day':
-        return self + (-n)
 
     def days_since(self, rhs: 'Day') -> int:
         return (self._date - rhs._date).days
