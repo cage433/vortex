@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-__all__ = ["DateRange"]
+__all__ = ["DateRange", "ContiguousDateRange"]
 
 
 class DateRange(ABC):

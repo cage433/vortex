@@ -1,6 +1,7 @@
 from sheets import Workbook
 from utils import checked_type
 
+__all__ = ["Worksheet"]
 
 class Worksheet:
     def __init__(self, workbook: Workbook, sheet_name: str):
