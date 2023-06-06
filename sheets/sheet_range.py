@@ -4,7 +4,19 @@ from sheets import Worksheet
 from utils import checked_type, checked_optional_type
 
 
+
 class CellCoordinates:
+    """
+    Representation of an Excel cell, both using its text representation (e.g. "A1") and its zero offset
+    row and column indices.
+
+    The tricky part is converting the column representation, for example
+
+            CBY -> 3 * 26 * 26 + 2 * 26 + 25  - 1
+
+    where the final '- 1' is because we are zero offset.
+
+    """
     def __init__(
             self,
             text: Optional[str] = None,
@@ -25,24 +37,14 @@ class CellCoordinates:
 
     @staticmethod
     def _text_from_row_and_col(row: int, col: int):
-        # one offset
-        # rep = [[1, 26], 26 * [1, 26], 26 * 26 * [1, 26]]
-        col_1 = col + 1
         col_text = ""
-        # col //= 26
+        # easier to work with the equivalent one offset column number
+        col_1 = col + 1
         while col_1 >= 1:
             a = (col_1 - 1) % 26  # between 0 and 25
             col_text = chr(ord('A') + a) + col_text
             col_1 = (col_1 - a - 1) // 26
 
-        #
-        # col_text = chr(ord('A') + col % 26)
-        # col //= 26
-        # col -= 1
-        # while col > 0:
-        #     col_text = chr(ord('A') + col % 26) + col_text
-        #     col //= 26
-        #     col -= 1
         return f"{col_text}{row + 1}"
 
     @staticmethod
@@ -56,7 +58,8 @@ class CellCoordinates:
         return i_row, i_col - 1
 
     def __eq__(self, other):
-        return isinstance(other, CellCoordinates) and self.text == other.text
+        return isinstance(other, CellCoordinates) and self.text == other.text \
+            and self.i_row == other.i_row and self.i_col == other.i_col
 
 
 class SheetCell:

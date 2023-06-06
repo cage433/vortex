@@ -24,4 +24,6 @@ class CellCoordinatesTest(TestCase):
         i_col = rng.randint(1, 100)
         coords = CellCoordinates(i_row=i_row, i_col=i_col)
         coords2 = CellCoordinates(text=coords.text)
-        self.assertEqual(coords, coords2)
+        self.assertEqual(coords2, coords)
+        coords3 = CellCoordinates(i_row=coords.i_row, i_col=coords.i_col)
+        self.assertEqual(coords3, coords)
