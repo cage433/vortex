@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from functools import total_ordering
 
+from date_range import parse_date
 from date_range.date_range import ContiguousDateRange
 
 __all__ = ["Day"]
@@ -16,10 +17,21 @@ class Day(ContiguousDateRange):
         self.d: int = checked_type(d, int)
         self._date: date = date(y, m, d)
 
+
     @property
     def first_day(self) -> 'Day':
         return self
 
+    @property
+    def iso_repr(self) -> str:
+        return self._date.isoformat()
+
+    def __str__(self):
+        return self.iso_repr
+
+    def __repr__(self):
+        return str(self)
+    
     @property
     def last_day(self) -> 'Day':
         return self
@@ -39,3 +51,7 @@ class Day(ContiguousDateRange):
 
     def days_since(self, rhs: 'Day') -> int:
         return (self._date - rhs._date).days
+
+    @staticmethod
+    def parse(text) -> 'Day':
+        return Day.from_date(parse_date(text))
