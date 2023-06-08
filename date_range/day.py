@@ -31,7 +31,7 @@ class Day(ContiguousDateRange):
 
     def __repr__(self):
         return str(self)
-    
+
     @property
     def last_day(self) -> 'Day':
         return self
