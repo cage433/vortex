@@ -19,6 +19,10 @@ class Day(ContiguousDateRange):
 
 
     @property
+    def weekday(self) -> int:
+        return self._date.weekday()
+
+    @property
     def first_day(self) -> 'Day':
         return self
 

@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 __all__ = ["DateRange", "ContiguousDateRange"]
 
+from functools import total_ordering
+
 
 class DateRange(ABC):
     @property
@@ -22,3 +24,5 @@ class ContiguousDateRange(DateRange, ABC):
 
     def __sub__(self, n) -> 'ContiguousDateRange':
         return self + (-n)
+
+
