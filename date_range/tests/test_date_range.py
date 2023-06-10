@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from date_range.tests.fixtures import random_day, random_month
 from date_range.week import Week
@@ -49,3 +50,25 @@ class WeekTests(TestCase):
         w2 = w1 + n
         w3 = w2 - n
         self.assertEqual(w3, w1)
+
+    def test_contiguity(self):
+        w = Week(2017, 1)
+        for n in range(1, 1000):
+            self.assertEqual(w.last_day + 1, (w + 1).first_day)
+            w += 1
+
+
+class AccountingMonthTests(TestCase):
+    @RandomisedTest(number_of_runs=100)
+    def test_addition(self, rng):
+        am = AccountingMonth(rng.randint(2010, 2030), rng.randint(1, 13))
+        n = rng.randint(-20, 20)
+        am2 = am + n
+        am3 = am2 - n
+        self.assertEqual(am3, am)
+
+    def test_contiguity(self):
+        am = AccountingMonth(2017, 1)
+        for n in range(1, 1000):
+            self.assertEqual(am.last_day + 1, (am + 1).first_day)
+            am += 1

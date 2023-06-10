@@ -15,9 +15,11 @@ TIMS_FIRST_MONDAYS_OF_ACCOUNTING_YEAR = {
     2021: Day(2020, 8, 31),
     2022: Day(2021, 8, 30),
     2023: Day(2022, 8, 29),
+    2024: Day(2023, 9, 4),
 }
 
 
+@total_ordering
 class Week(ContiguousDateRange):
     def __init__(self, y: int, week_no: int):
         self.y = checked_type(y, int)
