@@ -32,6 +32,12 @@ class Week(ContiguousDateRange):
             year += 1
         return Week(year, week_no)
 
+    def __str__(self):
+        return f"Week({self.year}, {self.week_no})"
+
+    def __repr__(self):
+        return str(self)
+
     @property
     def first_day(self):
         return self.year.first_day + (self.week_no - 1) * 7

@@ -106,3 +106,12 @@ class AccountingMonthTests(TestCase):
         self.assertEqual(AccountingMonth(AccountingYear(2018), 9) - 1, AccountingMonth(AccountingYear(2017), 8))
         self.assertEqual(AccountingMonth(AccountingYear(2018), 12) + 1, AccountingMonth(AccountingYear(2018), 1))
         self.assertEqual(AccountingMonth(AccountingYear(2018), 1) - 1, AccountingMonth(AccountingYear(2018), 12))
+
+    @RandomisedTest(number_of_runs=10)
+    def test_weeks(self, rng):
+        am = random_accounting_month(rng)
+        weeks = am.weeks
+        self.assertEqual(weeks[0].first_day, am.first_day)
+        self.assertEqual(weeks[-1].last_day, am.last_day)
+        for w0, w1 in zip(weeks, weeks[1:]):
+            self.assertEqual(w0.last_day + 1, w1.first_day)

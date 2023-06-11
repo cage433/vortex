@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from google_sheets.sheet_range import CellCoordinates
+from google_sheets.tab_range import CellCoordinates
 from testing_utils import RandomisedTest
 
 

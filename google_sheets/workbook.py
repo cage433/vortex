@@ -1,3 +1,4 @@
+from numbers import Number
 from pathlib import Path
 from typing import Union
 
@@ -46,6 +47,31 @@ class Workbook:
             'requests': requests
         }
         return self._resource.batchUpdate(
+            spreadsheetId=self.sheet_id,
+            body=batch_update_values_request_body
+        ).execute()
+
+    def batch_update_values(self, value_ranges: dict['TabRange', list[list[any]]]):
+        def transform_values(values):
+            def to_excel(value):
+                return value if isinstance(value, Number) else str(value)
+
+            return [
+                [to_excel(value) for value in row]
+                for row in values
+            ]
+
+
+        batch_update_values_request_body = {
+            "valueInputOption": "USER_ENTERED",
+            "data": [
+                {"range":range.full_range_name,
+                 "values": transform_values(values)}
+                for range, values in value_ranges.items()
+            ]
+        }
+
+        return self._resource.values().batchUpdate(
             spreadsheetId=self.sheet_id,
             body=batch_update_values_request_body
         ).execute()

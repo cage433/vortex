@@ -1,5 +1,4 @@
 from functools import total_ordering
-from typing import Union
 
 from date_range import ContiguousDateRange, Day
 from date_range.accounting_year import AccountingYear
@@ -75,10 +74,14 @@ class AccountingMonth(ContiguousDateRange):
         from date_range.week import Week
         ws = []
         w = Week.containing(self.first_day)
-        while w.first_day <= self.last_day:
+        while w.last_day <= self.last_day:
             ws.append(w)
             w += 1
         return ws
+
+    @property
+    def num_weeks(self):
+        return len(self.weeks)
 
     @staticmethod
     def containing(day: Day) -> 'AccountingMonth':
@@ -91,11 +94,12 @@ class AccountingMonth(ContiguousDateRange):
 
 
 TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH = {
+
     AccountingMonth(AccountingYear(2013), 9): Day(2012, 9, 3),
     AccountingMonth(AccountingYear(2013), 10): Day(2012, 10, 1),
     AccountingMonth(AccountingYear(2013), 11): Day(2012, 10, 29),
     AccountingMonth(AccountingYear(2013), 12): Day(2012, 11, 26),
-    AccountingMonth(AccountingYear(2013), 1): Day(2013, 12, 31),
+    AccountingMonth(AccountingYear(2013), 1): Day(2012, 12, 31),
     AccountingMonth(AccountingYear(2013), 2): Day(2013, 1, 28),
     AccountingMonth(AccountingYear(2013), 3): Day(2013, 2, 25),
     AccountingMonth(AccountingYear(2013), 4): Day(2013, 4, 1),
@@ -107,7 +111,7 @@ TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH = {
     AccountingMonth(AccountingYear(2014), 10): Day(2013, 9, 30),
     AccountingMonth(AccountingYear(2014), 11): Day(2013, 10, 28),
     AccountingMonth(AccountingYear(2014), 12): Day(2013, 11, 25),
-    AccountingMonth(AccountingYear(2014), 1): Day(2014, 12, 30),
+    AccountingMonth(AccountingYear(2014), 1): Day(2013, 12, 30),
     AccountingMonth(AccountingYear(2014), 2): Day(2014, 1, 27),
     AccountingMonth(AccountingYear(2014), 3): Day(2014, 2, 24),
     AccountingMonth(AccountingYear(2014), 4): Day(2014, 3, 31),
@@ -119,9 +123,9 @@ TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH = {
     AccountingMonth(AccountingYear(2015), 10): Day(2014, 9, 29),
     AccountingMonth(AccountingYear(2015), 11): Day(2014, 10, 27),
     AccountingMonth(AccountingYear(2015), 12): Day(2014, 11, 24),
-    AccountingMonth(AccountingYear(2015), 1): Day(2015, 12, 29),
+    AccountingMonth(AccountingYear(2015), 1): Day(2014, 12, 29),
     AccountingMonth(AccountingYear(2015), 2): Day(2015, 1, 26),
-    AccountingMonth(AccountingYear(2015), 3): Day(2015, 3, 1),
+    AccountingMonth(AccountingYear(2015), 3): Day(2015, 3, 2),
     AccountingMonth(AccountingYear(2015), 4): Day(2015, 3, 30),
     AccountingMonth(AccountingYear(2015), 5): Day(2015, 4, 27),
     AccountingMonth(AccountingYear(2015), 6): Day(2015, 6, 1),
@@ -131,7 +135,7 @@ TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH = {
     AccountingMonth(AccountingYear(2016), 10): Day(2015, 9, 28),
     AccountingMonth(AccountingYear(2016), 11): Day(2015, 11, 2),
     AccountingMonth(AccountingYear(2016), 12): Day(2015, 11, 30),
-    AccountingMonth(AccountingYear(2016), 1): Day(2016, 12, 28),
+    AccountingMonth(AccountingYear(2016), 1): Day(2015, 12, 28),
     AccountingMonth(AccountingYear(2016), 2): Day(2016, 2, 1),
     AccountingMonth(AccountingYear(2016), 3): Day(2016, 2, 29),
     AccountingMonth(AccountingYear(2016), 4): Day(2016, 3, 28),
@@ -167,7 +171,7 @@ TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH = {
     AccountingMonth(AccountingYear(2019), 10): Day(2018, 10, 1),
     AccountingMonth(AccountingYear(2019), 11): Day(2018, 10, 29),
     AccountingMonth(AccountingYear(2019), 12): Day(2018, 12, 3),
-    AccountingMonth(AccountingYear(2019), 1): Day(2019, 12, 31),
+    AccountingMonth(AccountingYear(2019), 1): Day(2018, 12, 31),
     AccountingMonth(AccountingYear(2019), 2): Day(2019, 1, 28),
     AccountingMonth(AccountingYear(2019), 3): Day(2019, 2, 25),
     AccountingMonth(AccountingYear(2019), 4): Day(2019, 4, 1),
@@ -179,7 +183,7 @@ TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH = {
     AccountingMonth(AccountingYear(2020), 10): Day(2019, 9, 30),
     AccountingMonth(AccountingYear(2020), 11): Day(2019, 11, 4),
     AccountingMonth(AccountingYear(2020), 12): Day(2019, 12, 2),
-    AccountingMonth(AccountingYear(2020), 1): Day(2020, 12, 30),
+    AccountingMonth(AccountingYear(2020), 1): Day(2019, 12, 30),
     AccountingMonth(AccountingYear(2020), 2): Day(2020, 2, 3),
     AccountingMonth(AccountingYear(2020), 3): Day(2020, 3, 2),
     AccountingMonth(AccountingYear(2020), 4): Day(2020, 3, 30),
@@ -191,7 +195,7 @@ TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH = {
     AccountingMonth(AccountingYear(2021), 10): Day(2020, 9, 28),
     AccountingMonth(AccountingYear(2021), 11): Day(2020, 11, 2),
     AccountingMonth(AccountingYear(2021), 12): Day(2020, 11, 30),
-    AccountingMonth(AccountingYear(2021), 1): Day(2021, 12, 28),
+    AccountingMonth(AccountingYear(2021), 1): Day(2020, 12, 28),
     AccountingMonth(AccountingYear(2021), 2): Day(2021, 2, 1),
     AccountingMonth(AccountingYear(2021), 3): Day(2021, 3, 1),
     AccountingMonth(AccountingYear(2021), 4): Day(2021, 3, 29),
