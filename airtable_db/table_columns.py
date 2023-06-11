@@ -1,3 +1,18 @@
+from enum import Enum
+
+
+class TicketCategory(Enum):
+    ONLINE = 1
+    WALK_IN = 2
+
+
+class TicketPriceLevel(Enum):
+    FULL = 1
+    MEMBER = 2
+    CONCESSION = 3
+    OTHER = 4
+
+
 class EventColumns:
     EVENT_ID = "Record ID"
     SHEETS_EVENT_TITLE = "SheetsEventTitle"
@@ -29,6 +44,18 @@ class EventColumns:
     CREDIT_CARD_TAKINGS = "Bar takings"
     EVENING_PURCHASES = "Evening purchases"
     CONTRACT_TYPE = "Contract Type"
+
+
+    @staticmethod
+    def num_tickets_column(category: TicketCategory, price_level: TicketPriceLevel):
+        category_text = "online" if category == TicketCategory.ONLINE else "walk-in"
+        price_level_text = {
+            TicketPriceLevel.FULL: "Full price",
+            TicketPriceLevel.MEMBER: "Member",
+            TicketPriceLevel.CONCESSION: "Student",
+            TicketPriceLevel.OTHER: "Other"
+        }
+        return f"{price_level_text[price_level]} tickets ({category_text})"
 
 
 class ContractsColumns:

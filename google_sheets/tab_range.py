@@ -150,6 +150,7 @@ class TabRange:
                 return value
             else:
                 return str(value)
+
         transformed_values = [
             [to_excel(value) for value in row]
             for row in values
@@ -162,7 +163,8 @@ class TabRange:
 
         ).execute()
 
-    def set_border_request(self, borders, style="SOLID_MEDIUM", color=Colors.BLACK):
+    def border_request(self, borders, style="SOLID_MEDIUM", color=Colors.BLACK):
+
         border_style = {
             "style": style,
             "color": color
@@ -176,7 +178,19 @@ class TabRange:
             "update_borders": borders_description
         }
 
-    def set_number_format_request(self, format: dict):
+    def outline_border_request(self, style="SOLID_MEDIUM", color=Colors.BLACK):
+        return self.border_request(borders=["top", "bottom", "left", "right"], style=style, color=color)
+
+
+    def merge_columns_request(self):
+        return {
+            "merge_cells": {
+                "merge_type": 'MERGE_ALL',
+                "range": self.as_json_range
+            }
+        }
+
+    def number_format_request(self, format: dict):
         return {
             "repeat_cell": {
                 "range": self.as_json_range,
@@ -189,11 +203,11 @@ class TabRange:
             }
         }
 
-    def set_date_format_request(self, format):
-        return self.set_number_format_request({"type": "DATE", "pattern": format})
+    def date_format_request(self, format):
+        return self.number_format_request({"type": "DATE", "pattern": format})
 
-    def set_percentage_format_request(self):
-        return self.set_number_format_request({"type": "PERCENT"})
+    def percentage_format_request(self):
+        return self.number_format_request({"type": "PERCENT"})
 
     def user_entered_format_request(self, format):
         fields = ",".join([f"user_entered_format.{k}" for k in format.keys()])
@@ -206,6 +220,15 @@ class TabRange:
                 "fields": fields
             }
         }
+
+    def horizontal_alignment_request(self, align: str):
+        return self.user_entered_format_request({"horizontal_alignment": align})
+
+    def center_text_request(self):
+        return self.horizontal_alignment_request("CENTER")
+
+    def right_align_text_request(self):
+        return self.horizontal_alignment_request("right")
 
     def text_format_request(self, format):
         return self.user_entered_format_request({"text_format": format})
@@ -221,8 +244,12 @@ class TabRange:
             raise ValueError("Expected tuple of length 2")
         row_slice, col_slice = indexish
         if isinstance(row_slice, int):
+            if row_slice < 0:
+                return self[self.num_rows + row_slice: self.num_rows, col_slice]
             return self[row_slice:row_slice + 1, col_slice]
         if isinstance(col_slice, int):
+            if col_slice < 0:
+                return self[row_slice, self.num_cols + col_slice: self.num_cols]
             return self[row_slice, col_slice: col_slice + 1]
 
         def make_slice_absolute(_slice, N):
