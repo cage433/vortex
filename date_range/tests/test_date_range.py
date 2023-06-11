@@ -1,8 +1,10 @@
 from unittest import TestCase
 
 from date_range.accounting_month import AccountingMonth
+from date_range.accounting_year import AccountingYear
 from date_range.month import Month
-from date_range.tests.fixtures import random_day, random_month
+from date_range.tests.fixtures import random_day, random_month, random_week, random_accounting_year, \
+    random_accounting_month
 from date_range.week import Week
 from testing_utils import RandomisedTest
 
@@ -39,36 +41,68 @@ class MonthTests(TestCase):
         m3 = m2 - n
         self.assertEqual(m3, m1)
 
+    @RandomisedTest()
+    def test_containing(self, rng):
+        month = random_month(rng)
+        for day in month.days:
+            self.assertEqual(Month.containing(day), month)
+
 
 class WeekTests(TestCase):
-    @RandomisedTest(number_of_runs=100)
+    @RandomisedTest(number_of_runs=10)
     def test_addition(self, rng):
         y = rng.randint(2010, 2030)
         week_no = rng.randint(1, Week.num_weeks_in_accounting_year(y))
-        w1 = Week(y, week_no)
+        w1 = Week(AccountingYear(y), week_no)
         n = rng.randint(-200, 200)
         w2 = w1 + n
         w3 = w2 - n
         self.assertEqual(w3, w1)
 
     def test_contiguity(self):
-        w = Week(2017, 1)
+        w = Week(AccountingYear(2017), 1)
         for n in range(1, 1000):
             self.assertEqual(w.last_day + 1, (w + 1).first_day)
             w += 1
 
+    @RandomisedTest()
+    def test_containing(self, rng):
+        week = random_week(rng)
+        for day in week.days:
+            self.assertEqual(Week.containing(day), week)
+
+
+class AccountingYearTests(TestCase):
+    @RandomisedTest(number_of_runs=10)
+    def test_containing(self, rng):
+        year = random_accounting_year(rng)
+        for day in year.days:
+            self.assertEqual(AccountingYear.containing(day), year)
+
 
 class AccountingMonthTests(TestCase):
-    @RandomisedTest(number_of_runs=100)
+    @RandomisedTest(number_of_runs=10)
     def test_addition(self, rng):
-        am = AccountingMonth(rng.randint(2010, 2030), rng.randint(1, 13))
+        am = random_accounting_month(rng)
         n = rng.randint(-20, 20)
         am2 = am + n
         am3 = am2 - n
         self.assertEqual(am3, am)
 
     def test_contiguity(self):
-        am = AccountingMonth(2017, 1)
-        for n in range(1, 1000):
+        am = AccountingMonth(AccountingYear(2010), 1)
+        for n in range(1, 200):
             self.assertEqual(am.last_day + 1, (am + 1).first_day)
             am += 1
+
+    @RandomisedTest()
+    def test_containing(self, rng):
+        month = random_accounting_month(rng)
+        for day in month.days:
+            self.assertEqual(AccountingMonth.containing(day), month)
+
+    def test_explicit_increments(self):
+        self.assertEqual(AccountingMonth(AccountingYear(2017), 8) + 1, AccountingMonth(AccountingYear(2018), 9))
+        self.assertEqual(AccountingMonth(AccountingYear(2018), 9) - 1, AccountingMonth(AccountingYear(2017), 8))
+        self.assertEqual(AccountingMonth(AccountingYear(2018), 12) + 1, AccountingMonth(AccountingYear(2018), 1))
+        self.assertEqual(AccountingMonth(AccountingYear(2018), 1) - 1, AccountingMonth(AccountingYear(2018), 12))

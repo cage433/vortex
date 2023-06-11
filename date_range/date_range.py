@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 
 __all__ = ["DateRange", "ContiguousDateRange"]
 
-from functools import total_ordering
-
 
 class DateRange(ABC):
     @property
@@ -16,6 +14,21 @@ class DateRange(ABC):
     def last_day(self) -> 'Day':
         raise NotImplementedError()
 
+    def contains_day(self, day: 'Day') -> bool:
+        return self.first_day <= day <= self.last_day
+
+    @property
+    def num_days(self) -> int:
+        return self.last_day.days_since(self.first_day) + 1
+
+    @property
+    def days(self) -> list['Day']:
+        ds = []
+        d = self.first_day
+        while d <= self.last_day:
+            ds.append(d)
+            d += 1
+        return ds
 
 class ContiguousDateRange(DateRange, ABC):
     @abstractmethod

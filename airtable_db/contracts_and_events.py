@@ -1,6 +1,6 @@
 from airtable_db.airtable_record import AirtableRecord
 from airtable_db.table_columns import ContractsColumns, EventColumns
-from date_range import Day
+from date_range import Day, DateRange
 from utils import checked_type, checked_list_type
 
 
@@ -43,3 +43,6 @@ class ContractAndEvents:
 class MultipleContractAndEvents:
     def __init__(self, contracts_and_events: list[ContractAndEvents]):
         self.contracts_and_events = checked_list_type(contracts_and_events, ContractAndEvents)
+
+    def restrict_to_period(self, period: DateRange) -> 'MultipleContractAndEvents':
+        return MultipleContractAndEvents([c for c in self.contracts_and_events if period.contains_day(c.contract.performance_date)])

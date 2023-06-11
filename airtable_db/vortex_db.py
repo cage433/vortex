@@ -6,6 +6,9 @@ from date_range import DateRange
 from date_range.month import Month
 from utils.collection_utils import group_into_dict, flatten
 
+__all__ = [
+    "VortexDB",
+]
 
 class VortexDB:
     def __init__(self):

@@ -1,5 +1,6 @@
 from numbers import Number
 
+from airtable_db import VortexDB
 from airtable_db.contracts_and_events import MultipleContractAndEvents
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
@@ -39,5 +40,7 @@ class MonthlyAccounts(Tab):
 
 
 if __name__ == '__main__':
-    accounts = MonthlyAccounts(Workbook(TEST_SHEET_ID), AccountingMonth(2023, 1), vat_rate=0.2)
-    accounts.update(None)
+    month = AccountingMonth(2023, 1)
+    accounts = MonthlyAccounts(Workbook(TEST_SHEET_ID), month, vat_rate=0.2)
+    contracts_and_events = VortexDB().contracts_and_events_for_period(month)
+    accounts.update(contracts_and_events)
