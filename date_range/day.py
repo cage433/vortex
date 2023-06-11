@@ -15,12 +15,12 @@ class Day(ContiguousDateRange):
         self.y: int = checked_type(y, int)
         self.m: int = checked_type(m, int)
         self.d: int = checked_type(d, int)
-        self._date: date = date(y, m, d)
+        self.date: date = date(y, m, d)
 
 
     @property
     def weekday(self) -> int:
-        return self._date.weekday()
+        return self.date.weekday()
 
     @property
     def first_day(self) -> 'Day':
@@ -28,7 +28,7 @@ class Day(ContiguousDateRange):
 
     @property
     def iso_repr(self) -> str:
-        return self._date.isoformat()
+        return self.date.isoformat()
 
     def __str__(self):
         return self.iso_repr
@@ -41,20 +41,20 @@ class Day(ContiguousDateRange):
         return self
 
     def __eq__(self, other: 'Day') -> bool:
-        return isinstance(other, Day) and self._date == other._date
+        return isinstance(other, Day) and self.date == other.date
 
     def __lt__(self, other: 'Day') -> bool:
-        return self._date < other._date
+        return self.date < other.date
 
     def __add__(self, n) -> 'Day':
-        return Day.from_date(self._date + timedelta(n))
+        return Day.from_date(self.date + timedelta(n))
 
     @staticmethod
     def from_date(d: date) -> 'Day':
         return Day(d.year, d.month, d.day)
 
     def days_since(self, rhs: 'Day') -> int:
-        return (self._date - rhs._date).days
+        return (self.date - rhs.date).days
 
     @staticmethod
     def parse(text) -> 'Day':

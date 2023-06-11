@@ -24,6 +24,9 @@ class AccountingMonth(ContiguousDateRange):
     def __hash__(self):
         return hash((self.y, self.m))
 
+    def __str__(self):
+        return self.tab_name
+
     @property
     def first_day(self) -> 'Day':
         if self in TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH:
@@ -35,6 +38,13 @@ class AccountingMonth(ContiguousDateRange):
     def last_day(self) -> 'Day':
         return (self + 1).first_day - 1
 
+    @property
+    def tab_name(self):
+        return self.corresponding_calendar_month.first_day.date.strftime("%b %y")
+
+    @property
+    def corresponding_calendar_month(self):
+        return Month(self.y, self.m)
 
 TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH = {
     AccountingMonth(2012, 9): Day(2012, 9, 3),
