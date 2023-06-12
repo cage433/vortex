@@ -105,7 +105,7 @@ class TabRange:
         self.num_cols: int = checked_type(num_cols, int)
 
     @property
-    def range_name(self):
+    def in_a1_notation(self):
         t1 = self.top_left_cell.cell_coordinates
         t2 = t1.offset(self.num_rows - 1, self.num_cols - 1)
         return f"{t1.text}:{t2.text}"
@@ -142,7 +142,7 @@ class TabRange:
 
     @property
     def full_range_name(self):
-        return f"{self.tab.tab_name}!{self.range_name}"
+        return f"{self.tab.tab_name}!{self.in_a1_notation}"
 
     def write_values(self, values: list[list[any]]):
         def to_excel(value):
@@ -236,6 +236,18 @@ class TabRange:
     def set_bold_text_request(self):
         return self.text_format_request({"bold": True})
 
+    @property
+    def is_single_cell(self):
+        return self.num_rows == 1 and self.num_cols == 1
+
+    @property
+    def is_row(self):
+        return self.num_rows == 1
+
+    @property
+    def is_column(self):
+        return self.num_cols == 1
+
     def __getitem__(self, indexish):
         if isinstance(indexish, (slice, int)):
             return self[indexish, :]
@@ -245,12 +257,32 @@ class TabRange:
         row_slice, col_slice = indexish
         if isinstance(row_slice, int):
             if row_slice < 0:
-                return self[self.num_rows + row_slice: self.num_rows, col_slice]
+                return self[self.num_rows + row_slice, col_slice]
             return self[row_slice:row_slice + 1, col_slice]
+        if isinstance(row_slice, slice):
+            if row_slice.start is None:
+                return self[0: row_slice.stop, col_slice]
+            if row_slice.start < 0:
+                return self[self.num_rows + row_slice.start: row_slice.stop, col_slice]
+            if row_slice.stop is None:
+                return self[row_slice.start: self.num_rows, col_slice]
+            if row_slice.stop < 0:
+                return self[self.num_rows: row_slice.stop + self.num_rows, col_slice]
+
         if isinstance(col_slice, int):
             if col_slice < 0:
-                return self[row_slice, self.num_cols + col_slice: self.num_cols]
+                return self[row_slice, self.num_cols + col_slice]
             return self[row_slice, col_slice: col_slice + 1]
+
+        if isinstance(col_slice, slice):
+            if col_slice.start is None:
+                return self[row_slice, 0: col_slice.stop]
+            if col_slice.start < 0:
+                return self[row_slice, self.num_cols + col_slice.start: col_slice.stop]
+            if col_slice.stop is None:
+                return self[row_slice, col_slice.start: self.num_cols]
+            if col_slice.stop < 0:
+                return self[row_slice, self.num_cols: col_slice.stop + self.num_cols]
 
         def make_slice_absolute(_slice, N):
             new_start = 0 if _slice.start is None else _slice.start

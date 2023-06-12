@@ -27,10 +27,52 @@ class MonthlyAccounts(Tab):
         self._gigs_by_week = [self._gigs_info.restrict_to_period(w) for w in self.month.weeks]
         self._month_heading_range = TabRange.from_range_name(self, "B2:C4")
         self._ticket_numbers_range = TabRange(self.cell("B6"), num_rows=12, num_cols=month.num_weeks + 2)
+        self._income_range = TabRange(self.cell("B19"), num_rows=11, num_cols=month.num_weeks + 3)
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
 
-    def _ticket_numbers_array(self):
+    def _workbook_format_requests(self):
+        return self.delete_all_row_groups_requests() + [
+            self.set_column_width_request(i_col=0, width=20)
+        ]
+
+    def _month_headings_format_requests(self):
+        return [
+            self._month_heading_range.outline_border_request(),
+            self._month_heading_range[0, 1].date_format_request("mmm-yy"),
+            self._month_heading_range[1, 1].date_format_request("d mmm yy"),
+            self._month_heading_range[2, 1].percentage_format_request(),
+            self._month_heading_range[:, 0].set_bold_text_request(),
+        ]
+
+    def _month_heading_values(self) -> list[tuple[TabRange, list[list[any]]]]:
+        return [
+            (self._month_heading_range[:,0], [[""]])
+        ]
+
+    def _month_headings_values(self) -> list[tuple[TabRange, list[list[any]]]]:
+        return [
+            (self._month_heading_range[:, 0], ["Month", "Start Date", "VAT Rate"]),
+            (self._month_heading_range[:, 1], [self.month.corresponding_calendar_month.first_day, self.month.first_day, self.vat_rate]),
+        ]
+
+    def _ticket_numbers_format_requests(self):
+        return [
+            self._ticket_numbers_range.outline_border_request(),
+            self._ticket_numbers_range[0:4, :].set_bold_text_request(),
+            self._ticket_numbers_range[0].merge_columns_request(),
+            self._ticket_numbers_range[0].center_text_request(),
+            self._ticket_numbers_range[2, -1].right_align_text_request(),
+            self._ticket_numbers_range[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
+            self._ticket_numbers_range[2].border_request(["bottom"]),
+            self._ticket_numbers_range[2:, 1].border_request(["left"]),
+            self._ticket_numbers_range[2:, -1].border_request(["left"]),
+            self.group_rows_request(self._ticket_numbers_range.i_first_row + 4,
+                                    self._ticket_numbers_range.i_last_row)
+        ]
+
+
+    def _ticket_numbers_values(self):
         def tickets_row(name: str, ticket_func: Callable[[GigsInfo], int]) -> list[any]:
             return [name] + [ticket_func(gigs) for gigs in self._gigs_by_week] + [ticket_func(self._gigs_info)]
 
@@ -58,55 +100,41 @@ class MonthlyAccounts(Tab):
         ]
         return values
 
-    def _ticket_numbers_formats(self):
+    def _income_format_requests(self):
         return [
-            self._ticket_numbers_range.outline_border_request(),
-            self._ticket_numbers_range[0:4, :].set_bold_text_request(),
-            self._ticket_numbers_range[0].merge_columns_request(),
-            self._ticket_numbers_range[0].center_text_request(),
-            self._ticket_numbers_range[2, -1].right_align_text_request(),
-            self._ticket_numbers_range[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
-            self._ticket_numbers_range[2].border_request(["bottom"]),
-            self._ticket_numbers_range[2:, 1].border_request(["left"]),
-            self._ticket_numbers_range[2:, -1].border_request(["left"]),
-            self.group_rows_request(self._ticket_numbers_range.i_first_row + 4,
-                                    self._ticket_numbers_range.i_last_row)
+            self._income_range.outline_border_request(),
+            self._income_range[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
+            self._income_range[2].border_request(["bottom"]),
+            self._income_range[2:, 1].border_request(["left"]),
+            self._income_range[2:, -2].border_request(["left", "right"]),
+            self.group_rows_request(self._income_range.i_first_row + 4,
+                                    self._income_range.i_last_row),
+            self._income_range[0].merge_columns_request(),
+            self._income_range[0].center_text_request(),
+            self._income_range[2, -2:].right_align_text_request(),
         ]
 
-    def _month_headings_formats(self):
-        return [
-            self._month_heading_range.outline_border_request(),
-            self._month_heading_range[0, 1].date_format_request("mmm-yy"),
-            self._month_heading_range[1, 1].date_format_request("d mmm yy"),
-            self._month_heading_range[2, 1].percentage_format_request(),
-            self._month_heading_range[:, 0].set_bold_text_request(),
+    def _income_values(self):
+        values = [
+            ["Income"],
+            [],
+            ["Week"] + [w.week_no for w in self.month.weeks] + ["MTD", "VAT Estimate"],
         ]
-
-    def _month_headings_values(self) -> list[list[any]]:
-        return [
-            ["Month", self.month.corresponding_calendar_month.first_day],
-            ["Start Date", self.month.first_day],
-            ["VAT Rate", self.vat_rate]
-        ]
-
-    def _workbook_requests(self):
-        return self.delete_all_row_groups_requests() + [
-            self.set_column_width_request(i_col=0, width=20)
-        ]
+        return values
 
     def update(self):
 
         format_requests = self.clear_values_and_formats_requests() \
-                          + self._workbook_requests() \
-                          + self._month_headings_formats() \
-                          + self._ticket_numbers_formats()
+                          + self._workbook_format_requests() \
+                          + self._month_headings_format_requests() \
+                          + self._ticket_numbers_format_requests() \
+                          + self._income_format_requests()
         self.workbook.batch_update(format_requests)
 
         self.workbook.batch_update_values(
-            {
-                self._month_heading_range: self._month_headings_values(),
-                self._ticket_numbers_range: self._ticket_numbers_array()
-            }
+            self._month_headings_values() + [
+                (self._ticket_numbers_range, self._ticket_numbers_values())
+            ]
         )
 
 

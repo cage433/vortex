@@ -64,7 +64,21 @@ class Workbook:
             body=batch_update_values_request_body
         ).execute()
 
-    def batch_update_values(self, value_ranges: dict['TabRange', list[list[any]]]):
+    def batch_update_values(self, value_ranges: list[tuple['TabRange', list[list[any]]]]):
+        def match_dimensions(range, values):
+            if not isinstance(values, list):
+                assert range.is_single_cell(), "Value must be a list if range is not a single cell"
+                return [[values]]
+
+            assert len(values) > 0, "Can't have an empty list of values"
+            if not isinstance(values[0], list):
+                if range.is_row:
+                    return [values]
+                if range.is_column:
+                    return [[value] for value in values]
+                raise ValueError("Mismatch of range and value dimensions")
+            return values
+
         def transform_values(values):
             def to_excel(value):
                 return value if isinstance(value, Number) else str(value)
@@ -74,13 +88,12 @@ class Workbook:
                 for row in values
             ]
 
-
         batch_update_values_request_body = {
             "valueInputOption": "USER_ENTERED",
             "data": [
                 {"range":range.full_range_name,
-                 "values": transform_values(values)}
-                for range, values in value_ranges.items()
+                 "values": transform_values(match_dimensions(range, values))}
+                for range, values in value_ranges
             ]
         }
 
