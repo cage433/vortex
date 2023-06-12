@@ -13,7 +13,7 @@ class ContractsTable:
     def __init__(self):
         self.table = Table(AIRTABLE_TOKEN, VORTEX_DATABASE_ID, ContractsTable.TABLE)
 
-    def records_for_date_range(self, date_range: DateRange, *fields):
+    def records_for_date_range(self, date_range: DateRange, fields):
         # Hack to avoid airtable time zone bug I can't quite figure
         first_day, last_day = date_range.first_day, date_range.last_day
         fields = list(fields)

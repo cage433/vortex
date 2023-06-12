@@ -45,7 +45,6 @@ class EventColumns:
     EVENING_PURCHASES = "Evening purchases"
     CONTRACT_TYPE = "Contract Type"
 
-
     @staticmethod
     def num_tickets_column(category: TicketCategory, price_level: TicketPriceLevel):
         category_text = "online" if category == TicketCategory.ONLINE else "walk-in"
@@ -95,3 +94,14 @@ class ContractsColumns:
     MEMBER_TICKET_PRICE = "Member ticket price"
     STUDENT_TICKET_PRICE = "Student ticket price"
     MUSICIANS_FEE = "Musicians fee"
+
+    @staticmethod
+    def ticket_price_column(price_level: TicketPriceLevel):
+        price_level_text = {
+            TicketPriceLevel.FULL: "Full ticket price",
+            TicketPriceLevel.MEMBER: "Member ticket price",
+            TicketPriceLevel.CONCESSION: "Student ticket price",
+        }
+        return price_level_text[price_level]
+
+

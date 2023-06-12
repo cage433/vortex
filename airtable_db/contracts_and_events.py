@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Optional
 
 from airtable_db.airtable_record import AirtableRecord
@@ -22,6 +21,9 @@ class ContractRecord(AirtableRecord):
     @property
     def events_link(self):
         return self._airtable_value(ContractsColumns.EVENTS_LINK)
+
+    def ticket_price(self, price_level: TicketPriceLevel) -> int:
+        return self._airtable_value(ContractsColumns.ticket_price_column(price_level))
 
 
 class EventRecord(AirtableRecord):
@@ -48,7 +50,10 @@ class EventRecord(AirtableRecord):
         return self._airtable_value(column, default=0)
 
     def num_free_tickets(self) -> int:
-        return self._airtable_value(EventColumns.PROMO_TICKETS, 0)
+        return self._airtable_value(EventColumns.PROMO_TICKETS, default=0)
+
+    def other_ticket_sales(self) -> float:
+        return self._airtable_value(EventColumns.OTHER_TICKET_SALES, default=0)
 
 
 class ContractAndEvents:
@@ -63,10 +68,18 @@ class ContractAndEvents:
         )
 
     def num_free_tickets(self) -> int:
-        return sum(
-            e.num_free_tickets() for e in self.events
-        )
+        return sum(e.num_free_tickets() for e in self.events)
 
+    def ticket_sales(self, price_level: TicketPriceLevel) -> float:
+        num_tickets = self.num_paid_tickets(price_level=price_level)
+        ticket_price = self.contract.ticket_price(price_level)
+        if ticket_price is None:
+            return 0
+
+        return num_tickets * ticket_price
+
+    def other_ticket_sales(self) -> float:
+        return sum(e.other_ticket_sales() for e in self.events)
 
 class GigsInfo:
     def __init__(self, contracts_and_events: list[ContractAndEvents]):
@@ -88,3 +101,9 @@ class GigsInfo:
     @property
     def total_tickets(self):
         return sum([ce.num_paid_tickets() + ce.num_free_tickets() for ce in self.contracts_and_events])
+
+    def ticket_sales(self, price_level: TicketPriceLevel) -> float:
+        return sum(ce.ticket_sales(price_level) for ce in self.contracts_and_events)
+
+    def other_ticket_sales(self) -> float:
+        return sum(ce.other_ticket_sales() for ce in self.contracts_and_events)

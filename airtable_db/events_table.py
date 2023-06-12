@@ -28,7 +28,7 @@ class EventsTable:
 if __name__ == '__main__':
     c = ContractsTable()
     period = Month(2023, 1)
-    contracts = c.records_for_date_range(period, ContractsColumns.RECORD_ID, ContractsColumns.EVENTS_LINK)
+    contracts = c.records_for_date_range(period, [ContractsColumns.RECORD_ID, ContractsColumns.EVENTS_LINK])
     e = EventsTable()
     events = e.records_for_contracts(contracts, EventColumns.EVENT_ID, EventColumns.SHEETS_EVENT_TITLE)
     for event in events:

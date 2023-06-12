@@ -10,13 +10,21 @@ __all__ = [
     "VortexDB",
 ]
 
+
 class VortexDB:
     def __init__(self):
         self.contracts_table = ContractsTable()
         self.events_table = EventsTable()
 
     def contracts_and_events_for_period(self, period: DateRange) -> GigsInfo:
-        contracts = self.contracts_table.records_for_date_range(period, ContractsColumns.RECORD_ID, ContractsColumns.EVENTS_LINK)
+        contracts_columns = [
+            ContractsColumns.ticket_price_column(level)
+            for level in [TicketPriceLevel.FULL, TicketPriceLevel.MEMBER, TicketPriceLevel.CONCESSION]
+        ]
+        contracts_columns += [ContractsColumns.RECORD_ID, ContractsColumns.EVENTS_LINK]
+        contracts = self.contracts_table.records_for_date_range(
+            period, contracts_columns
+        )
 
         events_columns = [
             EventColumns.num_tickets_column(category, price_level)
@@ -24,7 +32,10 @@ class VortexDB:
             for price_level in TicketPriceLevel
             if not (category == TicketCategory.ONLINE and price_level == TicketPriceLevel.OTHER)
         ]
-        events_columns += [EventColumns.EVENT_ID, EventColumns.SHEETS_EVENT_TITLE, EventColumns.PROMO_TICKETS]
+        events_columns += [
+            EventColumns.EVENT_ID, EventColumns.SHEETS_EVENT_TITLE, EventColumns.PROMO_TICKETS,
+            EventColumns.OTHER_TICKET_SALES
+        ]
         events = self.events_table.records_for_contracts(contracts, events_columns)
         grouped_events = group_into_dict(events, lambda e: e.event_id)
         return GigsInfo([

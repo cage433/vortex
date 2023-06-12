@@ -30,13 +30,14 @@ class MonthlyAccounts(Tab):
         self._gigs_by_week: list[GigsInfo] = [self._gigs_info.restrict_to_period(w) for w in self._weeks]
         self._month_heading_range: TabRange = TabRange.from_range_name(self, "B2:C4")
         self._ticket_numbers_range: TabRange = TabRange(self.cell("B6"), num_rows=11, num_cols=month.num_weeks + 2)
-        self._income_range: TabRange = TabRange(self.cell("B19"), num_rows=11, num_cols=month.num_weeks + 3)
+        self._income_range: TabRange = TabRange(self.cell("B19"), num_rows=14, num_cols=month.num_weeks + 3)
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
 
     def _workbook_format_requests(self):
         return self.delete_all_row_groups_requests() + [
-            self.set_column_width_request(i_col=0, width=20)
+            self.set_column_width_request(i_col=0, width=20),
+            self.set_column_width_request(i_col=1, width=150),
         ]
 
     def _month_headings_format_requests(self):
@@ -61,6 +62,7 @@ class MonthlyAccounts(Tab):
             self._ticket_numbers_range[0].merge_columns_request(),
             self._ticket_numbers_range[0].center_text_request(),
             self._ticket_numbers_range[2, -1].right_align_text_request(),
+            self._ticket_numbers_range[4:, 0].right_align_text_request(),
             self._ticket_numbers_range[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
 
             self._ticket_numbers_range[2:, 1].border_request(["left"]),
@@ -75,9 +77,29 @@ class MonthlyAccounts(Tab):
         return [gig_func(gigs) for gigs in self._gigs_by_week]
 
     def _ticket_numbers_values(self):
+        # Headings
         values = [
-            (self._ticket_numbers_range[:, 0], ["Audience", "", "Week", "Total", "Full Price", "Members", "Concessions", "Other", "Guest", "Online", "Walk-in"])
+            (
+                self._ticket_numbers_range[:, 0],
+                ["Audience", "", "Week", "Total", "Full Price", "Members", "Concessions", "Other", "Guest", "Online", "Walk-in"]
+            )
         ]
+
+        # Week Nos
+        values.append(
+            (
+                self._ticket_numbers_range[2, 1:-1],
+                [w.week_no for w in self._weeks]
+            )
+        )
+
+        values.append(
+            (
+                self._ticket_numbers_range[2, 5], "MTD"
+            )
+        )
+
+        # Tickets by level
         for i_level, level in enumerate([
             TicketPriceLevel.FULL,
             TicketPriceLevel.MEMBER,
@@ -88,19 +110,24 @@ class MonthlyAccounts(Tab):
             week_range = self._ticket_numbers_range[i_level + 4, 1:self._num_weeks + 1]
             values.append((week_range, self._week_gigs_row(func)))
 
+        # Guests
         values.append(
             (self._ticket_numbers_range[8, 1:self._num_weeks + 1], self._week_gigs_row(lambda x: x.num_free_tickets()))
         )
+
+        # Online/Walk-in
         for i_category, category in enumerate([TicketCategory.ONLINE, TicketCategory.WALK_IN]):
             func = lambda gigs: gigs.num_paid_tickets(category=category)
             week_range = self._ticket_numbers_range[i_category + 9, 1:self._num_weeks + 1]
             values.append((week_range, self._week_gigs_row(func)))
 
+        # Top totals
         for i_week in range(self._num_weeks + 1):                          # +1 for MTD
             breakdown_values = self._ticket_numbers_range[4:9, i_week + 1]
             values.append(
                 (self._ticket_numbers_range[3, i_week + 1], f"=Sum({breakdown_values.in_a1_notation})")
             )
+        # Side totals
         for i_row in range(3, 11):
             week_range = self._ticket_numbers_range[i_row, 1:self._num_weeks + 1]
             values.append(
@@ -112,23 +139,68 @@ class MonthlyAccounts(Tab):
     def _income_format_requests(self):
         return [
             self._income_range.outline_border_request(),
-            self._income_range[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
+            self._income_range[0].merge_columns_request(),
+            self._income_range[0].center_text_request(),
+            self._income_range[0:4, :].set_bold_text_request(),
+            self._income_range[8:10, 0].set_bold_text_request(),
+            self._income_range[13, 0].set_bold_text_request(),
             self._income_range[2].border_request(["bottom"]),
             self._income_range[2:, 1].border_request(["left"]),
             self._income_range[2:, -2].border_request(["left", "right"]),
             self.group_rows_request(self._income_range.i_first_row + 4,
-                                    self._income_range.i_last_row),
-            self._income_range[0].merge_columns_request(),
-            self._income_range[0].center_text_request(),
+                                    self._income_range.i_first_row + 7),
+            self.group_rows_request(self._income_range.i_first_row + 10,
+                                    self._income_range.i_first_row + 12),
             self._income_range[2, -2:].right_align_text_request(),
+            self._income_range[4:8, 0].right_align_text_request(),
+            self._income_range[10:13, 0].right_align_text_request(),
+            self._income_range[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
+            self._income_range[3:, 1:].set_decimal_format_request("#,##0.00")
         ]
 
     def _income_values(self):
+        # Headings
         values = [
-            ["Income"],
-            [],
-            ["Week"] + [w.week_no for w in self.month.weeks] + ["MTD", "VAT Estimate"],
+            (
+                self._income_range[:, 0],
+                ["Incoming", "", "Week", "Ticket Sales", "Full Price", "Members", "Student", "Other",
+                 "Hire Fees", "Bar Takings", "Total CC Takings", "CC Ticket Sales", "CC Artist Merch", "Total"])
         ]
+
+        # Week Nos
+        values.append(
+            (
+                self._income_range[2, 1:-2],
+                [w.week_no for w in self._weeks]
+            )
+        )
+
+        values.append(
+            (
+                self._income_range[2, -2:], ["MTD", "VAT Estimate"]
+            )
+        )
+
+        # Ticket values
+        values.append(
+            (
+                self._income_range[3, 1:-2],
+                [
+                    f"=SUM({self._income_range[4:8, i_col].in_a1_notation})"
+                    for i_col in range(1, self._num_weeks + 1)
+                ]
+            )
+        )
+        values += [
+            (self._income_range[i + 4, 1:-2], [w.ticket_sales(level) for w in self._gigs_by_week])
+            for i, level in enumerate([TicketPriceLevel.FULL, TicketPriceLevel.MEMBER, TicketPriceLevel.CONCESSION])
+        ]
+
+        values.append(
+            (self._income_range[7, 1:-2], [w.other_ticket_sales() for w in self._gigs_by_week])
+        )
+
+
         return values
 
     def update(self):
@@ -141,7 +213,7 @@ class MonthlyAccounts(Tab):
 
         self.workbook.batch_update(format_requests)
         self.workbook.batch_update_values(
-            self._month_headings_values() + self._ticket_numbers_values()
+            self._month_headings_values() + self._ticket_numbers_values() + self._income_values()
         )
 
 

@@ -203,6 +203,10 @@ class TabRange:
             }
         }
 
+    def set_decimal_format_request(self, format):
+        return self.number_format_request({"type": "NUMBER", "pattern": format})
+
+
     def date_format_request(self, format):
         return self.number_format_request({"type": "DATE", "pattern": format})
 
@@ -271,7 +275,7 @@ class TabRange:
             if row_slice.stop is None:
                 return self[row_slice.start: self.num_rows, col_slice]
             if row_slice.stop < 0:
-                return self[self.num_rows: row_slice.stop + self.num_rows, col_slice]
+                return self[row_slice.start: row_slice.stop + self.num_rows, col_slice]
 
         if isinstance(col_slice, int):
             if col_slice < 0:
@@ -286,7 +290,7 @@ class TabRange:
             if col_slice.stop is None:
                 return self[row_slice, col_slice.start: self.num_cols]
             if col_slice.stop < 0:
-                return self[row_slice, self.num_cols: col_slice.stop + self.num_cols]
+                return self[row_slice, col_slice.start: col_slice.stop + self.num_cols]
 
         def make_slice_absolute(_slice, N):
             new_start = 0 if _slice.start is None else _slice.start
