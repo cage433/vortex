@@ -67,12 +67,13 @@ class ContractAndEvents:
             e.num_free_tickets() for e in self.events
         )
 
-class MultipleContractAndEvents:
+
+class GigsInfo:
     def __init__(self, contracts_and_events: list[ContractAndEvents]):
         self.contracts_and_events = checked_list_type(contracts_and_events, ContractAndEvents)
 
-    def restrict_to_period(self, period: DateRange) -> 'MultipleContractAndEvents':
-        return MultipleContractAndEvents(
+    def restrict_to_period(self, period: DateRange) -> 'GigsInfo':
+        return GigsInfo(
             [c for c in self.contracts_and_events if period.contains_day(c.contract.performance_date)])
 
     def num_paid_tickets(self, category: Optional[TicketCategory] = None,

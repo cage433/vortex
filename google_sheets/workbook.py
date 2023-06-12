@@ -5,7 +5,6 @@ from typing import Union
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build, Resource
 
-from env import TEST_SHEET_ID
 from utils import checked_type
 
 __all__ = ["Workbook"]
@@ -24,12 +23,26 @@ class Workbook:
         return build('sheets', 'v4', credentials=creds)
 
     def tab_ids_by_name(self) -> dict[str, int]:
-        metadata = self._resource.get(spreadsheetId=TEST_SHEET_ID).execute()
+        metadata = self._resource.get(spreadsheetId=self.sheet_id).execute()
         sheets = metadata.get('sheets')
         return {
             sheet["properties"]["title"]: sheet["properties"]["sheetId"]
             for sheet in sheets
         }
+
+    def row_groups_for_tab_id(self, tab_id: int):
+        metadata = self._resource.get(spreadsheetId=self.sheet_id).execute()
+
+        sheets = metadata.get('sheets')
+        for sheet in sheets:
+            if sheet["properties"]["sheetId"] == tab_id:
+                groups = []
+                for row_group in sheet.get("rowGroups", []):
+                    start_index = row_group["range"]["startIndex"]
+                    end_index = row_group["range"]["endIndex"]
+                    groups.append((start_index, end_index))
+                return groups
+        raise ValueError("No sheet with id #{self.tab_id} found")
 
     def delete_tab(self, name: str):
         sheet_id = self.tab_ids_by_name()[name]

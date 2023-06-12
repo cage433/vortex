@@ -163,7 +163,7 @@ class TabRange:
 
         ).execute()
 
-    def border_request(self, borders, style="SOLID_MEDIUM", color=Colors.BLACK):
+    def border_request(self, borders, style="SOLID", color=Colors.BLACK):
 
         border_style = {
             "style": style,
@@ -263,3 +263,17 @@ class TabRange:
         num_rows = row_slice.stop - row_slice.start
         num_cols = col_slice.stop - col_slice.start
         return TabRange(new_top_left, num_rows, num_cols)
+
+    @property
+    def i_first_row(self):
+        return self.top_left_cell.i_row
+
+    @property
+    def i_last_row(self):
+        return self.i_first_row + self.num_rows - 1
+
+    def offset(self, rows: int = 0, cols: int = 0) -> "TabRange":
+        return TabRange(
+            self.top_left_cell.offset(num_rows=rows, num_cols=cols),
+            self.num_rows, self.num_cols
+        )

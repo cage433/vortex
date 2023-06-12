@@ -43,3 +43,49 @@ class Tab:
             ),
             self.unmerge_all_request(),
         ]
+
+    def group_rows_request(self, i_first_row, i_last_row):
+        return {
+            "add_dimension_group": {
+                "range": {
+                    "sheet_id": self.tab_id,
+                    "dimension": "ROWS",
+                    "start_index": i_first_row,
+                    "end_index": i_last_row + 1
+                },
+            }
+        }
+
+    def row_groups(self) -> list[tuple[int, int]]:
+        return self.workbook.row_groups_for_tab_id(self.tab_id)
+
+    def delete_all_row_groups_requests(self):
+        return [
+            {
+                "delete_dimension_group": {
+                    "range": {
+                        "sheet_id": self.tab_id,
+                        "dimension": "ROWS",
+                        "start_index": start_index,
+                        "end_index": end_index
+                    }
+                }
+            }
+            for (start_index, end_index) in self.row_groups()
+        ]
+
+    def set_column_width_request(self, i_col: int, width: int):
+        return {
+            "update_dimension_properties": {
+                "range": {
+                    "sheet_id": self.tab_id,
+                    "dimension": "COLUMNS",
+                    "start_index": i_col,
+                    "end_index": i_col + 1
+                },
+                "properties": {
+                    "pixel_size": width
+                },
+                "fields": "pixel_size"
+            }
+        }

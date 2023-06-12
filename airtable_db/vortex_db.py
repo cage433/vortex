@@ -1,4 +1,4 @@
-from airtable_db.contracts_and_events import MultipleContractAndEvents, ContractAndEvents
+from airtable_db.contracts_and_events import GigsInfo, ContractAndEvents
 from airtable_db.contracts_table import ContractsTable
 from airtable_db.events_table import EventsTable
 from airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
@@ -15,7 +15,7 @@ class VortexDB:
         self.contracts_table = ContractsTable()
         self.events_table = EventsTable()
 
-    def contracts_and_events_for_period(self, period: DateRange) -> MultipleContractAndEvents:
+    def contracts_and_events_for_period(self, period: DateRange) -> GigsInfo:
         contracts = self.contracts_table.records_for_date_range(period, ContractsColumns.RECORD_ID, ContractsColumns.EVENTS_LINK)
 
         events_columns = [
@@ -27,7 +27,7 @@ class VortexDB:
         events_columns += [EventColumns.EVENT_ID, EventColumns.SHEETS_EVENT_TITLE, EventColumns.PROMO_TICKETS]
         events = self.events_table.records_for_contracts(contracts, events_columns)
         grouped_events = group_into_dict(events, lambda e: e.event_id)
-        return MultipleContractAndEvents([
+        return GigsInfo([
             ContractAndEvents(
                 contract,
                 flatten([
