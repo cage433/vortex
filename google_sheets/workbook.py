@@ -67,7 +67,7 @@ class Workbook:
     def batch_update_values(self, value_ranges: list[tuple['TabRange', list[list[any]]]]):
         def match_dimensions(range, values):
             if not isinstance(values, list):
-                assert range.is_single_cell(), "Value must be a list if range is not a single cell"
+                assert range.is_single_cell, "Value must be a list if range is not a single cell"
                 return [[values]]
 
             assert len(values) > 0, "Can't have an empty list of values"

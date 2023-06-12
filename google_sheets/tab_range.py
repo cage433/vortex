@@ -248,6 +248,10 @@ class TabRange:
     def is_column(self):
         return self.num_cols == 1
 
+    @property
+    def top_right_cell(self):
+        return self[0, -1]
+
     def __getitem__(self, indexish):
         if isinstance(indexish, (slice, int)):
             return self[indexish, :]
