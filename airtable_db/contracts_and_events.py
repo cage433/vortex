@@ -3,7 +3,6 @@ from typing import Optional
 from airtable_db.airtable_record import AirtableRecord
 from airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
 from date_range import Day, DateRange
-from date_range.week import Week
 from utils import checked_type, checked_list_type
 
 
@@ -62,6 +61,9 @@ class EventRecord(AirtableRecord):
     def ticket_sales_override(self, level: TicketPriceLevel) -> Optional[float]:
         return self._airtable_value(EventColumns.sales_override_column(level))
 
+    @property
+    def hire_fee(self) -> float:
+        return self._airtable_value(EventColumns.HIRE_FEE, default=0)
 
 
 class ContractAndEvents:
@@ -92,6 +94,8 @@ class ContractAndEvents:
     def other_ticket_sales(self) -> float:
         return sum(e.other_ticket_sales() for e in self.events)
 
+
+
 class GigsInfo:
     def __init__(self, contracts_and_events: list[ContractAndEvents]):
         self.contracts_and_events = checked_list_type(contracts_and_events, ContractAndEvents)
@@ -118,3 +122,10 @@ class GigsInfo:
 
     def other_ticket_sales(self) -> float:
         return sum(ce.other_ticket_sales() for ce in self.contracts_and_events)
+
+    def hire_fees(self) -> float:
+        return sum(
+            e.hire_fee
+            for ce in self.contracts_and_events
+            for e in ce.events
+        )

@@ -34,7 +34,7 @@ class VortexDB:
         ]
         events_columns += [
             EventColumns.EVENT_ID, EventColumns.SHEETS_EVENT_TITLE, EventColumns.PROMO_TICKETS,
-            EventColumns.OTHER_TICKET_SALES
+            EventColumns.OTHER_TICKET_SALES, EventColumns.HIRE_FEE
         ]
         events_columns += [
             EventColumns.sales_override_column(price_level)

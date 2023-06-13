@@ -188,6 +188,10 @@ class MonthlyAccounts(Tab):
             (self._income_range[7, 1:-2], [w.other_ticket_sales() for w in self._gigs_by_week])
         )
 
+        values.append(
+            (self._income_range[8, 1:-2], [w.hire_fees() for w in self._gigs_by_week])
+        )
+
         # MTD values
         values += [
             (
@@ -222,7 +226,7 @@ class MonthlyAccounts(Tab):
 
 
 if __name__ == '__main__':
-    month = AccountingMonth(AccountingYear(2022), 5)
+    month = AccountingMonth(AccountingYear(2022), 7)
     contracts_and_events = VortexDB().contracts_and_events_for_period(month)
     accounts = MonthlyAccounts(Workbook(TEST_SHEET_ID), month, vat_rate=0.2, gigs_info=contracts_and_events)
     accounts.row_groups()
