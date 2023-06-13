@@ -56,6 +56,14 @@ class EventColumns:
         }
         return f"{price_level_text[price_level]} tickets ({category_text})"
 
+    @staticmethod
+    def sales_override_column(price_level: TicketPriceLevel):
+        price_level_text = {
+            TicketPriceLevel.FULL: "Full price",
+            TicketPriceLevel.MEMBER: "Member",
+            TicketPriceLevel.CONCESSION: "Student",
+        }
+        return f"{price_level_text[price_level]} sales override"
 
 class ContractsColumns:
     CODE = "Code"

@@ -3,6 +3,7 @@ from typing import Optional
 from airtable_db.airtable_record import AirtableRecord
 from airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
 from date_range import Day, DateRange
+from date_range.week import Week
 from utils import checked_type, checked_list_type
 
 
@@ -23,7 +24,10 @@ class ContractRecord(AirtableRecord):
         return self._airtable_value(ContractsColumns.EVENTS_LINK)
 
     def ticket_price(self, price_level: TicketPriceLevel) -> int:
-        return self._airtable_value(ContractsColumns.ticket_price_column(price_level))
+        price = self._airtable_value(ContractsColumns.ticket_price_column(price_level))
+        if price is None:
+            price = self._airtable_value(ContractsColumns.ticket_price_column(TicketPriceLevel.FULL))
+        return price
 
 
 class EventRecord(AirtableRecord):
@@ -55,6 +59,10 @@ class EventRecord(AirtableRecord):
     def other_ticket_sales(self) -> float:
         return self._airtable_value(EventColumns.OTHER_TICKET_SALES, default=0)
 
+    def ticket_sales_override(self, level: TicketPriceLevel) -> Optional[float]:
+        return self._airtable_value(EventColumns.sales_override_column(level))
+
+
 
 class ContractAndEvents:
     def __init__(self, contract: ContractRecord, events: list[EventRecord]):
@@ -71,12 +79,15 @@ class ContractAndEvents:
         return sum(e.num_free_tickets() for e in self.events)
 
     def ticket_sales(self, price_level: TicketPriceLevel) -> float:
-        num_tickets = self.num_paid_tickets(price_level=price_level)
-        ticket_price = self.contract.ticket_price(price_level)
-        if ticket_price is None:
-            return 0
-
-        return num_tickets * ticket_price
+        sales = 0
+        for e in self.events:
+            if e.ticket_sales_override(price_level) is not None:
+                sales += e.ticket_sales_override(price_level)
+            else:
+                num_tickets = e.num_paid_tickets(price_level=price_level)
+                ticket_price = self.contract.ticket_price(price_level)
+                sales += num_tickets * ticket_price
+        return sales
 
     def other_ticket_sales(self) -> float:
         return sum(e.other_ticket_sales() for e in self.events)

@@ -29,6 +29,7 @@ class MonthlyAccounts(Tab):
         self._num_weeks: int = len(self._weeks)
         self._gigs_by_week: list[GigsInfo] = [self._gigs_info.restrict_to_period(w) for w in self._weeks]
         self._month_heading_range: TabRange = TabRange.from_range_name(self, "B2:C4")
+        self._vat_cell = self._month_heading_range[-1, 1]
         self._ticket_numbers_range: TabRange = TabRange(self.cell("B6"), num_rows=11, num_cols=month.num_weeks + 2)
         self._income_range: TabRange = TabRange(self.cell("B19"), num_rows=14, num_cols=month.num_weeks + 3)
         if not self.workbook.has_tab(self.tab_name):
@@ -159,38 +160,25 @@ class MonthlyAccounts(Tab):
         ]
 
     def _income_values(self):
-        # Headings
-        values = [
-            (
-                self._income_range[:, 0],
-                ["Incoming", "", "Week", "Ticket Sales", "Full Price", "Members", "Student", "Other",
-                 "Hire Fees", "Bar Takings", "Total CC Takings", "CC Ticket Sales", "CC Artist Merch", "Total"])
-        ]
-
-        # Week Nos
-        values.append(
-            (
-                self._income_range[2, 1:-2],
-                [w.week_no for w in self._weeks]
-            )
-        )
-
-        values.append(
-            (
-                self._income_range[2, -2:], ["MTD", "VAT Estimate"]
-            )
-        )
+        # Headings + Week nos + Total weekly ticket sales
+        values = [(
+            self._income_range[:, 0],
+            ["Incoming", "", "Week", "Ticket Sales", "Full Price", "Members", "Student", "Other",
+             "Hire Fees", "Bar Takings", "Total CC Takings", "CC Ticket Sales", "CC Artist Merch", "Total"]
+        ), (
+            self._income_range[2, 1:-2],
+            [w.week_no for w in self._weeks]
+        ), (
+            self._income_range[2, -2:], ["MTD", "VAT Estimate"]
+        ), (
+            self._income_range[3, 1:-2],
+            [
+                f"=SUM({self._income_range[4:8, i_col].in_a1_notation})"
+                for i_col in range(1, self._num_weeks + 1)
+            ]
+        )]
 
         # Ticket values
-        values.append(
-            (
-                self._income_range[3, 1:-2],
-                [
-                    f"=SUM({self._income_range[4:8, i_col].in_a1_notation})"
-                    for i_col in range(1, self._num_weeks + 1)
-                ]
-            )
-        )
         values += [
             (self._income_range[i + 4, 1:-2], [w.ticket_sales(level) for w in self._gigs_by_week])
             for i, level in enumerate([TicketPriceLevel.FULL, TicketPriceLevel.MEMBER, TicketPriceLevel.CONCESSION])
@@ -198,6 +186,22 @@ class MonthlyAccounts(Tab):
 
         values.append(
             (self._income_range[7, 1:-2], [w.other_ticket_sales() for w in self._gigs_by_week])
+        )
+
+        # MTD values
+        values += [
+            (
+                self._income_range[i_row, -2],
+                f"=SUM({self._income_range[i_row, 1:self._num_weeks + 1].in_a1_notation})"
+            )
+            for i_row in range(3, 14)
+        ]
+
+        # VAT
+        mtd = self._income_range[3, -2].in_a1_notation
+        vat = self._vat_cell.in_a1_notation
+        values.append(
+            (self._income_range[3, -1], f"=SUM({mtd} * {vat} / (1 + {vat}))")
         )
 
 

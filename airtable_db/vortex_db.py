@@ -36,6 +36,11 @@ class VortexDB:
             EventColumns.EVENT_ID, EventColumns.SHEETS_EVENT_TITLE, EventColumns.PROMO_TICKETS,
             EventColumns.OTHER_TICKET_SALES
         ]
+        events_columns += [
+            EventColumns.sales_override_column(price_level)
+            for price_level in TicketPriceLevel
+            if price_level != TicketPriceLevel.OTHER
+        ]
         events = self.events_table.records_for_contracts(contracts, events_columns)
         grouped_events = group_into_dict(events, lambda e: e.event_id)
         return GigsInfo([
