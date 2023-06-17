@@ -113,7 +113,7 @@ class MonthlyAccounts(Tab):
 
         # Guests
         values.append(
-            (self._ticket_numbers_range[8, 1:self._num_weeks + 1], self._week_gigs_row(lambda x: x.num_free_tickets()))
+            (self._ticket_numbers_range[8, 1:self._num_weeks + 1], self._week_gigs_row(lambda x: x.num_free_tickets))
         )
 
         # Online/Walk-in
@@ -185,11 +185,11 @@ class MonthlyAccounts(Tab):
         ]
 
         values.append(
-            (self._income_range[7, 1:-2], [w.other_ticket_sales() for w in self._gigs_by_week])
+            (self._income_range[7, 1:-2], [w.other_ticket_sales for w in self._gigs_by_week])
         )
 
         values.append(
-            (self._income_range[8, 1:-2], [w.hire_fees() for w in self._gigs_by_week])
+            (self._income_range[8, 1:-2], [w.hire_fees for w in self._gigs_by_week])
         )
 
         # MTD values

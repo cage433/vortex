@@ -52,14 +52,20 @@ class EventRecord(AirtableRecord):
         column = EventColumns.num_tickets_column(category, price_level)
         return self._airtable_value(column, default=0)
 
+    @property
     def num_free_tickets(self) -> int:
         return self._airtable_value(EventColumns.PROMO_TICKETS, default=0)
 
+    @property
     def other_ticket_sales(self) -> float:
         return self._airtable_value(EventColumns.OTHER_TICKET_SALES, default=0)
 
     def ticket_sales_override(self, level: TicketPriceLevel) -> Optional[float]:
         return self._airtable_value(EventColumns.sales_override_column(level))
+
+    @property
+    def bar_takings(self) -> float:
+        return self._airtable_value(EventColumns.BAR_TAKINGS, default=0)
 
     @property
     def hire_fee(self) -> float:
@@ -70,15 +76,6 @@ class ContractAndEvents:
     def __init__(self, contract: ContractRecord, events: list[EventRecord]):
         self.contract = checked_type(contract, ContractRecord)
         self.events = checked_list_type(events, EventRecord)
-
-    def num_paid_tickets(self, category: Optional[TicketCategory] = None,
-                         price_level: Optional[TicketPriceLevel] = None) -> int:
-        return sum(
-            e.num_paid_tickets(category, price_level) for e in self.events
-        )
-
-    def num_free_tickets(self) -> int:
-        return sum(e.num_free_tickets() for e in self.events)
 
     def ticket_sales(self, price_level: TicketPriceLevel) -> float:
         sales = 0
@@ -91,10 +88,6 @@ class ContractAndEvents:
                 sales += num_tickets * ticket_price
         return sales
 
-    def other_ticket_sales(self) -> float:
-        return sum(e.other_ticket_sales() for e in self.events)
-
-
 
 class GigsInfo:
     def __init__(self, contracts_and_events: list[ContractAndEvents]):
@@ -106,26 +99,30 @@ class GigsInfo:
 
     def num_paid_tickets(self, category: Optional[TicketCategory] = None,
                          price_level: Optional[TicketPriceLevel] = None) -> int:
-        return sum(ce.num_paid_tickets(category, price_level) for ce in self.contracts_and_events)
+        return self._event_sum(lambda e: e.num_paid_tickets(category, price_level))
 
+    def _event_sum(self, func):
+        return sum(func(e) for ce in self.contracts_and_events for e in ce.events)
+
+    @property
     def num_free_tickets(self) -> int:
-        return sum(
-            e.num_free_tickets() for e in self.contracts_and_events
-        )
+        return self._event_sum(lambda e: e.num_free_tickets)
 
     @property
     def total_tickets(self):
-        return sum([ce.num_paid_tickets() + ce.num_free_tickets() for ce in self.contracts_and_events])
+        return self._event_sum(lambda e: e.num_free_tickets + e.num_paid_tickets())
 
     def ticket_sales(self, price_level: TicketPriceLevel) -> float:
         return sum(ce.ticket_sales(price_level) for ce in self.contracts_and_events)
 
+    @property
     def other_ticket_sales(self) -> float:
-        return sum(ce.other_ticket_sales() for ce in self.contracts_and_events)
+        return self._event_sum(lambda e: e.other_ticket_sales)
 
+    @property
     def hire_fees(self) -> float:
-        return sum(
-            e.hire_fee
-            for ce in self.contracts_and_events
-            for e in ce.events
-        )
+        return self._event_sum(lambda e: e.hire_fee)
+
+    @property
+    def bar_takings(self):
+        return self._event_sum(lambda e: e.bar_takings)

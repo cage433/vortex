@@ -14,6 +14,7 @@ class TicketPriceLevel(Enum):
 
 
 class EventColumns:
+    BAR_TAKINGS = "Bar takings"
     EVENT_ID = "Record ID"
     SHEETS_EVENT_TITLE = "SheetsEventTitle"
     EVENT_DATE = "Event Date"
