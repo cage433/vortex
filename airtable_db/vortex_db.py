@@ -21,7 +21,15 @@ class VortexDB:
             ContractsColumns.ticket_price_column(level)
             for level in [TicketPriceLevel.FULL, TicketPriceLevel.MEMBER, TicketPriceLevel.CONCESSION]
         ]
-        contracts_columns += [ContractsColumns.RECORD_ID, ContractsColumns.EVENTS_LINK]
+        contracts_columns += [
+            ContractsColumns.RECORD_ID,
+            ContractsColumns.EVENTS_LINK,
+            ContractsColumns.MUSICIANS_FEE,
+            ContractsColumns.PRS_FEE_EX_VAT,
+            ContractsColumns.TRANSPORT_COST,
+            ContractsColumns.HOTELS_COST,
+            ContractsColumns.FOOD_BUDGET,
+        ]
         contracts = self.contracts_table.records_for_date_range(
             period, contracts_columns
         )
@@ -33,8 +41,13 @@ class VortexDB:
             if not (category == TicketCategory.ONLINE and price_level == TicketPriceLevel.OTHER)
         ]
         events_columns += [
-            EventColumns.EVENT_ID, EventColumns.SHEETS_EVENT_TITLE, EventColumns.PROMO_TICKETS,
-            EventColumns.OTHER_TICKET_SALES, EventColumns.HIRE_FEE, EventColumns.BAR_TAKINGS
+            EventColumns.BAR_TAKINGS,
+            EventColumns.EVENING_PURCHASES,
+            EventColumns.EVENT_ID,
+            EventColumns.HIRE_FEE,
+            EventColumns.OTHER_TICKET_SALES,
+            EventColumns.PROMO_TICKETS,
+            EventColumns.SHEETS_EVENT_TITLE,
         ]
         events_columns += [
             EventColumns.sales_override_column(price_level)

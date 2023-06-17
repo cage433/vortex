@@ -116,6 +116,10 @@ class TabRange:
         t2 = t1.offset(self.num_rows - 1, self.num_cols - 1)
         return f"{t1.text}:{t2.text}"
 
+    @property
+    def bottom_left_cell(self):
+        return self.top_left_cell.offset(num_rows=self.num_rows - 1)
+
     @staticmethod
     def from_range_name(tab: Tab, range_name: str):
         top_left, bottom_right = [CellCoordinates(text=text) for text in range_name.split(":")]
@@ -187,7 +191,6 @@ class TabRange:
     def outline_border_request(self, style="SOLID_MEDIUM", color=Colors.BLACK):
         return self.border_request(borders=["top", "bottom", "left", "right"], style=style, color=color)
 
-
     def merge_columns_request(self):
         return {
             "merge_cells": {
@@ -211,7 +214,6 @@ class TabRange:
 
     def set_decimal_format_request(self, format):
         return self.number_format_request({"type": "NUMBER", "pattern": format})
-
 
     def date_format_request(self, format):
         return self.number_format_request({"type": "DATE", "pattern": format})

@@ -12,20 +12,20 @@ class ContractRecord(AirtableRecord):
 
     @property
     def performance_date(self):
-        return Day.parse(self._airtable_value(ContractsColumns.PERFORMANCE_DATE))
+        return Day.parse(self._airtable_value(ContractsColumns.PERFORMANCE_DATE, allow_missing=False))
 
     @property
     def record_id(self):
-        return self._airtable_value(ContractsColumns.RECORD_ID)
+        return self._airtable_value(ContractsColumns.RECORD_ID, allow_missing=False)
 
     @property
     def events_link(self):
-        return self._airtable_value(ContractsColumns.EVENTS_LINK)
+        return self._airtable_value(ContractsColumns.EVENTS_LINK, allow_missing=False)
 
     def ticket_price(self, price_level: TicketPriceLevel) -> int:
-        price = self._airtable_value(ContractsColumns.ticket_price_column(price_level))
+        price = self._airtable_value(ContractsColumns.ticket_price_column(price_level), allow_missing=True)
         if price is None:
-            price = self._airtable_value(ContractsColumns.ticket_price_column(TicketPriceLevel.FULL))
+            price = self._airtable_value(ContractsColumns.ticket_price_column(TicketPriceLevel.FULL), allow_missing=False)
         return price
 
 
@@ -35,11 +35,11 @@ class EventRecord(AirtableRecord):
 
     @property
     def event_id(self):
-        return self._airtable_value(EventColumns.EVENT_ID)
+        return self._airtable_value(EventColumns.EVENT_ID, allow_missing=False)
 
     @property
     def title(self):
-        return self._airtable_value(EventColumns.SHEETS_EVENT_TITLE)
+        return self._airtable_value(EventColumns.SHEETS_EVENT_TITLE, allow_missing=False)
 
     def num_paid_tickets(self, category: Optional[TicketCategory] = None,
                          price_level: Optional[TicketPriceLevel] = None) -> int:
@@ -50,26 +50,26 @@ class EventRecord(AirtableRecord):
         if category == TicketCategory.ONLINE and price_level == TicketPriceLevel.OTHER:
             return 0
         column = EventColumns.num_tickets_column(category, price_level)
-        return self._airtable_value(column, default=0)
+        return self._airtable_value(column, allow_missing=True) or 0
 
     @property
     def num_free_tickets(self) -> int:
-        return self._airtable_value(EventColumns.PROMO_TICKETS, default=0)
+        return self._airtable_value(EventColumns.PROMO_TICKETS, allow_missing=True) or 0
 
     @property
     def other_ticket_sales(self) -> float:
-        return self._airtable_value(EventColumns.OTHER_TICKET_SALES, default=0)
+        return self._airtable_value(EventColumns.OTHER_TICKET_SALES, allow_missing=True) or 0
 
     def ticket_sales_override(self, level: TicketPriceLevel) -> Optional[float]:
-        return self._airtable_value(EventColumns.sales_override_column(level))
+        return self._airtable_value(EventColumns.sales_override_column(level), allow_missing=True)
 
     @property
     def bar_takings(self) -> float:
-        return self._airtable_value(EventColumns.BAR_TAKINGS, default=0)
+        return self.column_float_value(EventColumns.BAR_TAKINGS, allow_missing=True) or 0.0
 
     @property
     def hire_fee(self) -> float:
-        return self._airtable_value(EventColumns.HIRE_FEE, default=0)
+        return self.column_float_value(EventColumns.HIRE_FEE, allow_missing=True) or 0.0
 
 
 class ContractAndEvents:
@@ -101,8 +101,17 @@ class GigsInfo:
                          price_level: Optional[TicketPriceLevel] = None) -> int:
         return self._event_sum(lambda e: e.num_paid_tickets(category, price_level))
 
+    def _event_column_sum(self, column: str, allow_missing: bool):
+        return self._event_sum(lambda e: e.column_float_value(column, allow_missing) or 0)
+
     def _event_sum(self, func):
         return sum(func(e) for ce in self.contracts_and_events for e in ce.events)
+
+    def _contract_sum(self, func):
+        return sum(func(ce.contract) for ce in self.contracts_and_events)
+
+    def _contract_column_sum(self, column: str, allow_missing: bool):
+        return self._contract_sum(lambda c: c.column_float_value(column, allow_missing) or 0)
 
     @property
     def num_free_tickets(self) -> int:
@@ -117,12 +126,36 @@ class GigsInfo:
 
     @property
     def other_ticket_sales(self) -> float:
-        return self._event_sum(lambda e: e.other_ticket_sales)
+        return self._event_column_sum(EventColumns.OTHER_TICKET_SALES, allow_missing=True) or 0
 
     @property
     def hire_fees(self) -> float:
-        return self._event_sum(lambda e: e.hire_fee)
+        return self._event_column_sum(EventColumns.HIRE_FEE, allow_missing=True) or 0
 
     @property
     def bar_takings(self):
-        return self._event_sum(lambda e: e.bar_takings)
+        return self._event_column_sum(EventColumns.BAR_TAKINGS, allow_missing=True) or 0
+
+    @property
+    def band_fees(self):
+        return self._contract_column_sum(ContractsColumns.MUSICIANS_FEE, allow_missing=True) or 0
+
+    @property
+    def band_accommodation(self):
+        return self._contract_column_sum(ContractsColumns.HOTELS_COST, allow_missing=True) or 0
+
+    @property
+    def band_catering(self):
+        return self._contract_column_sum(ContractsColumns.FOOD_BUDGET, allow_missing=True) or 0
+
+    @property
+    def band_transport(self):
+        return self._contract_column_sum(ContractsColumns.TRANSPORT_COST, allow_missing=True) or 0
+
+    @property
+    def prs_fee_ex_vat(self):
+        return self._contract_column_sum(ContractsColumns.PRS_FEE_EX_VAT, allow_missing=True) or 0
+
+    @property
+    def evening_purchases(self):
+        return self._event_column_sum(EventColumns.EVENING_PURCHASES, allow_missing=True) or 0

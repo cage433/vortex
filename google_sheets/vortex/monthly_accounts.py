@@ -13,6 +13,35 @@ from google_sheets.tab_range import TabRange, TabCell
 from utils import checked_type
 
 
+class MonthHeadingsRange(TabRange):
+    NUM_ROWS = 3
+    MONTH, START_DATE, VAT_RATE = range(NUM_ROWS)
+
+    def __init__(self, top_left_cell: TabCell, month: AccountingMonth, vat_rate: Number):
+        super().__init__(top_left_cell, num_rows=self.NUM_ROWS, num_cols=2)
+        self.month = checked_type(month, AccountingMonth)
+        self.vat_rate: float = checked_type(vat_rate, Number)
+
+    def format_requests(self):
+        return [
+            self.outline_border_request(),
+            self[self.MONTH, 1].date_format_request("mmm-yy"),
+            self[self.START_DATE, 1].date_format_request("d mmm yy"),
+            self[self.VAT_RATE, 1].percentage_format_request(),
+            self[:, 0].set_bold_text_request(),
+        ]
+
+    def values(self) -> list[tuple[TabRange, list[list[any]]]]:
+        return [
+            (self[:, 0], ["Month", "Start Date", "VAT Rate"]),
+            (self[:, 1], [self.month.corresponding_calendar_month.first_day, self.month.first_day, self.vat_rate]),
+        ]
+
+    @property
+    def vat_cell(self):
+        return self[self.VAT_RATE, -1]
+
+
 class MonthAccountsRange(TabRange):
     def __init__(self, top_left_cell: TabCell, num_rows: int, num_cols: int, month: AccountingMonth,
                  gigs_info: GigsInfo):
@@ -158,7 +187,7 @@ class IncomeRange(MonthAccountsRange):
         ), (
             self[self.TICKET_SALES, 1:-2],
             [
-                f"=SUM({self[4:8, i_col].in_a1_notation})"
+                f"=SUM({self[self.FULL:self.OTHER + 1, i_col].in_a1_notation})"
                 for i_col in range(1, self.num_weeks + 1)
             ]
         )]
@@ -207,33 +236,93 @@ class IncomeRange(MonthAccountsRange):
         return values
 
 
-class MonthHeadingsRange(TabRange):
-    NUM_ROWS = 3
-    MONTH, START_DATE, VAT_RATE = range(NUM_ROWS)
+class OutgoingsRange(MonthAccountsRange):
+    NUM_ROWS = 12
 
-    def __init__(self, top_left_cell: TabCell, month: AccountingMonth, vat_rate: Number):
-        super().__init__(top_left_cell, num_rows=self.NUM_ROWS, num_cols=2)
-        self.month = checked_type(month, AccountingMonth)
-        self.vat_rate: float = checked_type(vat_rate, Number)
+    TITLE, _, WEEK, MUSICIAN_COSTS, BAND_FEES, ACCOMMODATION, TRAVEL, CATERING, \
+        SOUND_ENGINEERS, PRS, EVENING_PURCHASES, TOTAL = range(NUM_ROWS)
+
+    def __init__(self, top_left_cell: TabCell, month: AccountingMonth, gigs_info: GigsInfo):
+        super().__init__(
+            top_left_cell,
+            num_rows=self.NUM_ROWS,
+            num_cols=month.num_weeks + 3,
+            month=month,
+            gigs_info=gigs_info)
 
     def format_requests(self):
         return [
             self.outline_border_request(),
-            self[self.MONTH, 1].date_format_request("mmm-yy"),
-            self[self.START_DATE, 1].date_format_request("d mmm yy"),
-            self[self.VAT_RATE, 1].percentage_format_request(),
-            self[:, 0].set_bold_text_request(),
+            self[self.TITLE].merge_columns_request(),
+            self[self.TITLE].center_text_request(),
+            self[self.TITLE:self.MUSICIAN_COSTS + 1, :].set_bold_text_request(),
+            self[self.TOTAL, :].set_bold_text_request(),
+            self[self.SOUND_ENGINEERS:self.EVENING_PURCHASES + 1, 0].set_bold_text_request(),
+            self[self.TOTAL, 0].set_bold_text_request(),
+            self[self.WEEK].border_request(["bottom"]),
+            self[self.WEEK:, 1].border_request(["left"]),
+            self[self.WEEK:, -2].border_request(["left", "right"]),
+            self.tab.group_rows_request(self.i_first_row + self.MUSICIAN_COSTS,
+                                        self.i_first_row + self.CATERING),
+            self[self.WEEK, -2:].right_align_text_request(),
+            self[self.BAND_FEES:self.CATERING + 1, 0].right_align_text_request(),
+            self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
+            self[self.MUSICIAN_COSTS:, 1:].set_decimal_format_request("#,##0.00")
         ]
 
-    def values(self) -> list[tuple[TabRange, list[list[any]]]]:
-        return [
-            (self[:, 0], ["Month", "Start Date", "VAT Rate"]),
-            (self[:, 1], [self.month.corresponding_calendar_month.first_day, self.month.first_day, self.vat_rate]),
+    def values(self):
+        # Headings + Week nos + Total weekly ticket sales
+        values = [(
+            self[:, 0],
+            ["Outgoing", "", "Week", "Musician Costs", "Fees", "Accomodation", "Travel", "Catering",
+             "Sound Engineers", "PRS", "Evening Purchases", "Total"]
+        ), (
+            self[self.WEEK, 1:-2],
+            [w.week_no for w in self.weeks]
+        ), (
+            self[self.WEEK, -2:], ["MTD", "VAT Estimate"]
+        ), (
+            self[self.MUSICIAN_COSTS, 1:-2],
+            [
+                f"=SUM({self[self.BAND_FEES:self.CATERING + 1, i_col].in_a1_notation})"
+                for i_col in range(1, self.num_weeks + 1)
+            ]
+        )]
+
+        for i_row, func in [
+            (self.BAND_FEES, lambda w: w.band_fees),
+            (self.ACCOMMODATION, lambda w: w.band_accommodation),
+            (self.CATERING, lambda w: w.band_catering),
+            (self.PRS, lambda w: w.prs_fee_ex_vat),
+            (self.TRAVEL, lambda w: w.band_transport),
+            (self.EVENING_PURCHASES, lambda w: w.evening_purchases),
+        ]:
+            values.append(
+                (self[i_row, 1:-2], [func(w) for w in self.gigs_by_week])
+            )
+
+        # MTD values
+        values += [
+            (
+                self[i_row, -2],
+                f"=SUM({self[i_row, 1:self.num_weeks + 1].in_a1_notation})"
+            )
+            for i_row in range(self.MUSICIAN_COSTS, self.EVENING_PURCHASES + 1)
         ]
 
-    @property
-    def vat_cell(self):
-        return self[self.VAT_RATE, -1]
+        # Bottom totals
+        for i_week in range(self.num_weeks + 2):  # +2 for MTD + VAT
+            cells = [
+                self[row, i_week + 1].in_a1_notation
+                for row in [self.MUSICIAN_COSTS, self.SOUND_ENGINEERS, self.PRS, self.EVENING_PURCHASES]
+            ]
+            text = " + ".join(cells)
+            values.append(
+                (self[self.TOTAL, i_week + 1], f"={text}")
+            )
+
+        return values
+
 
 class MonthlyAccounts(Tab):
     def __init__(
@@ -249,8 +338,11 @@ class MonthlyAccounts(Tab):
         self.ticket_numbers_range = TicketsSoldRange(self.cell("B6"), month, gigs_info)
         self.income_range: IncomeRange = \
             IncomeRange(self.cell("B19"), month, gigs_info, self.month_heading_range.vat_cell)
+        self.outgoings_range: OutgoingsRange = \
+            OutgoingsRange(self.income_range.bottom_left_cell.offset(num_rows=2), month, gigs_info)
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
+
 
     def _workbook_format_requests(self):
         return self.delete_all_row_groups_requests() + [
@@ -263,11 +355,16 @@ class MonthlyAccounts(Tab):
                           + self._workbook_format_requests() \
                           + self.month_heading_range.format_requests() \
                           + self.ticket_numbers_range.format_requests() \
-                          + self.income_range.format_requests()
+                          + self.income_range.format_requests() \
+                          + self.outgoings_range.format_requests()
+
 
         self.workbook.batch_update(format_requests)
         self.workbook.batch_update_values(
-            self.month_heading_range.values() + self.ticket_numbers_range.values() + self.income_range.values()
+            self.month_heading_range.values()
+            + self.ticket_numbers_range.values()
+            + self.income_range.values()
+            + self.outgoings_range.values()
         )
 
 

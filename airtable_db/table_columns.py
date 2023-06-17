@@ -104,6 +104,7 @@ class ContractsColumns:
     MEMBER_TICKET_PRICE = "Member ticket price"
     STUDENT_TICKET_PRICE = "Student ticket price"
     MUSICIANS_FEE = "Musicians fee"
+    PRS_FEE_EX_VAT = "PRS Fee Ex VAT"
 
     @staticmethod
     def ticket_price_column(price_level: TicketPriceLevel):
