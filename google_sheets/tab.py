@@ -8,10 +8,13 @@ class Tab:
     def __init__(self, workbook: Workbook, tab_name: str):
         self.workbook: Workbook = checked_type(workbook, Workbook)
         self.tab_name: str = checked_type(tab_name, str)
+        self._tab_id: int = None
 
     @property
     def tab_id(self):
-        return self.workbook.tab_ids_by_name()[self.tab_name]
+        if self._tab_id is None:
+            self._tab_id = self.workbook.tab_ids_by_name()[self.tab_name]
+        return self._tab_id
 
     def cell(self, coordinates):
         from google_sheets.tab_range import CellCoordinates, TabCell

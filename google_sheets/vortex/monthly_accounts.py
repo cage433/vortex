@@ -142,7 +142,8 @@ class MonthlyAccounts(Tab):
             self._income_range.outline_border_request(),
             self._income_range[0].merge_columns_request(),
             self._income_range[0].center_text_request(),
-            self._income_range[0:4, :].set_bold_text_request(),
+            self._income_range[0:3, :].set_bold_text_request(),
+            self._income_range[-1, :].set_bold_text_request(),
             self._income_range[8:10, 0].set_bold_text_request(),
             self._income_range[13, 0].set_bold_text_request(),
             self._income_range[2].border_request(["bottom"]),
@@ -184,13 +185,14 @@ class MonthlyAccounts(Tab):
             for i, level in enumerate([TicketPriceLevel.FULL, TicketPriceLevel.MEMBER, TicketPriceLevel.CONCESSION])
         ]
 
-        values.append(
-            (self._income_range[7, 1:-2], [w.other_ticket_sales for w in self._gigs_by_week])
-        )
-
-        values.append(
-            (self._income_range[8, 1:-2], [w.hire_fees for w in self._gigs_by_week])
-        )
+        for i, func in enumerate([
+            lambda w: w.other_ticket_sales,
+            lambda w: w.hire_fees,
+            lambda w: w.bar_takings
+        ]):
+            values.append(
+                (self._income_range[7 + i, 1:-2], [func(w) for w in self._gigs_by_week])
+            )
 
         # MTD values
         values += [
@@ -202,12 +204,21 @@ class MonthlyAccounts(Tab):
         ]
 
         # VAT
-        mtd = self._income_range[3, -2].in_a1_notation
-        vat = self._vat_cell.in_a1_notation
-        values.append(
-            (self._income_range[3, -1], f"=SUM({mtd} * {vat} / (1 + {vat}))")
-        )
+        for i_row in [3, 8, 9]:
+            mtd = self._income_range[i_row, -2].in_a1_notation
+            vat = self._vat_cell.in_a1_notation
+            values.append(
+                (self._income_range[i_row, -1], f"=SUM({mtd} * {vat} / (1 + {vat}))")
+            )
 
+        # Bottom totals
+        for i_week in range(self._num_weeks + 2):                          # +2 for MTD + VAT
+            ticket_sales_cell = self._income_range[3, i_week + 1].in_a1_notation
+            hire_fees_cell = self._income_range[8, i_week + 1].in_a1_notation
+            bar_takings_cell = self._income_range[9, i_week + 1].in_a1_notation
+            values.append(
+                (self._income_range[13, i_week + 1], f"={ticket_sales_cell} + {hire_fees_cell} + {bar_takings_cell}")
+            )
 
         return values
 

@@ -107,6 +107,8 @@ class TabRange:
     @property
     def in_a1_notation(self):
         t1 = self.top_left_cell.cell_coordinates
+        if self.is_single_cell:
+            return t1.text
         t2 = t1.offset(self.num_rows - 1, self.num_cols - 1)
         return f"{t1.text}:{t2.text}"
 
