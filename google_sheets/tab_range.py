@@ -105,6 +105,10 @@ class TabRange:
         self.num_cols: int = checked_type(num_cols, int)
 
     @property
+    def tab(self):
+        return self.top_left_cell.tab
+
+    @property
     def in_a1_notation(self):
         t1 = self.top_left_cell.cell_coordinates
         if self.is_single_cell:
