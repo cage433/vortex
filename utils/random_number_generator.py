@@ -40,3 +40,5 @@ class RandomNumberGenerator:
     def random_seed(self):
         return self.randint(10 * 1000 * 1000)
 
+    def uniform(self, low=0.0, high=1.0):
+        return self._random.uniform(low, high)
