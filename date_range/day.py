@@ -36,6 +36,9 @@ class Day(ContiguousDateRange):
     def __repr__(self):
         return str(self)
 
+    def __hash__(self):
+        return hash(self.date)
+
     @property
     def last_day(self) -> 'Day':
         return self

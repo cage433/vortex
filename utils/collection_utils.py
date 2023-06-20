@@ -22,3 +22,8 @@ def flatten(things):
         else:
             result.append(thing)
     return result
+
+
+def single_element(things: list):
+    assert len(things) == 1, f"Expected a single element, got {things}"
+    return things[0]

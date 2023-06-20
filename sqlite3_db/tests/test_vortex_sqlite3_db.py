@@ -30,31 +30,29 @@ class VortexSqlite3DBTest(TestCase):
             db = VortexSqlite3DB(Path(tmpdir) / "test.db")
             invoice = self.__random_invoice(rng, paid_date=rng.maybe(random_day(rng)))
             db.add_invoice(invoice)
-            invoices = list(db.get_invoices(first_issue_date=rng.maybe(invoice.issue_date), last_issue_date=rng.maybe(invoice.issue_date)))
+            invoices = db.get_invoices(first_issue_day=rng.maybe(invoice.issue_date), last_issue_day=rng.maybe(invoice.issue_date))
             self.assertEqual(len(invoices), 1)
-            self.assertEqual(invoices[0], invoice)
+            self.assertTrue(invoices.has_invoice(invoice))
 
     @RandomisedTest(number_of_runs=20)
-    def test_update_invoice(self, rng):
+    def test_invoice_deletion(self, rng):
         with TemporaryDirectory() as tmpdir:
             db = VortexSqlite3DB(Path(tmpdir) / "test.db")
-            invoice = self.__random_invoice(rng, paid_date=None)
-            db.add_invoice(invoice)
-            invoices = list(db.get_invoices(first_issue_date=rng.maybe(invoice.issue_date), last_issue_date=rng.maybe(invoice.issue_date)))
-            self.assertEqual(len(invoices), 1)
-            self.assertEqual(invoices[0], invoice)
+            N = rng.randint(1, 10)
+            invoices = [self.__random_invoice(rng, paid_date=None) for _ in range(N)]
+            for inv in invoices:
+                db.add_invoice(inv)
+            self.assertEqual(db.num_invoices(), N)
 
-            invoice2 = KashflowInvoice(
-                invoice.issue_date,
-                random_day(rng),
-                invoice.reference,
-                invoice.external_reference,
-                invoice.payment,
-                invoice.vat,
-                invoice.invoice_type,
-                invoice.note,
-            )
-            db.update_invoice(invoice2)
-            invoices = list(db.get_invoices(first_issue_date=rng.maybe(invoice.issue_date), last_issue_date=rng.maybe(invoice.issue_date)))
-            self.assertEqual(len(invoices), 1)
-            self.assertEqual(invoices[0], invoice2)
+            first_issue_day = min(inv.issue_date for inv in invoices)
+            last_issue_day = max(inv.issue_date for inv in invoices)
+            db.delete_invoices(first_day=last_issue_day + 1)
+            self.assertEqual(db.num_invoices(), N)
+
+            db.delete_invoices(last_day=first_issue_day - 1)
+            invoices = db.get_invoices(first_issue_day=rng.maybe(first_issue_day), last_issue_day=rng.maybe(last_issue_day))
+            self.assertEqual(db.num_invoices(), N)
+
+            db.delete_invoices()
+            invoices = db.get_invoices(first_issue_day=rng.maybe(first_issue_day), last_issue_day=rng.maybe(last_issue_day))
+            self.assertEqual(len(invoices), 0)

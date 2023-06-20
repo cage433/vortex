@@ -1,3 +1,4 @@
+import csv
 from datetime import date
 from numbers import Number
 from pathlib import Path
@@ -5,7 +6,8 @@ from typing import Optional, Tuple, List
 
 import numpy as np
 
-from time_period import DateRange
+from date_range import DateRange
+
 
 
 def difference(x, y, path: List[str] = None, tol: float = 1e-9) -> Optional[Tuple[str, str, object, object]]:
@@ -19,7 +21,6 @@ def difference(x, y, path: List[str] = None, tol: float = 1e-9) -> Optional[Tupl
 
     if x.__class__ != y.__class__:
         return ("/".join(path), "class", x.__class__, y.__class__)
-
 
     if isinstance(x, np.ndarray):
         try:
@@ -52,10 +53,10 @@ def difference(x, y, path: List[str] = None, tol: float = 1e-9) -> Optional[Tupl
         if len(x) != len(y):
             return (path, "len", x, y)
         for k, v in x.items():
-            if result:= difference(x.get(k), y.get(k), path + [str(k)], tol):
+            if result := difference(x.get(k), y.get(k), path + [str(k)], tol):
                 return result
         for k, v in y.items():
-            if result:= difference(x.get(k), y.get(k), path + [str(k)], tol):
+            if result := difference(x.get(k), y.get(k), path + [str(k)], tol):
                 return result
         return None
 
