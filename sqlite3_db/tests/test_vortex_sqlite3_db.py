@@ -50,9 +50,7 @@ class VortexSqlite3DBTest(TestCase):
             self.assertEqual(db.num_invoices(), N)
 
             db.delete_invoices(last_day=first_issue_day - 1)
-            invoices = db.get_invoices(first_issue_day=rng.maybe(first_issue_day), last_issue_day=rng.maybe(last_issue_day))
             self.assertEqual(db.num_invoices(), N)
 
             db.delete_invoices()
-            invoices = db.get_invoices(first_issue_day=rng.maybe(first_issue_day), last_issue_day=rng.maybe(last_issue_day))
-            self.assertEqual(len(invoices), 0)
+            self.assertEqual(db.num_invoices(), 0)

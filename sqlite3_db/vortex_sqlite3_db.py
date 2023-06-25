@@ -2,6 +2,7 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 
+from bank_statements import Transaction, Statement
 from date_range import Day
 from env import VORTEX_DB_PATH
 from kashflow.invoice import KashflowInvoice
@@ -14,13 +15,12 @@ class VortexSqlite3DB:
     def __init__(self, override_path: Optional[Path] = None):
         self.path: Path = checked_type(override_path or VORTEX_DB_PATH, Path)
         assert self.path.parent.exists(), f"Vortex DB directory {self.path.parent} does not exist"
-        if not self.path.exists():
-            self._create_db()
+        self._create_db()
 
     def _create_db(self):
         with Sqlite3(str(self.path)) as cur:
             cur.execute("""
-            CREATE TABLE kashflow (
+            CREATE TABLE if not exists kashflow (
                 id INTEGER PRIMARY KEY,
                 issue_date TEXT NOT NULL,
                 paid_date TEXT,
@@ -32,10 +32,23 @@ class VortexSqlite3DB:
                 note TEXT
             )
             """)
+            res = cur.execute("""
+            CREATE TABLE if not exists bank_statements (
+                id INTEGER PRIMARY KEY,
+                account_id integer not null,
+                ftid TEXT not null,
+                payment_date TEXT NOT NULL,
+                amount real not null,
+                transaction_type TEXT not null,
+                payee TEXT not null
+            )
+            """)
+            print(res)
 
     def add_invoices(self, invoices: KashflowInvoices):
-        for inv in invoices:
+        for inv in invoices.invoices:
             self.add_invoice(inv)
+
     def add_invoice(
             self,
             invoice: KashflowInvoice
@@ -53,6 +66,21 @@ class VortexSqlite3DB:
                 invoice.vat,
                 invoice.invoice_type,
                 invoice.note))
+
+    def add_statement(self, statement: Statement):
+        with Sqlite3(str(self.path)) as cur:
+            for tr in statement.transactions:
+                cur.execute("""
+                INSERT INTO bank_statements (account_id, ftid, payment_date, amount, transaction_type, payee)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    tr.account,
+                    tr.ftid,
+                    tr.payment_date.iso_repr,
+                    tr.amount,
+                    tr.transaction_type,
+                    tr.payee
+                ))
 
     def num_invoices(self) -> int:
         with Sqlite3(str(self.path)) as cur:
@@ -96,3 +124,17 @@ class VortexSqlite3DB:
                 last_day.iso_repr
             ))
 
+    def delete_statements(self, account_id: int, first_day: Optional[Day] = None, last_day: Optional[Day] = None):
+        first_day = first_day or Day(1970, 1, 1)
+        last_day = last_day or Day(9999, 12, 31)
+        with Sqlite3(str(self.path)) as cur:
+            cur.execute("""
+            DELETE FROM bank_statements
+            WHERE payment_date >= ?
+            and payment_date <= ?
+            and account_id = ?
+            """, (
+                first_day.iso_repr,
+                last_day.iso_repr,
+                account_id
+            ))

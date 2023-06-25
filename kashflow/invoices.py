@@ -9,12 +9,6 @@ from utils.collection_utils import group_into_dict, single_element
 class KashflowInvoices:
     def __init__(self, invoices: list[KashflowInvoice]):
         self.invoices: list[KashflowInvoice] = checked_list_type(invoices, KashflowInvoice)
-        foo = group_into_dict(self.invoices, lambda i: (i.reference, i.issue_date, i.external_reference))
-        for k, v in foo.items():
-            if len(v) > 1:
-                print(f"Duplicate invoices: {k}")
-                for v1 in v:
-                    print(v1)
         self.by_ref_and_issue_date: dict[Tuple[str, Day], list[KashflowInvoice]] = \
             group_into_dict(self.invoices, lambda i: (i.reference, i.issue_date))
 
