@@ -1,16 +1,23 @@
+from numbers import Number
 from typing import Optional
 
 from bank_statements import Transaction
 from date_range import Day
-from utils import checked_list_type, checked_type
+from utils import checked_list_type, checked_type, checked_dict_type
 
 __all__ = ["Statement"]
 
 
 class Statement:
-    def __init__(self, account: int, transactions: list[Transaction]):
+    def __init__(
+            self,
+            account: int,
+            transactions: list[Transaction],
+            balances: dict[Day, float],
+    ):
         self.account: int = checked_type(account, int)
         self.transactions: list[Transaction] = checked_list_type(transactions, Transaction)
+        self.balances: dict[Day, float] = checked_dict_type(balances, Day, Number)
         for tr in transactions:
             assert tr.account == account, \
                 f"Transaction {tr} has account {tr.account} but statement has account {account}"

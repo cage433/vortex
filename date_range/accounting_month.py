@@ -16,7 +16,8 @@ class AccountingMonth(ContiguousDateRange):
         return isinstance(other, AccountingMonth) and self.year == other.year and self.m == other.m
 
     def __lt__(self, other):
-        return self.y < other.y or (self.y == other.y and self.m < other.m)
+        assert isinstance(other, AccountingMonth), f"Cannot compare {self} to {other}"
+        return self.first_day < other.first_day
 
     def __add__(self, n) -> 'AccountingMonth':
         if n == 0:

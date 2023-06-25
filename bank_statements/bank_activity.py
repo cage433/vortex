@@ -12,3 +12,9 @@ class BankActivity:
     @property
     def net_flow(self):
         return sum(s.net_flow for s in self.statements)
+
+    def sorted_transactions(self):
+        return sorted(
+            [t for s in self.statements for t in s.transactions],
+            key=lambda t: abs(t.amount),
+        )

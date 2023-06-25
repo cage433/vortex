@@ -1,6 +1,6 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional
+from typing import Optional, Tuple
 from unittest import TestCase
 
 from bank_statements import Transaction, Statement
@@ -36,6 +36,9 @@ class VortexSqlite3DBTest(TestCase):
             category1=rng.maybe(rng.choice("test2", "")),
             category2=rng.maybe(rng.choice("test3", ""))
         )
+
+    def __random_balance(self, rng: RandomNumberGenerator) -> Tuple[Day, float]:
+        return random_day(rng), rng.uniform(-100, 100)
 
     @RandomisedTest(number_of_runs=20)
     def test_db_creation(self, rng):
@@ -76,9 +79,11 @@ class VortexSqlite3DBTest(TestCase):
             N_accounts = rng.randint(1, 10)
             accounts = list(set([rng.randint(0, 100) for _ in range(N_accounts)]))
             N_trans = rng.randint(1, 10)
+            N_balances = rng.randint(5)
             statements = [
                 Statement(account,
-                          [self.__random_transaction(rng, account) for _ in range(N_trans)]
+                          [self.__random_transaction(rng, account) for _ in range(N_trans)],
+                          {random_day(rng):rng.uniform(-100, 100) for _ in range(N_balances)}
                           )
                 for account in accounts
 
@@ -91,3 +96,5 @@ class VortexSqlite3DBTest(TestCase):
                 self.assertEqual(len(s1.transactions), len(s2.transactions))
                 for t1, t2 in list(zip(s1.transactions, s2.transactions))[0:10]:
                     self.assertEqual(t1, t2)
+                self.assertEqual(s1.balances, s2.balances)
+

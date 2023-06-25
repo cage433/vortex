@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from bank_statements import Statement, Transaction
+from bank_statements import Statement, Transaction, BankActivity
 from date_range import Day
 from env import VORTEX_DB_PATH
 from kashflow.invoice import KashflowInvoice
@@ -44,6 +44,14 @@ class VortexSqlite3DB:
                 category2 TEXT
             )
             """)
+            res = cur.execute("""
+            CREATE TABLE if not exists account_balances (
+                id INTEGER PRIMARY KEY,
+                account_id integer not null,
+                balance_date TEXT NOT NULL,
+                balance real not null
+            )
+            """)
 
     def add_invoices(self, invoices: KashflowInvoices):
         for inv in invoices.invoices:
@@ -84,6 +92,16 @@ class VortexSqlite3DB:
                     tr.category1,
                     tr.category2
                 ))
+            for balance_date, balance in statement.balances.items():
+                cur.execute("""
+                INSERT INTO account_balances 
+                (account_id, balance_date, balance)
+                VALUES (?, ?, ?)
+                """, (
+                    statement.account,
+                    balance_date.iso_repr,
+                    balance,
+                ))
 
     def num_invoices(self) -> int:
         with Sqlite3(str(self.path)) as cur:
@@ -95,7 +113,7 @@ class VortexSqlite3DB:
             res = cur.execute("SELECT COUNT(*) FROM bank_statements")
             return res.fetchone()[0]
 
-    def bank_accounts(self) -> list[str]:
+    def bank_accounts(self) -> list[int]:
         with Sqlite3(str(self.path)) as cur:
             res = cur.execute("SELECT DISTINCT account_id FROM bank_statements")
             return [row[0] for row in res.fetchall()]
@@ -152,7 +170,8 @@ class VortexSqlite3DB:
                 account_id
             ))
 
-    def get_statements(self, account_id: int, first_day: Optional[Day] = None, last_day: Optional[Day] = None) -> Statement:
+    def get_statements(self, account_id: int, first_day: Optional[Day] = None,
+                       last_day: Optional[Day] = None) -> Statement:
         first_day = first_day or Day(1970, 1, 1)
         last_day = last_day or Day(9999, 12, 31)
         with Sqlite3(str(self.path)) as cur:
@@ -180,4 +199,25 @@ class VortexSqlite3DB:
                     category1=row[5],
                     category2=row[6]
                 ))
-            return Statement(account_id, transactions)
+            res = cur.execute("""
+            SELECT balance_date, balance
+            FROM account_balances
+            WHERE balance_date >= ?
+            and balance_date <= ?
+            and account_id = ?
+            """, (
+                first_day.iso_repr,
+                last_day.iso_repr,
+                account_id
+            ))
+            rows = res.fetchall()
+            balances = {}
+            for row in rows:
+                balances[Day.parse(row[0])] = float(row[1])
+            return Statement(account_id, transactions, balances)
+
+    def bank_activity(self, first_day: Optional[Day], last_day: Optional[Day]) -> BankActivity:
+        first_day = first_day or Day(1970, 1, 1)
+        last_day = last_day or Day(9999, 12, 31)
+        statements = [self.get_statements(account_id, first_day, last_day) for account_id in self.bank_accounts()]
+        return BankActivity(statements)

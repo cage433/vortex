@@ -21,9 +21,11 @@ class StatementsReader:
             account_id = int(dir.name)
             ofx_files = list(dir.glob("*.ofx"))
             transactions = []
+            balances = {}
             for file in ofx_files:
                 with codecs.open(file) as fileobj:
                     ofx = OfxParser.parse(fileobj)
+                balances[Day.from_date(ofx.account.statement.balance_date)] = float(ofx.account.statement.balance)
                 for tr in ofx.account.statement.transactions:
                     trans = Transaction(
                         account_id,
@@ -34,7 +36,7 @@ class StatementsReader:
                         tr.type
                     )
                     transactions.append(trans)
-            statements.append(Statement(account_id, transactions))
+            statements.append(Statement(account_id, transactions, balances))
 
         return statements
 
