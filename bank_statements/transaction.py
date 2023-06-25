@@ -26,3 +26,6 @@ class Transaction:
         self.transaction_type: str = checked_type(transaction_type, str)
         self.category1 = checked_optional_type(category1, str)
         self.category2 = checked_optional_type(category2, str)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__

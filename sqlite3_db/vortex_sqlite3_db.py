@@ -44,7 +44,6 @@ class VortexSqlite3DB:
                 category2 TEXT
             )
             """)
-            print(res)
 
     def add_invoices(self, invoices: KashflowInvoices):
         for inv in invoices.invoices:
