@@ -1,8 +1,7 @@
-import sqlite3
 from pathlib import Path
 from typing import Optional
 
-from bank_statements import Transaction, Statement
+from bank_statements import Statement, Transaction
 from date_range import Day
 from env import VORTEX_DB_PATH
 from kashflow.invoice import KashflowInvoice
@@ -40,7 +39,9 @@ class VortexSqlite3DB:
                 payment_date TEXT NOT NULL,
                 amount real not null,
                 transaction_type TEXT not null,
-                payee TEXT not null
+                payee TEXT not null,
+                category1 TEXT,
+                category2 TEXT
             )
             """)
             print(res)
@@ -71,21 +72,34 @@ class VortexSqlite3DB:
         with Sqlite3(str(self.path)) as cur:
             for tr in statement.transactions:
                 cur.execute("""
-                INSERT INTO bank_statements (account_id, ftid, payment_date, amount, transaction_type, payee)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO bank_statements 
+                (account_id, ftid, payment_date, amount, transaction_type, payee, category1, category2)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     tr.account,
                     tr.ftid,
                     tr.payment_date.iso_repr,
                     tr.amount,
                     tr.transaction_type,
-                    tr.payee
+                    tr.payee,
+                    tr.category1,
+                    tr.category2
                 ))
 
     def num_invoices(self) -> int:
         with Sqlite3(str(self.path)) as cur:
             res = cur.execute("SELECT COUNT(*) FROM kashflow")
             return res.fetchone()[0]
+
+    def num_statements(self) -> int:
+        with Sqlite3(str(self.path)) as cur:
+            res = cur.execute("SELECT COUNT(*) FROM bank_statements")
+            return res.fetchone()[0]
+
+    def bank_accounts(self) -> list[str]:
+        with Sqlite3(str(self.path)) as cur:
+            res = cur.execute("SELECT DISTINCT account_id FROM bank_statements")
+            return [row[0] for row in res.fetchall()]
 
     def get_invoices(self, first_issue_day: Optional[Day], last_issue_day: Optional[Day]) -> KashflowInvoices:
         with Sqlite3(str(self.path)) as cur:
@@ -138,3 +152,33 @@ class VortexSqlite3DB:
                 last_day.iso_repr,
                 account_id
             ))
+
+    def get_statements(self, account_id: int, first_day: Optional[Day] = None, last_day: Optional[Day] = None) -> Statement:
+        first_day = first_day or Day(1970, 1, 1)
+        last_day = last_day or Day(9999, 12, 31)
+        with Sqlite3(str(self.path)) as cur:
+            res = cur.execute("""
+            SELECT ftid, payment_date, amount, transaction_type, payee, category1, category2
+            FROM bank_statements
+            WHERE payment_date >= ?
+            and payment_date <= ?
+            and account_id = ?
+            """, (
+                first_day.iso_repr,
+                last_day.iso_repr,
+                account_id
+            ))
+            rows = res.fetchall()
+            transactions = []
+            for row in rows:
+                transactions.append(Transaction(
+                    account=account_id,
+                    ftid=row[0],
+                    payment_date=Day.parse(row[1]),
+                    payee=row[4],
+                    amount=float(row[2]),
+                    transaction_type=row[3],
+                    category1=row[5],
+                    category2=row[6]
+                ))
+            return Statement(account_id, transactions)

@@ -26,3 +26,7 @@ class Statement:
         if len(self.transactions) == 0:
             return None
         return max(t.payment_date for t in self.transactions)
+
+    @property
+    def net_flow(self) -> float:
+        return sum(t.amount for t in self.transactions)
