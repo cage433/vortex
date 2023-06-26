@@ -44,3 +44,7 @@ class Statement:
         if len(self.balances) == 0:
             return None
         return self.balances[min(self.balances.keys())]
+
+    @property
+    def payees(self) -> list[str]:
+        return sorted(list(set([t.payee for t in self.transactions])))

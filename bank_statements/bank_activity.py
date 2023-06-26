@@ -5,8 +5,9 @@ from bank_statements import Statement
 __all__ = ["BankActivity"]
 
 from date_range import Day
+from env import CURRENT_ACCOUNT_ID
 
-from utils import checked_list_type, checked_dict_type
+from utils import checked_dict_type
 
 
 class BankActivity:
@@ -25,3 +26,12 @@ class BankActivity:
     @property
     def initial_balance(self) -> float:
         return sum([statement.earliest_balance for statement in self.statements.values()])
+
+    @property
+    def payees(self) -> list[str]:
+        return sorted(list(set([t.payee for t in self.sorted_transactions()])))
+
+
+    @property
+    def current_account_statement(self):
+        return self.statements[CURRENT_ACCOUNT_ID]
