@@ -26,8 +26,9 @@ def update_bank_statement():
 
 
 if __name__ == '__main__':
-    # update_bank_statement()
-    # update_kashflow_invoices()
+    os.remove(VORTEX_DB_PATH)
+    update_bank_statement()
+    update_kashflow_invoices()
 
     db = VortexSqlite3DB()
     num_statements = db.num_statements()

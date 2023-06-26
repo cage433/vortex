@@ -37,9 +37,6 @@ class VortexSqlite3DBTest(TestCase):
             category2=rng.maybe(rng.choice("test3", ""))
         )
 
-    def __random_balance(self, rng: RandomNumberGenerator) -> Tuple[Day, float]:
-        return random_day(rng), rng.uniform(-100, 100)
-
     @RandomisedTest(number_of_runs=20)
     def test_db_creation(self, rng):
         with TemporaryDirectory() as tmpdir:

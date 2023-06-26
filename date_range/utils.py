@@ -4,11 +4,13 @@ __all__ = ["parse_date"]
 
 def parse_date(text):
     formats = [
+        "%d %b %Y",
         "%Y-%m-%d",
         "%d-%b-%y",
         "%d-%b-%Y",
         "%d-%m-%y",
         "%d-%m-%Y",
+        "%d %m %Y",
         "%d/%m/%Y",
         "%d %b %y",
         "%Y-%b-%d",

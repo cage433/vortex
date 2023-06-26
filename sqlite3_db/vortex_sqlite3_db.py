@@ -216,8 +216,8 @@ class VortexSqlite3DB:
                 balances[Day.parse(row[0])] = float(row[1])
             return Statement(account_id, transactions, balances)
 
-    def bank_activity(self, first_day: Optional[Day], last_day: Optional[Day]) -> BankActivity:
+    def bank_activity(self, first_day: Optional[Day] = None, last_day: Optional[Day] = None) -> BankActivity:
         first_day = first_day or Day(1970, 1, 1)
         last_day = last_day or Day(9999, 12, 31)
-        statements = [self.get_statements(account_id, first_day, last_day) for account_id in self.bank_accounts()]
+        statements = {account_id: self.get_statements(account_id, first_day, last_day) for account_id in self.bank_accounts()}
         return BankActivity(statements)

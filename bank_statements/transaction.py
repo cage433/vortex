@@ -1,3 +1,4 @@
+from numbers import Number
 from typing import Optional
 
 from date_range import Day
@@ -29,3 +30,6 @@ class Transaction:
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
+
+    def __str__(self):
+        return f"{self.account}: {self.payment_date} {self.payee} {self.amount} {self.transaction_type}"

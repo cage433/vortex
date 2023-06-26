@@ -34,6 +34,13 @@ class Statement:
             return None
         return max(t.payment_date for t in self.transactions)
 
+    def net_flow(self, first_day: Optional[Day], last_day: Optional[Day]) -> float:
+        first_day = first_day or self.first_date
+        last_day = last_day or self.last_date
+        return sum(t.amount for t in self.transactions if first_day <= t.payment_date <= last_day)
+
     @property
-    def net_flow(self) -> float:
-        return sum(t.amount for t in self.transactions)
+    def earliest_balance(self) -> Optional[float]:
+        if len(self.balances) == 0:
+            return None
+        return self.balances[min(self.balances.keys())]
