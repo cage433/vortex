@@ -16,7 +16,10 @@ class Statement:
             balances: dict[Day, float],
     ):
         self.account: int = checked_type(account, int)
-        self.transactions: list[Transaction] = checked_list_type(transactions, Transaction)
+        self.transactions: list[Transaction] = sorted(
+            checked_list_type(transactions, Transaction),
+            key=lambda t: (t.payment_date, t.payee),
+        )
         self.balances: dict[Day, float] = checked_dict_type(balances, Day, Number)
         for tr in transactions:
             assert tr.account == account, \

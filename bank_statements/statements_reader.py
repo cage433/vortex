@@ -16,12 +16,12 @@ class StatementsReader:
     @staticmethod
     def read_balances(statements_dir: Path) -> dict[int, dict[Day, float]]:
         balances = {}
-        for dir in (statements_dir / "csv").glob("*"):
-            if dir.name == ".DS_Store":
+        for directory in (statements_dir / "csv").glob("*"):
+            if directory.name == ".DS_Store":
                 continue
-            assert dir.is_dir(), f"Expected {dir} to be a directory"
-            account_id = int(dir.name)
-            csv_files = list(dir.glob("*.csv"))
+            assert directory.is_dir(), f"Expected {directory} to be a directory"
+            account_id = int(directory.name)
+            csv_files = list(directory.glob("*.csv"))
             account_balances = {}
             for file in csv_files:
                 rows = read_csv_file(file)[1:]
@@ -37,12 +37,12 @@ class StatementsReader:
     @staticmethod
     def read_transactions(statements_dir: Path) -> dict[int, list[Transaction]]:
         transactions_by_account = {}
-        for dir in (statements_dir / "ofx").glob("*"):
-            if dir.name == ".DS_Store":
+        for directory in (statements_dir / "ofx").glob("*"):
+            if directory.name == ".DS_Store":
                 continue
-            assert dir.is_dir(), f"Expected {dir} to be a directory"
-            account_id = int(dir.name)
-            ofx_files = list(dir.glob("*.ofx"))
+            assert directory.is_dir(), f"Expected {directory} to be a directory"
+            account_id = int(directory.name)
+            ofx_files = list(directory.glob("*.ofx"))
             transactions_for_account = []
             for file in ofx_files:
                 with codecs.open(file) as fileobj:

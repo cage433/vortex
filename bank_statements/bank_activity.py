@@ -20,7 +20,7 @@ class BankActivity:
     def sorted_transactions(self):
         return sorted(
             [t for s in self.statements.values() for t in s.transactions],
-            key=lambda t: abs(t.amount),
+            key=lambda t: (t.payment_date, t.payee),
         )
 
     @property

@@ -18,6 +18,8 @@ class Transaction:
             transaction_type: str,
             category1: Optional[str] = None,
             category2: Optional[str] = None,
+            category3: Optional[str] = None,
+            category4: Optional[str] = None,
     ):
         self.account: int = checked_type(account, int)
         self.ftid = checked_type(ftid, str)
@@ -27,9 +29,11 @@ class Transaction:
         self.transaction_type: str = checked_type(transaction_type, str)
         self.category1 = checked_optional_type(category1, str)
         self.category2 = checked_optional_type(category2, str)
+        self.category3 = checked_optional_type(category3, str)
+        self.category4 = checked_optional_type(category4, str)
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
     def __str__(self):
-        return f"{self.account}: {self.payment_date} {self.payee} {self.amount} {self.transaction_type}"
+        return f"{self.account}: {self.payment_date}, {self.payee}, {self.amount}, {self.transaction_type}"

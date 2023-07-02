@@ -41,7 +41,9 @@ class VortexSqlite3DB:
                 transaction_type TEXT not null,
                 payee TEXT not null,
                 category1 TEXT,
-                category2 TEXT
+                category2 TEXT,
+                category3 TEXT,
+                category4 TEXT
             )
             """)
             res = cur.execute("""
@@ -80,8 +82,8 @@ class VortexSqlite3DB:
             for tr in statement.transactions:
                 cur.execute("""
                 INSERT INTO bank_statements 
-                (account_id, ftid, payment_date, amount, transaction_type, payee, category1, category2)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (account_id, ftid, payment_date, amount, transaction_type, payee, category1, category2, category3, category4)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     tr.account,
                     tr.ftid,
@@ -90,7 +92,9 @@ class VortexSqlite3DB:
                     tr.transaction_type,
                     tr.payee,
                     tr.category1,
-                    tr.category2
+                    tr.category2,
+                    tr.category3,
+                    tr.category4
                 ))
             for balance_date, balance in statement.balances.items():
                 cur.execute("""
@@ -197,7 +201,7 @@ class VortexSqlite3DB:
                     amount=float(row[2]),
                     transaction_type=row[3],
                     category1=row[5],
-                    category2=row[6]
+                    category2=row[6],
                 ))
             res = cur.execute("""
             SELECT balance_date, balance
