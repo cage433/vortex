@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from bank_statements import Statement, Transaction, BankActivity
+from bank_statements.account_mapping_table import AccountMappingTable
 from date_range import Day
 from env import VORTEX_DB_PATH
 from kashflow.invoice import KashflowInvoice
@@ -107,6 +108,25 @@ class VortexSqlite3DB:
                     balance,
                 ))
 
+    def categorize(self, mapping_table: AccountMappingTable):
+        with Sqlite3(str(self.path)) as cur:
+            res = cur.execute("SELECT id FROM bank_statements where category1 is null")
+            ids_to_categorize = [row[0] for row in res.fetchall()]
+        print(f"Found {len(ids_to_categorize)} transactions to categorize")
+
+        for id in ids_to_categorize:
+            transaction = self.get_transaction(id)
+            mapping = mapping_table.get_mapping(transaction.payee)
+            if mapping is not None:
+                print(f"Mapping {transaction.payee} to {mapping.category1}")
+                updated_transaction = transaction.clone(
+                    category1=mapping.category1,
+                    category2=mapping.category2,
+                    category3=mapping.category3,
+                    category4=mapping.category4
+                )
+                self.update_transaction(id, updated_transaction)
+
     def num_invoices(self) -> int:
         with Sqlite3(str(self.path)) as cur:
             res = cur.execute("SELECT COUNT(*) FROM kashflow")
@@ -174,13 +194,85 @@ class VortexSqlite3DB:
                 account_id
             ))
 
+    def get_transaction(self, id: int) -> Transaction:
+        with Sqlite3(str(self.path)) as cur:
+            res = cur.execute("""
+            SELECT account_id, ftid, payment_date, amount, transaction_type, payee, category1, category2, category3, category4
+            FROM bank_statements
+            WHERE id = ?
+            """, (id,))
+            row = res.fetchone()
+            return Transaction(
+                account=row[0],
+                ftid=row[1],
+                payment_date=Day.parse(row[2]),
+                amount=row[3],
+                transaction_type=row[4],
+                payee=row[5],
+                category1=row[6],
+                category2=row[7],
+                category3=row[8],
+                category4=row[9]
+            )
+
+    def update_transaction(self, id: int, transaction: Transaction):
+        with Sqlite3(str(self.path)) as cur:
+            cur.execute("""
+            UPDATE bank_statements
+            SET account_id = ?,
+                ftid = ?,
+                payment_date = ?,
+                amount = ?,
+                transaction_type = ?,
+                payee = ?,
+                category1 = ?,
+                category2 = ?,
+                category3 = ?,
+                category4 = ?
+            WHERE id = ?
+            """, (
+                transaction.account,
+                transaction.ftid,
+                transaction.payment_date.iso_repr,
+                transaction.amount,
+                transaction.transaction_type,
+                transaction.payee,
+                transaction.category1,
+                transaction.category2,
+                transaction.category3,
+                transaction.category4,
+                id
+            ))
+
+    def distinct_categories(self, category_number):
+        with Sqlite3(str(self.path)) as cur:
+            res = cur.execute(f"SELECT DISTINCT category{category_number} FROM bank_statements")
+            return [row[0] for row in res.fetchall()]
+
+    def totals_by_category(self, category_number, first_day: Optional[Day] = None, last_day: Optional[Day] = None):
+        first_day = first_day or Day(1970, 1, 1)
+        last_day = last_day or Day(9999, 12, 31)
+        with Sqlite3(str(self.path)) as cur:
+            res = cur.execute(f"""
+            SELECT category{category_number}, SUM(amount) 
+            FROM bank_statements 
+            WHERE payment_date >= ?
+            and payment_date <= ?
+            GROUP BY category{category_number}
+            """, (first_day.iso_repr, last_day.iso_repr))
+            return {row[0]: row[1] for row in res.fetchall()}
+
+    def replace_category(self, category_number, old_category, new_category):
+        with Sqlite3(str(self.path)) as cur:
+            cur.execute(f"UPDATE bank_statements SET category{category_number} = ? WHERE category{category_number} = ?", (new_category, old_category))
+
     def get_statements(self, account_id: int, first_day: Optional[Day] = None,
                        last_day: Optional[Day] = None) -> Statement:
         first_day = first_day or Day(1970, 1, 1)
         last_day = last_day or Day(9999, 12, 31)
         with Sqlite3(str(self.path)) as cur:
             res = cur.execute("""
-            SELECT ftid, payment_date, amount, transaction_type, payee, category1, category2
+            SELECT ftid, payment_date, amount, transaction_type, payee, category1, category2, category3, category4
             FROM bank_statements
             WHERE payment_date >= ?
             and payment_date <= ?
@@ -202,6 +294,8 @@ class VortexSqlite3DB:
                     transaction_type=row[3],
                     category1=row[5],
                     category2=row[6],
+                    category3=row[7],
+                    category4=row[8]
                 ))
             res = cur.execute("""
             SELECT balance_date, balance
@@ -223,5 +317,6 @@ class VortexSqlite3DB:
     def bank_activity(self, first_day: Optional[Day] = None, last_day: Optional[Day] = None) -> BankActivity:
         first_day = first_day or Day(1970, 1, 1)
         last_day = last_day or Day(9999, 12, 31)
-        statements = {account_id: self.get_statements(account_id, first_day, last_day) for account_id in self.bank_accounts()}
+        statements = {account_id: self.get_statements(account_id, first_day, last_day) for account_id in
+                      self.bank_accounts()}
         return BankActivity(statements)

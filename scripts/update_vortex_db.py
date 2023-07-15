@@ -1,6 +1,7 @@
 import os
 
 from bank_statements import StatementsReader
+from bank_statements.account_mapping_table import AccountMappingTable
 from env import STATEMENTS_DIR, VORTEX_DB_PATH
 from kashflow.kashflow_csv import KashflowCSV
 from sqlite3_db.vortex_sqlite3_db import VortexSqlite3DB
@@ -24,15 +25,20 @@ def update_bank_statement():
         db.delete_statements(statement.account, statement.first_date, statement.last_date)
         db.add_statement(statement)
 
+def update_mappings():
+    db = VortexSqlite3DB()
+    mapping_table = AccountMappingTable.from_csvs()
+    db.categorize(mapping_table)
 
 if __name__ == '__main__':
-    os.remove(VORTEX_DB_PATH)
-    update_bank_statement()
-    update_kashflow_invoices()
-
-    db = VortexSqlite3DB()
-    num_statements = db.num_statements()
-    print(f"db has {num_statements} statements")
-    accounts = db.bank_accounts()
-    for acc in accounts:
-        print(acc)
+    update_mappings()
+    # os.remove(VORTEX_DB_PATH)
+    # update_bank_statement()
+    # update_kashflow_invoices()
+    #
+    # db = VortexSqlite3DB()
+    # num_statements = db.num_statements()
+    # print(f"db has {num_statements} statements")
+    # accounts = db.bank_accounts()
+    # for acc in accounts:
+    #     print(acc)
