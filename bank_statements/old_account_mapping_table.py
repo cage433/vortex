@@ -42,7 +42,7 @@ class AccountMapping:
         )
 
 
-class AccountMappingTable:
+class OldAccountMappingTable:
     def __init__(self, mappings: list[AccountMapping]):
         self.mappings = checked_list_type(mappings, AccountMapping)
         self.mappings_by_payee = {m.payee.lower(): m for m in mappings}
@@ -55,7 +55,7 @@ class AccountMappingTable:
 
     @staticmethod
     def from_csvs(tims_mapping_csv: Optional[Path] = None,
-                  bank_mapping_with_payee_csv: Optional[Path] = None) -> 'AccountMappingTable':
+                  bank_mapping_with_payee_csv: Optional[Path] = None) -> 'OldAccountMappingTable':
         tims_mapping_csv = tims_mapping_csv or TIMS_MAPPING_CSV
         bank_mapping_with_payee_csv = bank_mapping_with_payee_csv or BANK_MAPPING_WITH_PAYEE_CSV
         tims_rows = read_csv_file(tims_mapping_csv)[2:]
@@ -91,7 +91,7 @@ class AccountMappingTable:
                 mapping_sans_payee = mappings_via_tims_description[tims_description]
                 mappings_with_payees.append(mapping_sans_payee.clone(payee=payee))
 
-        return AccountMappingTable(mappings_with_payees)
+        return OldAccountMappingTable(mappings_with_payees)
 
     def has_mapping(self, payee: str) -> bool:
         return payee.lower() in self.mappings_by_payee
@@ -101,5 +101,5 @@ class AccountMappingTable:
 
 
 if __name__ == '__main__':
-    table = AccountMappingTable.from_csvs()
+    table = OldAccountMappingTable.from_csvs()
     print(len(table))

@@ -1,6 +1,6 @@
-from numbers import Number
 from typing import Optional
 
+from bank_statements.old_account_mapping_table import OldAccountMappingTable
 from date_range import Day
 from utils import checked_type, checked_optional_type
 
@@ -49,6 +49,8 @@ class Transaction:
     def __str__(self):
         return f"{self.account}: {self.payment_date}, {self.payee}, {self.amount}, {self.transaction_type}, {self.category1}, {self.category2}, {self.category3}, {self.category4}"
 
+    def with_tims_categories(self, mapping_table: OldAccountMappingTable):
+        pass
     def clone(
             self,
             account: Optional[int] = None,

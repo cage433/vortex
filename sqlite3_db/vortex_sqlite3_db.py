@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from bank_statements import Statement, Transaction, BankActivity
-from bank_statements.account_mapping_table import AccountMappingTable
+from bank_statements.old_account_mapping_table import OldAccountMappingTable
 from date_range import Day
 from env import VORTEX_DB_PATH
 from kashflow.invoice import KashflowInvoice
@@ -108,7 +108,7 @@ class VortexSqlite3DB:
                     balance,
                 ))
 
-    def categorize(self, mapping_table: AccountMappingTable):
+    def categorize(self, mapping_table: OldAccountMappingTable):
         with Sqlite3(str(self.path)) as cur:
             res = cur.execute("SELECT id FROM bank_statements where category1 is null")
             ids_to_categorize = [row[0] for row in res.fetchall()]

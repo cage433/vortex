@@ -62,3 +62,4 @@ class Day(ContiguousDateRange):
     @staticmethod
     def parse(text) -> 'Day':
         return Day.from_date(parse_date(text))
+

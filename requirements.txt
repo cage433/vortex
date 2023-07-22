@@ -5,3 +5,5 @@ google-auth-oauthlib
 pyairtable
 ofxparse
 tabulate
+pandas
+openpyxl

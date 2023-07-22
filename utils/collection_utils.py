@@ -1,3 +1,6 @@
+from collections import defaultdict
+
+
 def group_into_dict(iterable, key_constructor):
     """Builds a dict whose values are disjoint sub-lists of `iterable`, which share the same `property` value, the
     latter being the associated key.
@@ -6,10 +9,10 @@ def group_into_dict(iterable, key_constructor):
 
     Equivalent to `groupBy` in the Scala collections library. Note that this is _not_ equivalent to `itertools.group_by`
     """
-    result = {}
+    result = defaultdict(list)
     for item in iterable:
         key = key_constructor(item)
-        result[key] = result.get(key, []) + [item]
+        result[key].append(item)
 
     return result
 
