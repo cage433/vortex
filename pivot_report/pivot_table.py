@@ -11,7 +11,7 @@ class PivotRow:
         self.fields = values.keys()
 
     def value(self, field: PivotField) -> PivotValue:
-        # assert field in self.fields, f"Field {field} not in {self.fields}"
+        assert field in self.fields, f"Field {field} not in {self.fields}"
         return self.values[field]
 
 
@@ -19,8 +19,8 @@ class PivotTable:
     def __init__(self, fields: set[PivotField], rows: list[PivotRow]):
         self.fields = checked_set_type(fields, PivotField)
         self.rows: list[PivotRow] = checked_list_type(rows, PivotRow)
-        # for row in self.rows:
-        #     assert row.values.keys() == fields, "All rows must have the same fields"
+        for row in self.rows:
+            assert row.values.keys() == fields, "All rows must have the same fields"
 
     def group_by(self, field: PivotField) -> dict[PivotValue, 'PivotTable']:
         grouped_rows = group_into_dict(self.rows, lambda row: row.value(field))

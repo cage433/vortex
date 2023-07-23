@@ -2,6 +2,7 @@ from collections import defaultdict
 
 import tabulate
 
+from date_range import Day
 from env import ACCOUNT_MAPPING_TABLE, BANK_ACCOUNT_DATA
 from pivot_report.pivot_field import DimensionField, MeasureField, PivotField, LEVEL_1, LEVEL_2, TIMS_DESCRIPTION, \
     TRANSACTION_VALUE, LEVEL_3, LEVEL_4, LEVEL_5
@@ -37,11 +38,14 @@ class BankAccountReports:
 
 if __name__ == '__main__':
     mapping_table = AccountMappingTable.from_spreadsheet(ACCOUNT_MAPPING_TABLE, force=True, clean=True)
-    bank_account_data = BankAccountData.from_spreadsheet(BANK_ACCOUNT_DATA, mapping_table=None, force=False).with_mapping(mapping_table)
+    bank_account_data = BankAccountData\
+        .from_spreadsheet(BANK_ACCOUNT_DATA, mapping_table=None, force=False)\
+        .with_mapping(mapping_table)\
+        .filter_by_date(first_day=Day(2023, 3, 1), last_day=Day(2023, 3, 31))
 
     report = BankAccountReports.pivot_report(
         bank_account_data=bank_account_data,
-        row_fields=[LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5],
+        row_fields=[LEVEL_3, LEVEL_4, LEVEL_5],
         measure_fields=[TRANSACTION_VALUE]
     )
     report.as_table()

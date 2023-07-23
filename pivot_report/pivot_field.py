@@ -6,13 +6,12 @@ from utils import checked_type
 from utils.type_checks import checked_opt_type
 
 
-class PivotField(ABC):
+class PivotField():
     def __init__(self, name: str):
         self.name: str = checked_type(name, str)
 
-    @abstractmethod
     def value_type_check(self, value):
-        pass
+        raise NotImplementedError()
 
 
 class DimensionField(PivotField):

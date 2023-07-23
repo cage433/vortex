@@ -6,6 +6,7 @@ from .exceptions import FlatMapFunctionDoesNotReturnOptionalException
 T = TypeVar('T')
 S = TypeVar('S')
 
+
 class Something(Opt, Generic[T]):
     def __init__(self, value):
         if value is None:

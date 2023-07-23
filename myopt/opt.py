@@ -1,13 +1,10 @@
-from abc import abstractmethod
 from typing import TypeVar, Generic, Callable, Optional
-
-from .compatible_abc import CompatibleABC
 
 T = TypeVar('T')
 S = TypeVar('S')
 
 
-class Opt(CompatibleABC, Generic[T]):
+class Opt(Generic[T]):
 
     @staticmethod
     def of(thing=Optional[T]) -> 'Opt[T]':
@@ -15,24 +12,16 @@ class Opt(CompatibleABC, Generic[T]):
         from myopt.something import Something
         return Nothing[T]() if thing is None else Something[T](thing)
 
-    @staticmethod
-    def empty():
-        from myopt.nothing import Nothing
-        return Nothing()
-
     @property
-    @abstractmethod
     def is_empty(self):
-        pass
+        raise ValueError("is_empty must be implemented by {type(self)}")
 
     @property
-    @abstractmethod
     def get(self) -> T:
-        pass
+        raise ValueError("get must be implemented by {type(self)}")
 
-    @abstractmethod
     def get_or_else(self, default_value: T) -> T:
-        pass
+        raise ValueError("get_or_else must be implemented by {type(self)}")
 
     @property
     def get_or_throw(self) -> T:
@@ -40,26 +29,23 @@ class Opt(CompatibleABC, Generic[T]):
             raise ValueError("Optional is empty")
         return value
 
-    @abstractmethod
     def or_else(self, other: 'Opt[T]') -> 'Opt[T]':
-        pass
+        raise ValueError("or_else must be implemented by {type(self)}")
 
-    @abstractmethod
     def map(self, func: Callable[[T], S]) -> 'Opt[S]':
-        pass
+        raise ValueError("map must be implemented by {type(self)}")
 
-    @abstractmethod
     def for_each(self, func: Callable[[T], None]) -> None:
-        pass
+        raise ValueError("for_each must be implemented by {type(self)}")
 
-    @abstractmethod
     def flat_map(self, func: Callable[[T], 'Opt[S]']) -> 'Opt[S]':
-        pass
+        raise ValueError("flat_map must be implemented by {type(self)}")
 
-    def exists(self) -> bool:
+    def non_empty(self) -> bool:
         return not self.is_empty()
 
     def __lt__(self, other):
+        assert isinstance(other, Opt), f"Cannot compare {type(self)} to {type(other)}"
         if self.is_empty():
             if other.is_empty():
                 return False
@@ -69,4 +55,4 @@ class Opt(CompatibleABC, Generic[T]):
                 return False
             return self.get() < other.get()
 
-    __bool__ = __nonzero__ = exists
+    __bool__ = __nonzero__ = non_empty

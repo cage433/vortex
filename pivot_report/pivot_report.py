@@ -22,7 +22,6 @@ class PivotReport:
         return [field.name for field in self.fields]
 
     def as_table(self) -> list[list[any]]:
-        print("Partitioning")
         partitioned_tables = [self.pivot_table]
         for field in self.row_fields:
 

@@ -1,19 +1,15 @@
-from abc import ABC, abstractmethod
 from functools import total_ordering
 from numbers import Number
 
-from myopt.nothing import Nothing
 from myopt.opt import Opt
-from myopt.something import Something
 from utils import checked_type
 from utils.type_checks import checked_opt_type
 
 
-class PivotValue(ABC):
+class PivotValue:
     @property
-    @abstractmethod
     def display_value(self) -> any:
-        pass
+        raise NotImplementedError()
 
 
 @total_ordering
@@ -33,10 +29,11 @@ class StringPivotValue(PivotValue):
         return self.__str__()
 
     def __lt__(self, other):
+        checked_type(other, StringPivotValue)
         return self.value < other.value
 
     def __eq__(self, other):
-        return self.value == other.value
+        return isinstance(other, StringPivotValue) and self.value == other.value
 
     def __hash__(self):
         return self.__hash
@@ -55,9 +52,10 @@ class OptionalStringPivotValue(PivotValue):
         return self.__str__()
 
     def __eq__(self, other):
-        return self.value == other.value
+        return isinstance(other, OptionalStringPivotValue) and self.value == other.value
 
     def __lt__(self, other):
+        checked_type(other, OptionalStringPivotValue)
         return self.value < other.value
 
     def __hash__(self):
