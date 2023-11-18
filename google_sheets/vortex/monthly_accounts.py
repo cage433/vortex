@@ -127,8 +127,9 @@ class TicketsSoldRange(MonthAccountsRange):
         # Side totals
         for i_row in range(self.TOTAL, self.WALK_IN + 1):
             week_range = self[i_row, 1:self.num_weeks + 1]
+            total_cell = self[i_row, self.num_weeks + 2]
             values.append(
-                (week_range.top_right_cell.offset(cols=1), f"=Sum({week_range.in_a1_notation})")
+                (total_cell, f"=Sum({week_range.in_a1_notation})")
             )
 
         return values
@@ -369,7 +370,7 @@ class MonthlyAccounts(Tab):
 
 
 if __name__ == '__main__':
-    month = AccountingMonth(AccountingYear(2023), 9)
+    month = AccountingMonth(AccountingYear(2023), 12)
     contracts_and_events = VortexDB().contracts_and_events_for_period(month)
     accounts = MonthlyAccounts(Workbook(TEST_SHEET_ID), month, vat_rate=0.2, gigs_info=contracts_and_events)
     accounts.row_groups()

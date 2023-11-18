@@ -13,7 +13,6 @@ class Tab:
     @property
     def tab_id(self):
         if self._tab_id is None:
-            foo = self.workbook.tab_ids_by_name()
             self._tab_id = self.workbook.tab_ids_by_name()[self.tab_name]
         return self._tab_id
 

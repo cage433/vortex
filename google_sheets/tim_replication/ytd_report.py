@@ -1,8 +1,11 @@
+from airtable_db import VortexDB
+from airtable_db.contracts_and_events import GigsInfo
 from date_range.accounting_month import AccountingMonth
 from date_range.accounting_year import AccountingYear
 from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
+from google_sheets.tim_replication.tickets_sold_range import TicketsSoldRange
 from utils import checked_type
 
 
@@ -42,12 +45,23 @@ class YTD_Report(Tab):
             self,
             workbook: Workbook,
             month: AccountingMonth,
+            gigs_info: GigsInfo,
     ):
         super().__init__(workbook, tab_name=month.month_name)
         self.month: AccountingMonth = checked_type(month, AccountingMonth)
         self.headings_range = HeadingsRange(self.cell("B1"), self.month)
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
+
+        months = [
+            m for m in month.year.months
+            if m <= month
+        ]
+        self.tickets_range = TicketsSoldRange(
+            self.cell("B10"),
+            months,
+            gigs_info
+        )
 
     def _workbook_format_requests(self):
         return self.delete_all_row_groups_requests() + [
@@ -58,15 +72,26 @@ class YTD_Report(Tab):
     def update(self):
         format_requests = self.clear_values_and_formats_requests() \
                           + self._workbook_format_requests() \
-                          + self.headings_range.format_requests()
+                          + self.headings_range.format_requests() \
+                          + self.tickets_range.format_requests()
         self.workbook.batch_update(format_requests)
         self.workbook.batch_update_values(
             self.headings_range.values(),
-            value_input_option="RAW"            # Prevent creation of dates
+            value_input_option="RAW"  # Prevent creation of dates
+        )
+        self.workbook.batch_update_values(
+            self.tickets_range.values(),
         )
 
 
 if __name__ == '__main__':
     workbook = Workbook(YTD_ACCOUNTS_SPREADSHEET_ID)
-    tab = YTD_Report(workbook, AccountingMonth(AccountingYear(2023), 8))
+    acc_year = AccountingYear(2023)
+    acc_month = AccountingMonth(acc_year, 8)
+    gigs_info_list = []
+    for month in acc_year.months:
+        month_info = VortexDB().contracts_and_events_for_period(month)
+        gigs_info_list += month_info.contracts_and_events
+    gigs_info = GigsInfo(gigs_info_list)
+    tab = YTD_Report(workbook, AccountingMonth(acc_year, 8), gigs_info)
     tab.update()

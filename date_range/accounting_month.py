@@ -9,8 +9,8 @@ from utils import checked_type
 @total_ordering
 class AccountingMonth(ContiguousDateRange):
     def __init__(self, year: AccountingYear, m: int):
-        self.year = checked_type(year, AccountingYear)
-        self.m = checked_type(m, int)
+        self.year: AccountingYear = checked_type(year, AccountingYear)
+        self.m: int = checked_type(m, int)
 
     def __eq__(self, other):
         return isinstance(other, AccountingMonth) and self.year == other.year and self.m == other.m
@@ -44,7 +44,7 @@ class AccountingMonth(ContiguousDateRange):
         return hash((self.year, self.m))
 
     def __str__(self):
-        return f"{self.year.y}-{self.m} (acc)"
+        return self.month_name
 
     @property
     def month_name(self):
@@ -67,6 +67,7 @@ class AccountingMonth(ContiguousDateRange):
     @property
     def tab_name(self):
         return self.corresponding_calendar_month.first_day.date.strftime("%b %y")
+
 
     @property
     def corresponding_calendar_month(self):

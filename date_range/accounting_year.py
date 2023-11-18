@@ -30,6 +30,10 @@ class AccountingYear(ContiguousDateRange):
         return AccountingMonth(self, 9)
 
     @property
+    def months(self) -> list['AccountingMonth']:
+        return [self.first_month + i for i in range(12)]
+
+    @property
     def first_day(self) -> 'Day':
         from date_range.accounting_month import AccountingMonth
         return AccountingMonth(self, 9).first_day

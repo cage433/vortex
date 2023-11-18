@@ -107,7 +107,7 @@ class Workbook:
 
     def add_tab(self, name):
         if self.has_tab(name):
-            raise ValueError("Sheet called #{name} already exists")
+            raise ValueError(f"Sheet called {name} already exists")
         request = {
             "add_sheet": {
                 "properties": {
@@ -117,4 +117,4 @@ class Workbook:
             }
         }
         self.batch_update(request)
-        print(f"Created tab for #{name}")
+        print(f"Created tab for {name}")
