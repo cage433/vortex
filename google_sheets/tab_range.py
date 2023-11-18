@@ -88,6 +88,9 @@ class TabCell:
             coordinates=self.cell_coordinates.offset(num_rows=num_rows, num_cols=num_cols)
         )
 
+    def column_letter(self):
+        return CellCoordinates.column_text_from_index(self.i_col)
+
 
 class Colors:
     BLACK = {
@@ -172,6 +175,19 @@ class TabRange:
             body={"values": transformed_values}
 
         ).execute()
+
+    def background_colour_request(self, colour_json: str):
+        return {
+            "repeat_cell": {
+                "range": self.as_json_range,
+                "cell": {
+                    "user_entered_format": {
+                        "background_color": colour_json
+                    }
+                },
+                "fields": "user_entered_format.background_color"
+            }
+        }
 
     def border_request(self, borders, style="SOLID", color=Colors.BLACK):
 
@@ -262,7 +278,11 @@ class TabRange:
 
     @property
     def top_right_cell(self):
-        return self[0, -1]
+        return self[0, -1].top_left_cell
+
+    @property
+    def columns_in_a1_notation(self):
+        return f"{self.top_left_cell.column_letter()}:{self.top_right_cell.column_letter()}"
 
     def __getitem__(self, indexish):
         if isinstance(indexish, (slice, int)):

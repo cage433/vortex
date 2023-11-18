@@ -1,5 +1,6 @@
 from myopt.nothing import Nothing
 from pivot_report.pivot_field import DimensionField, MeasureField, PivotField
+from pivot_report.pivot_filter import PivotFilter
 from pivot_report.pivot_table import PivotTable
 from utils import checked_type, checked_list_type
 
@@ -17,6 +18,7 @@ class PivotReport:
         self.pivot_table: PivotTable = checked_type(pivot_table, PivotTable)
         for field in self.fields:
             assert field in pivot_table.fields, f"Field {field} not in {pivot_table.fields}"
+
 
     def headers(self) -> list[str]:
         return [field.name for field in self.fields]

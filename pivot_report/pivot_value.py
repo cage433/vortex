@@ -1,6 +1,7 @@
 from functools import total_ordering
 from numbers import Number
 
+from date_range import Day
 from myopt.opt import Opt
 from utils import checked_type
 from utils.type_checks import checked_opt_type
@@ -34,6 +35,33 @@ class StringPivotValue(PivotValue):
 
     def __eq__(self, other):
         return isinstance(other, StringPivotValue) and self.value == other.value
+
+    def __hash__(self):
+        return self.__hash
+
+
+@total_ordering
+class DayPivotValue(PivotValue):
+    def __init__(self, value: Day):
+        self.value: Day = checked_type(value, Day)
+        self.__hash = hash(self.value)
+
+    @property
+    def display_value(self) -> any:
+        return self.value.iso_repr
+
+    def __str__(self):
+        return f"Day({self.value})"
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __lt__(self, other):
+        checked_type(other, DayPivotValue)
+        return self.value < other.value
+
+    def __eq__(self, other):
+        return isinstance(other, DayPivotValue) and self.value == other.value
 
     def __hash__(self):
         return self.__hash

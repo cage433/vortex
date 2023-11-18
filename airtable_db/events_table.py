@@ -5,9 +5,10 @@ from pyairtable.formulas import FIELD, OR
 
 from airtable_db.contracts_and_events import EventRecord
 from airtable_db.contracts_table import ContractsTable
-from airtable_db.table_columns import EventColumns, ContractsColumns, TicketPriceLevel, TicketCategory
+from airtable_db.table_columns import EventColumns, ContractsColumns
 from date_range.month import Month
 from env import VORTEX_DATABASE_ID, AIRTABLE_TOKEN
+
 
 class EventsTable:
     TABLE = "Events"

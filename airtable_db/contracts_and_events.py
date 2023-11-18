@@ -84,8 +84,9 @@ class ContractAndEvents:
                 sales += e.ticket_sales_override(price_level)
             else:
                 num_tickets = e.num_paid_tickets(price_level=price_level)
-                ticket_price = self.contract.ticket_price(price_level)
-                sales += num_tickets * ticket_price
+                if num_tickets > 0:
+                    ticket_price = self.contract.ticket_price(price_level)
+                    sales += num_tickets * ticket_price
         return sales
 
 

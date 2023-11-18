@@ -30,7 +30,7 @@ class AccountMappingTable:
         with shelve.open(str(SHELF)) as shelf:
             key = "Mapping Table"
             if key not in shelf or force:
-                print("Rebuilding table")
+                print(f"Rebuilding table, {force}")
                 df = pd.read_csv(spreadsheet, header=0)
                 items = []
                 for _, row in df.iterrows():

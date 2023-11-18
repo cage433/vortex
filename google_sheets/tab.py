@@ -13,6 +13,7 @@ class Tab:
     @property
     def tab_id(self):
         if self._tab_id is None:
+            foo = self.workbook.tab_ids_by_name()
             self._tab_id = self.workbook.tab_ids_by_name()[self.tab_name]
         return self._tab_id
 
@@ -38,6 +39,13 @@ class Tab:
                 }
             }
         }
+
+    def read_values_for_columns(self, column_range: str) -> list[list[any]]:
+        values = self.workbook._resource.values().get(
+            spreadsheetId=self.workbook.sheet_id,
+            range=f"{self.tab_name}!{column_range}",
+        ).execute()
+        return values["values"]
 
     def clear_values_and_formats_requests(self) -> list[dict]:
         return [

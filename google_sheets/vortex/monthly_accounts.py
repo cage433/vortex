@@ -369,7 +369,7 @@ class MonthlyAccounts(Tab):
 
 
 if __name__ == '__main__':
-    month = AccountingMonth(AccountingYear(2022), 7)
+    month = AccountingMonth(AccountingYear(2023), 9)
     contracts_and_events = VortexDB().contracts_and_events_for_period(month)
     accounts = MonthlyAccounts(Workbook(TEST_SHEET_ID), month, vat_rate=0.2, gigs_info=contracts_and_events)
     accounts.row_groups()

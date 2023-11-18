@@ -67,6 +67,7 @@ class EventColumns:
         }
         return f"{price_level_text[price_level]} sales override"
 
+
 class ContractsColumns:
     CODE = "Code"
     RECORD_ID = "Record ID"
@@ -116,3 +117,12 @@ class ContractsColumns:
         return price_level_text[price_level]
 
 
+class MembersColumns:
+    FIRST_NAME = "First Name"
+    SECOND_NAME = "Second Name"
+    EMAIL = "Email"
+    MEMBERSHIP_TYPE = "Membership type"
+    MEMBERSHIP_START_DATE = "Membership start date"
+    EXPIRATION_DATE = "Expiration date"
+    CANCEL_MEMBERSHIP = "Cancel membership"
+    DATE_CREATED = "date created"

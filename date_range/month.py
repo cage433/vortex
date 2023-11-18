@@ -37,6 +37,9 @@ class Month(ContiguousDateRange):
     def last_day(self) -> 'Day':
         return (self + 1).first_day - 1
 
+    def __str__(self):
+        return f"Month({self.y}, {self.m})"
+
     @property
     def tab_name(self):
         return date(self.y, self.m, 1).strftime("%b %y")
@@ -44,3 +47,4 @@ class Month(ContiguousDateRange):
     @staticmethod
     def containing(day: Day) -> 'Month':
         return Month(day.y, day.m)
+
