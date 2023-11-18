@@ -44,7 +44,11 @@ class AccountingMonth(ContiguousDateRange):
         return hash((self.year, self.m))
 
     def __str__(self):
-        return f"AccountingMonth({self.year.y}, {self.m})"
+        return f"{self.year.y}-{self.m} (acc)"
+
+    @property
+    def month_name(self):
+        return self.corresponding_calendar_month.month_name
 
     def __repr__(self):
         return str(self)

@@ -64,7 +64,7 @@ class Workbook:
             body=batch_update_values_request_body
         ).execute()
 
-    def batch_update_values(self, value_ranges: list[tuple['TabRange', list[list[any]]]]):
+    def batch_update_values(self, value_ranges: list[tuple['TabRange', list[list[any]]]], value_input_option: str = "USER_ENTERED"):
         def match_dimensions(range, values):
             if not isinstance(values, list):
                 assert range.is_single_cell, "Value must be a list if range is not a single cell"
@@ -89,7 +89,7 @@ class Workbook:
             ]
 
         batch_update_values_request_body = {
-            "valueInputOption": "USER_ENTERED",
+            "valueInputOption": value_input_option,
             "data": [
                 {"range":range.full_range_name,
                  "values": transform_values(match_dimensions(range, values))}

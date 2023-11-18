@@ -17,9 +17,9 @@ class Week(ContiguousDateRange):
         return isinstance(other, Week) and self.year == other.year and self.week_no == other.week_no
 
     def __lt__(self, other):
-        if self.year == other.year:
+        if self.year == other.month:
             return self.week_no < other.week_no
-        return self.year < other.year
+        return self.year < other.month
 
     def __add__(self, n) -> 'Week':
         week_no = self.week_no + n

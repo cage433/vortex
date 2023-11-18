@@ -86,13 +86,16 @@ class Tab:
         ]
 
     def set_column_width_request(self, i_col: int, width: int):
+        return self.set_columns_width_request(i_col, i_col, width)
+
+    def set_columns_width_request(self, i_first_col: int, i_last_col: int, width: int):
         return {
             "update_dimension_properties": {
                 "range": {
                     "sheet_id": self.tab_id,
                     "dimension": "COLUMNS",
-                    "start_index": i_col,
-                    "end_index": i_col + 1
+                    "start_index": i_first_col,
+                    "end_index": i_last_col + 1
                 },
                 "properties": {
                     "pixel_size": width

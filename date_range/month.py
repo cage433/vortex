@@ -41,8 +41,12 @@ class Month(ContiguousDateRange):
         return f"Month({self.y}, {self.m})"
 
     @property
-    def tab_name(self):
+    def month_name(self):
         return date(self.y, self.m, 1).strftime("%b %y")
+
+    @property
+    def tab_name(self):
+        return self.month_name
 
     @staticmethod
     def containing(day: Day) -> 'Month':
