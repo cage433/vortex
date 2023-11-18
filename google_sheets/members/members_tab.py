@@ -71,18 +71,21 @@ class MembersTab(Tab):
         members = []
         values = self.read_values_for_columns(self.heading_range.columns_in_a1_notation)
         for row in values[1:]:
-            start_date = Day.parse(row[0])
-            name = row[1]
-            email = to_opt(row[2])
-            membership_type = row[3]
-            expiration = to_opt(row[4]).map(Day.parse)
-            cancelled = row[5]
-            members.append(Member(
-                name,
-                email,
-                membership_type,
-                start_date,
-                expiration,
-                cancelled.upper() == "TRUE"
-            ))
+            try:
+                start_date = Day.parse(row[0])
+                name = row[1]
+                email = to_opt(row[2])
+                membership_type = row[3]
+                expiration = to_opt(row[4]).map(Day.parse)
+                cancelled = row[5]
+                members.append(Member(
+                    name,
+                    email,
+                    membership_type,
+                    start_date,
+                    expiration,
+                    cancelled.upper() == "TRUE"
+                ))
+            except Exception as e:
+                pass
         return members
