@@ -10,6 +10,7 @@ from date_range.week import Week
 from env import TEST_SHEET_ID
 from google_sheets import Workbook, Tab
 from google_sheets.tab_range import TabRange, TabCell
+from google_sheets.tim_replication.tickets_sold_range import TicketsSoldRange
 from utils import checked_type
 
 
@@ -54,85 +55,6 @@ class MonthAccountsRange(TabRange):
 
     def week_gigs_row(self, gig_func: Callable[[GigsInfo], int]) -> list[any]:
         return [gig_func(gigs) for gigs in self.gigs_by_week]
-
-
-class TicketsSoldRange(MonthAccountsRange):
-    NUM_ROWS = 11
-    TITLE, _, WEEK, TOTAL, FULL_PRICE, MEMBERS, CONCS, OTHER, GUEST, ONLINE, WALK_IN = range(NUM_ROWS)
-
-    def __init__(self, top_left_cell: TabCell, month: AccountingMonth, gigs_info: GigsInfo):
-        super().__init__(top_left_cell, self.NUM_ROWS, month.num_weeks + 2, month, gigs_info)
-
-    def format_requests(self):
-        return [
-            self.outline_border_request(),
-            self[self.TITLE:self.TOTAL + 1, :].set_bold_text_request(),
-            self[self.TITLE].merge_columns_request(),
-            self[self.TITLE].center_text_request(),
-            self[self.WEEK, -1].right_align_text_request(),
-            self[self.FULL_PRICE:, 0].right_align_text_request(),
-            self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
-
-            self[self.WEEK:, 1].border_request(["left"]),
-            self[self.WEEK:, -1].border_request(["left"]),
-            self[self.TOTAL].border_request(["top", "bottom"]),
-            self[-2:].border_request(["top"]),
-            self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE,
-                                        self.i_last_row)
-        ]
-
-    def values(self):
-        # Headings
-        values = [(
-            self[:, 0],
-            ["Audience", "", "Week", "Total", "Full Price", "Members", "Concessions", "Other", "Guest", "Online",
-             "Walk-in"]
-        ), (
-            self[self.WEEK, 1:-1],
-            [w.week_no for w in self.weeks]
-        ), (
-            self[self.WEEK, -1], "MTD"
-        )]
-
-        # Week Nos
-
-        # Tickets by level
-        for i_level, level in enumerate([
-            TicketPriceLevel.FULL,
-            TicketPriceLevel.MEMBER,
-            TicketPriceLevel.CONCESSION,
-            TicketPriceLevel.OTHER,
-        ]):
-            func = lambda gigs: gigs.num_paid_tickets(price_level=level)
-            week_range = self[self.FULL_PRICE + i_level, 1:self.num_weeks + 1]
-            values.append((week_range, self.week_gigs_row(func)))
-
-        # Guests
-        values.append(
-            (self[self.GUEST, 1:self.num_weeks + 1], self.week_gigs_row(lambda x: x.num_free_tickets))
-        )
-
-        # Online/Walk-in
-        for i_category, category in enumerate([TicketCategory.ONLINE, TicketCategory.WALK_IN]):
-            func = lambda gigs: gigs.num_paid_tickets(category=category)
-            week_range = self[self.ONLINE + i_category, 1:self.num_weeks + 1]
-            values.append((week_range, self.week_gigs_row(func)))
-
-        # Top totals
-        for i_week in range(self.num_weeks + 1):  # +1 for MTD
-            breakdown_values = self[self.FULL_PRICE:self.GUEST + 1, i_week + 1]
-            values.append(
-                (self[self.TOTAL, i_week + 1], f"=Sum({breakdown_values.in_a1_notation})")
-            )
-        # Side totals
-        for i_row in range(self.TOTAL, self.WALK_IN + 1):
-            week_range = self[i_row, 1:self.num_weeks + 1]
-            total_cell = self[i_row, self.num_weeks + 2]
-            values.append(
-                (total_cell, f"=Sum({week_range.in_a1_notation})")
-            )
-
-        return values
 
 
 class IncomeRange(MonthAccountsRange):
@@ -336,14 +258,17 @@ class MonthlyAccounts(Tab):
         super().__init__(workbook, month.tab_name)
         self.month = checked_type(month, AccountingMonth)
         self.month_heading_range: MonthHeadingsRange = MonthHeadingsRange(self.cell("B2"), month, vat_rate)
-        self.ticket_numbers_range = TicketsSoldRange(self.cell("B6"), month, gigs_info)
+        self.ticket_numbers_range = TicketsSoldRange(
+            self.cell("B6"),
+            month.weeks,
+            [w.week_no for w in month.weeks],
+            gigs_info)
         self.income_range: IncomeRange = \
             IncomeRange(self.cell("B19"), month, gigs_info, self.month_heading_range.vat_cell)
         self.outgoings_range: OutgoingsRange = \
             OutgoingsRange(self.income_range.bottom_left_cell.offset(num_rows=2), month, gigs_info)
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
-
 
     def _workbook_format_requests(self):
         return self.delete_all_row_groups_requests() + [
@@ -358,7 +283,6 @@ class MonthlyAccounts(Tab):
                           + self.ticket_numbers_range.format_requests() \
                           + self.income_range.format_requests() \
                           + self.outgoings_range.format_requests()
-
 
         self.workbook.batch_update(format_requests)
         self.workbook.batch_update_values(

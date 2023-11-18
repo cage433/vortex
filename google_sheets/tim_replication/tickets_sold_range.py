@@ -11,11 +11,15 @@ class AccountsRange(TabRange):
     def __init__(self,
                  top_left_cell: TabCell, num_rows: int,
                  sub_periods: List[DateRange],
+                 sub_period_titles: List[any],
                  gigs_info: GigsInfo):
         super().__init__(top_left_cell, num_rows, len(sub_periods) + 2)
         if len(sub_periods) == 0:
             raise ValueError("Must have at least one sub-period")
         self.sub_periods: List[DateRange] = checked_list_type(sub_periods, DateRange)
+        self.sub_period_titles: List[any] = sub_period_titles
+        if len(sub_periods) != len(sub_period_titles):
+            raise ValueError("Must have same number of sub-periods and sub-period titles")
         self.gigs_info: GigsInfo = checked_type(gigs_info, GigsInfo)
         self.num_sub_periods: int = len(self.sub_periods)
         self.gigs_by_sub_period: list[GigsInfo] = [self.gigs_info.restrict_to_period(w) for w in self.sub_periods]
@@ -30,8 +34,9 @@ class TicketsSoldRange(AccountsRange):
 
     def __init__(self, top_left_cell: TabCell,
                  sub_periods: List[DateRange],
+                 sub_period_titles: List[any],
                  gigs_info: GigsInfo):
-        super().__init__(top_left_cell, self.NUM_ROWS, sub_periods, gigs_info)
+        super().__init__(top_left_cell, self.NUM_ROWS, sub_periods, sub_period_titles, gigs_info)
 
     def format_requests(self):
         return [
@@ -60,7 +65,7 @@ class TicketsSoldRange(AccountsRange):
              "Walk-in"]
         ), (
             self[self.SUB_PERIOD, 1:-1],
-            [str(w) for w in self.sub_periods]
+            [str(w) for w in self.sub_period_titles]
         ), (
             self[self.SUB_PERIOD, -1], "To Date"
         )]

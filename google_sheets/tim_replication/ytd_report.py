@@ -60,6 +60,7 @@ class YTD_Report(Tab):
         self.tickets_range = TicketsSoldRange(
             self.cell("B10"),
             months,
+            [m.month_name for m in months],
             gigs_info
         )
 
