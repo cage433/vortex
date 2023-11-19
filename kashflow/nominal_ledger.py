@@ -4,19 +4,29 @@ from typing import List
 
 from date_range import Day, DateRange
 from env import KASHFLOW_CSV_DIR
-from myopt.opt import Opt
 from utils import checked_list_type, checked_type
 from utils.file_utils import read_csv_file
 from utils.logging import log_message
 
 
 class NominalLedgerItemType:
-    OUTPUT_VAT = "Output VAT"
-    SPACE_HIRE = "Space Hire"
     BAR_STOCK = "Bar Stock"
-    SOUND_ENGINEERING = "Sound engineering"
-    SECURITY = "Door Security"
+    BUILDING_MAINTENANCE = "Building Maintenance"
+    BUILDING_WORKS = "Building works"
+    CLEANING = "Cleaning"
+    DOWNSTAIRS_BUILDING_WORKS = "Downstairs building works"
+    EQUIPMENT_MAINTENANCE = "Equipment Maintenance"
+    EQUIPMENT_PURCHASE = "Equipment Purchases"
+    LICENSING_INDIRECT = "Licensing - Indirect"
     MARKETING = "Marketing - Indirect"
+    OPERATIONAL_COSTS = "Operational Costs"
+    OUTPUT_VAT = "Output VAT"
+    PIANO_TUNING = "Piano tuning"
+    SECURITY = "Door Security"
+    SOUND_ENGINEERING = "Sound engineering"
+    SPACE_HIRE = "Space Hire"
+    STAFF_COSTS = "Staff Costs"
+    TELEPHONE = "Telephone"
 
 
 class NominalLedgerItem:
@@ -45,7 +55,7 @@ class NominalLedger:
         return NominalLedger([item for item in self.ledger_items if period.contains_day(item.date)])
 
     def filter_on_item_type(self, item_type: str) -> 'NominalLedger':
-        return NominalLedger([item for item in self.ledger_items if item.item_type == item_type])
+        return NominalLedger([item for item in self.ledger_items if item.item_type.upper() == item_type.upper()])
 
     def total_amount(self) -> float:
         return sum(item.amount for item in self.ledger_items)

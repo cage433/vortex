@@ -2,21 +2,20 @@ from numbers import Number
 from typing import List
 
 from airtable_db.contracts_and_events import GigsInfo
-from airtable_db.table_columns import TicketPriceLevel
 from date_range import DateRange
 from google_sheets.tab_range import TabCell
 from google_sheets.tim_replication.accounts_range import AccountsRange
-from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
+from kashflow.nominal_ledger import NominalLedger
 from utils import checked_type
 
 
 class GigCostsRange(AccountsRange):
-    NUM_ROWS = 14
+    NUM_ROWS = 15
 
     (TITLE, _, SUB_PERIOD, TOTAL, MUSICIAN_FEES, OTHER_COSTS, ACCOMMODATION, TRAVEL, CATERING, EQUIPMENT,
      WORK_PERMITS,
      SECURITY,
-     SOUND_ENGINEERING, MARKETING) = range(NUM_ROWS)
+     SOUND_ENGINEERING, PRS, MARKETING) = range(NUM_ROWS)
 
     def __init__(
             self,
@@ -36,8 +35,6 @@ class GigCostsRange(AccountsRange):
                                         self.i_first_row + self.WORK_PERMITS),
             self.tab.group_rows_request(self.i_first_row + self.MUSICIAN_FEES,
                                         self.i_first_row + self.MARKETING),
-            # self[self.OTHER_COSTS].border_request(["top"]),
-            # self[self.WORK_PERMITS].border_request(["bottom"]),
             self[self.ACCOMMODATION:self.WORK_PERMITS + 1, 0].right_align_text_request(),
         ]
 
@@ -46,7 +43,7 @@ class GigCostsRange(AccountsRange):
         values += [(
             self[:, 0],
             ["Gig Costs", "", "Period", "Total", "Fees", "Other Costs", "Accommodation", "Travel", "Catering",
-             "Equipment", "Work Permits", "Security", "Sound Engineer", "Marketing"]
+             "Equipment (TODO)", "Work Permits (TODO)", "Security", "Sound Engineer", "PRS", "Marketing"]
         ), (
             self[self.TOTAL, 1:-1],
             [
@@ -67,6 +64,7 @@ class GigCostsRange(AccountsRange):
             (self.ACCOMMODATION, lambda gig: -gig.band_accommodation),
             (self.TRAVEL, lambda gig: -gig.band_transport),
             (self.CATERING, lambda gig: -gig.band_catering / 1.2),
+            (self.PRS, lambda gig: -gig.prs_fee_ex_vat),
         ]:
             values.append(
                 (self[field, 1:-1], [func(gig) for gig in self.gigs_by_sub_period])

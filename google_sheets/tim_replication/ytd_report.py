@@ -9,12 +9,13 @@ from date_range.accounting_year import AccountingYear
 from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
+from google_sheets.tim_replication.admin_costs import AdminCostsRange
 from google_sheets.tim_replication.audience_numbers_range import AudienceNumbersRange
 from google_sheets.tim_replication.bar_takings import BarTakingsRange
 from google_sheets.tim_replication.gig_costs import GigCostsRange
 from google_sheets.tim_replication.hire_fees_range import HireFeesRange
 from google_sheets.tim_replication.ticket_sales_range import TicketSalesRange
-from google_sheets.tim_replication.vat_rate import VAT_RATE
+from google_sheets.tim_replication.constants import VAT_RATE
 from kashflow.nominal_ledger import NominalLedger
 from utils import checked_type
 
@@ -63,20 +64,20 @@ class YTD_Report(Tab):
             if m <= month
         ]
         self.audience_numbers_range = AudienceNumbersRange(
-            self.cell("B8"),
+            self.cell("B6"),
             months,
             [m.month_name for m in months],
             gigs_info
         )
         self.ticket_sales_range = TicketSalesRange(
-            self.cell("B20"),
+            self.audience_numbers_range.bottom_left_cell.offset(num_rows=2),
             months,
             [m.month_name for m in months],
             gigs_info
         )
 
         self.hire_fees_range = HireFeesRange(
-            self.cell("B29"),
+            self.ticket_sales_range.bottom_left_cell.offset(num_rows=2),
             months,
             [m.month_name for m in months],
             gigs_info,
@@ -84,7 +85,7 @@ class YTD_Report(Tab):
             VAT_RATE
         )
         self.bar_takings_range = BarTakingsRange(
-            self.cell("B36"),
+            self.hire_fees_range.bottom_left_cell.offset(num_rows=2),
             months,
             [m.month_name for m in months],
             gigs_info,
@@ -93,7 +94,15 @@ class YTD_Report(Tab):
         )
 
         self.gig_costs_range = GigCostsRange(
-            self.cell("B45"),
+            self.bar_takings_range.bottom_left_cell.offset(num_rows=2),
+            months,
+            [m.month_name for m in months],
+            gigs_info,
+            nominal_ledger,
+            VAT_RATE
+        )
+        self.admin_costs_range = AdminCostsRange(
+            self.gig_costs_range.bottom_left_cell.offset(num_rows=2),
             months,
             [m.month_name for m in months],
             gigs_info,
@@ -116,7 +125,8 @@ class YTD_Report(Tab):
             self.ticket_sales_range.format_requests() +
             self.hire_fees_range.format_requests() +
             self.bar_takings_range.format_requests() +
-            self.gig_costs_range.format_requests()
+            self.gig_costs_range.format_requests() +
+            self.admin_costs_range.format_requests()
         )
 
         self.workbook.batch_update_values(
@@ -128,7 +138,8 @@ class YTD_Report(Tab):
             self.ticket_sales_range.values() +
             self.hire_fees_range.values() +
             self.bar_takings_range.values() +
-            self.gig_costs_range.values()
+            self.gig_costs_range.values() +
+            self.admin_costs_range.values()
         )
 
 
