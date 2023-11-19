@@ -18,38 +18,23 @@ class AudienceNumbersRange(AccountsRange):
         super().__init__(top_left_cell, self.NUM_ROWS, sub_periods, sub_period_titles, gigs_info)
 
     def format_requests(self):
-        return [
-            self.outline_border_request(),
-            self[self.TITLE:self.TOTAL + 1, :].set_bold_text_request(),
-            self[self.TITLE].merge_columns_request(),
-            self[self.TITLE].center_text_request(),
-            self[self.SUB_PERIOD, -1].right_align_text_request(),
-            self[self.FULL_PRICE:, 0].right_align_text_request(),
-            self[self.FULL_PRICE:, 1:].set_decimal_format_request("#,0"),
-            self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
-
-            self[self.SUB_PERIOD:, 1].border_request(["left"]),
-            self[self.SUB_PERIOD:, -1].border_request(["left"]),
-            self[self.TOTAL].border_request(["top", "bottom"]),
-            self[-2:].border_request(["top"]),
+        return super().common_requests() + [
+            self[self.ONLINE].border_request(["top"]),
             self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE,
                                         self.i_last_row)
         ]
 
     def values(self):
         # Headings
-        values = [(
-            self[:, 0],
-            ["Audience", "", "", "Total", "Full Price", "Members", "Concessions", "Other", "Guest", "Online",
-             "Walk-in"]
-        ), (
-            self[self.SUB_PERIOD, 1:-1],
-            [str(w) for w in self.sub_period_titles]
-        ), (
-            self[self.SUB_PERIOD, -1], "To Date"
-        )]
-
-        # Week Nos
+        values = (super().sub_period_values() +
+                  [
+                      (
+                          self[:, 0],
+                          ["Audience", "", "",
+                           "Total", "Full Price", "Members", "Concessions", "Other", "Guest",
+                           "Online", "Walk-in"]
+                      )
+                  ])
 
         # Tickets by level
         for i_level, level in enumerate([
