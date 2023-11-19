@@ -29,6 +29,7 @@ class VortexDB:
             ContractsColumns.TRANSPORT_COST,
             ContractsColumns.HOTELS_COST,
             ContractsColumns.FOOD_BUDGET,
+            ContractsColumns.TYPE,
         ]
         contracts = self.contracts_table.records_for_date_range(
             period, contracts_columns

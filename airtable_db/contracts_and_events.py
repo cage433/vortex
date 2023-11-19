@@ -8,7 +8,7 @@ from utils import checked_type, checked_list_type
 
 class ContractRecord(AirtableRecord):
     def __init__(self, airtable_rec: dict):
-        self.airtable_rec = airtable_rec
+        super().__init__(airtable_rec)
 
     @property
     def performance_date(self):
@@ -27,6 +27,10 @@ class ContractRecord(AirtableRecord):
         if price is None:
             price = self._airtable_value(ContractsColumns.ticket_price_column(TicketPriceLevel.FULL), allow_missing=False)
         return price
+
+    @property
+    def is_hire(self):
+        return self._airtable_value(ContractsColumns.TYPE, allow_missing=True) == "Hire"
 
 
 class EventRecord(AirtableRecord):
@@ -88,6 +92,10 @@ class ContractAndEvents:
                     ticket_price = self.contract.ticket_price(price_level)
                     sales += num_tickets * ticket_price
         return sales
+
+    @property
+    def is_hire(self):
+        return self.contract.is_hire
 
 
 class GigsInfo:
@@ -160,3 +168,7 @@ class GigsInfo:
     @property
     def evening_purchases(self):
         return self._event_column_sum(EventColumns.EVENING_PURCHASES, allow_missing=True) or 0
+
+    @property
+    def excluding_hires(self):
+        return GigsInfo([ce for ce in self.contracts_and_events if not ce.contract.is_hire])

@@ -76,7 +76,7 @@ class Workbook:
                     return [values]
                 if range.is_column:
                     return [[value] for value in values]
-                raise ValueError("Mismatch of range and value dimensions")
+                raise ValueError(f"Mismatch of range and value dimensions")
             return values
 
         def transform_values(values):

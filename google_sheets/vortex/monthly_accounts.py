@@ -10,7 +10,7 @@ from date_range.week import Week
 from env import TEST_SHEET_ID
 from google_sheets import Workbook, Tab
 from google_sheets.tab_range import TabRange, TabCell
-from google_sheets.tim_replication.tickets_sold_range import TicketsSoldRange
+from google_sheets.tim_replication.audience_numbers_range import AudienceNumbersRange
 from utils import checked_type
 
 
@@ -258,7 +258,7 @@ class MonthlyAccounts(Tab):
         super().__init__(workbook, month.tab_name)
         self.month = checked_type(month, AccountingMonth)
         self.month_heading_range: MonthHeadingsRange = MonthHeadingsRange(self.cell("B2"), month, vat_rate)
-        self.ticket_numbers_range = TicketsSoldRange(
+        self.ticket_numbers_range = AudienceNumbersRange(
             self.cell("B6"),
             month.weeks,
             [w.week_no for w in month.weeks],

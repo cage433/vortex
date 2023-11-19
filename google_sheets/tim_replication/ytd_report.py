@@ -1,11 +1,16 @@
+import shelve
+from pathlib import Path
+
 from airtable_db import VortexDB
 from airtable_db.contracts_and_events import GigsInfo
+from date_range import DateRange
 from date_range.accounting_month import AccountingMonth
 from date_range.accounting_year import AccountingYear
 from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
-from google_sheets.tim_replication.tickets_sold_range import TicketsSoldRange
+from google_sheets.tim_replication.audience_numbers_range import AudienceNumbersRange
+from google_sheets.tim_replication.ticket_sales_range import TicketSalesRange
 from utils import checked_type
 
 
@@ -57,8 +62,14 @@ class YTD_Report(Tab):
             m for m in month.year.months
             if m <= month
         ]
-        self.tickets_range = TicketsSoldRange(
+        self.audience_numbers_range = AudienceNumbersRange(
             self.cell("B10"),
+            months,
+            [m.month_name for m in months],
+            gigs_info
+        )
+        self.ticket_sales_range = TicketSalesRange(
+            self.cell("B22"),
             months,
             [m.month_name for m in months],
             gigs_info
@@ -67,31 +78,52 @@ class YTD_Report(Tab):
     def _workbook_format_requests(self):
         return self.delete_all_row_groups_requests() + [
             self.set_column_width_request(i_col=1, width=200),
-            self.set_columns_width_request(i_first_col=2, i_last_col=14, width=100),
+            self.set_columns_width_request(i_first_col=2, i_last_col=14, width=75),
         ]
 
     def update(self):
         format_requests = self.clear_values_and_formats_requests() \
                           + self._workbook_format_requests() \
                           + self.headings_range.format_requests() \
-                          + self.tickets_range.format_requests()
+                          + self.audience_numbers_range.format_requests() \
+                          + self.ticket_sales_range.format_requests()
         self.workbook.batch_update(format_requests)
+
         self.workbook.batch_update_values(
             self.headings_range.values(),
             value_input_option="RAW"  # Prevent creation of dates
         )
         self.workbook.batch_update_values(
-            self.tickets_range.values(),
+            self.audience_numbers_range.values(),
         )
+        self.workbook.batch_update_values(
+            self.ticket_sales_range.values(),
+        )
+
+
+SHELF = Path(__file__).parent / "_gig_info.shelf"
+
+
+def gig_info(period: DateRange, force: bool = False) -> GigsInfo:
+    key = str(period)
+    with shelve.open(str(SHELF)) as shelf:
+        if key not in shelf or force:
+            info = VortexDB().contracts_and_events_for_period(period)
+            shelf[key] = info
+        return shelf[key]
 
 
 if __name__ == '__main__':
     workbook = Workbook(YTD_ACCOUNTS_SPREADSHEET_ID)
     acc_year = AccountingYear(2023)
-    acc_month = AccountingMonth(acc_year, 8)
+    # acc_month = AccountingMonth(acc_year, 9)
+    # acc_month = AccountingMonth(AccountingYear(2023), 7)
+    # print(acc_month.first_day)
+    # print(acc_month.last_day)
     gigs_info_list = []
+    force = True
     for month in acc_year.months:
-        month_info = VortexDB().contracts_and_events_for_period(month)
+        month_info = gig_info(month, force)
         gigs_info_list += month_info.contracts_and_events
     gigs_info = GigsInfo(gigs_info_list)
     tab = YTD_Report(workbook, AccountingMonth(acc_year, 8), gigs_info)
