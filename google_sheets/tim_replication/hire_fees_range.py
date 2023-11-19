@@ -28,35 +28,16 @@ class HireFeesRange(AccountsRange):
         self.vat_rate: float = checked_type(vat_rate, Number)
 
     def format_requests(self):
-        return [
-            self.outline_border_request(),
-            self[self.TITLE].merge_columns_request(),
-            self[self.TITLE].center_text_request(),
-            self[self.TITLE:self.SUB_PERIOD + 1, :].set_bold_text_request(),
-            self[self.TOTAL, :].set_bold_text_request(),
-            self[self.SUB_PERIOD].border_request(["bottom"]),
-            self[self.SUB_PERIOD:, 1].border_request(["left"]),
-            self[self.SUB_PERIOD:, -1].border_request(["left", "right"]),
-            self[self.SUB_PERIOD, -1:].right_align_text_request(),
-
-            self[self.TOTAL, 0].set_bold_text_request(),
-            self[self.TOTAL:, 1:].set_decimal_format_request("#,##0.00"),
+        return self.common_requests() + [
             self.tab.group_rows_request(self.i_first_row + self.EVENING,
                                         self.i_first_row + self.DAY),
-            self[self.EVENING:, 0].right_align_text_request(),
-            self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
         ]
 
     def values(self):
-        # Headings + Week nos + Total weekly ticket sales
-        values = [(
+        values = self.sub_period_values()
+        values += [(
             self[:, 0],
             ["Hire Fees (ex. VAT)", "", "Period", "Total", "Evening", "Day"]
-        ), (
-            self[self.SUB_PERIOD, 1:-1],
-            [w for w in self.sub_period_titles]
-        ), (
-            self[self.SUB_PERIOD, -1:], ["To Date"]
         ), (
             self[self.TOTAL, 1:-1],
             [

@@ -8,6 +8,8 @@ from utils import checked_type, checked_list_type
 
 
 class AccountsRange(TabRange):
+    (TITLE, _, SUB_PERIOD, TOTAL) = range(4)
+
     def __init__(self,
                  top_left_cell: TabCell, num_rows: int,
                  sub_periods: List[DateRange],
@@ -28,6 +30,35 @@ class AccountsRange(TabRange):
         self.gigs_by_sub_period: list[GigsInfo] = [self.gigs_info.restrict_to_period(w) for w in self.sub_periods]
         self.ledger_by_sub_period: list[NominalLedger] = [self.nominal_ledger.restrict_to_period(w) for w in
                                                           self.sub_periods]
+
+    def common_requests(self):
+        return [
+            self.outline_border_request(),
+            self[self.TITLE].merge_columns_request(),
+            self[self.TITLE].center_text_request(),
+            self[self.TITLE:self.SUB_PERIOD + 1, :].set_bold_text_request(),
+            self[self.TOTAL, :].set_bold_text_request(),
+            self[self.TOTAL].border_request(["bottom"]),
+            self[self.SUB_PERIOD].border_request(["bottom"]),
+            self[self.SUB_PERIOD:, 1].border_request(["left"]),
+            self[self.SUB_PERIOD:, -1].border_request(["left"]),
+            self[self.SUB_PERIOD, -1:].right_align_text_request(),
+
+            self[self.TOTAL, 0].set_bold_text_request(),
+            self[self.TOTAL:, 1:].set_decimal_format_request("#,##0.00"),
+            self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
+        ]
+
+    def sub_period_values(self):
+        return [
+            (
+                self[self.SUB_PERIOD, 1:-1],
+                [w for w in self.sub_period_titles]
+            ),
+            (
+                self[self.SUB_PERIOD, -1:], ["To Date"]
+            ),
+        ]
 
     def sub_period_gigs_row(self, fund: Callable[[GigsInfo], int]) -> list[any]:
         return [fund(gigs) for gigs in self.gigs_by_sub_period]
