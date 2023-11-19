@@ -14,6 +14,9 @@ class NominalLedgerItemType:
     OUTPUT_VAT = "Output VAT"
     SPACE_HIRE = "Space Hire"
     BAR_STOCK = "Bar Stock"
+    SOUND_ENGINEERING = "Sound engineering"
+    SECURITY = "Door Security"
+    MARKETING = "Marketing - Indirect"
 
 
 class NominalLedgerItem:
@@ -47,13 +50,28 @@ class NominalLedger:
     def total_amount(self) -> float:
         return sum(item.amount for item in self.ledger_items)
 
+    def total_for(self, item_type: str) -> float:
+        return self.filter_on_item_type(item_type).total_amount()
+
     @property
     def total_space_hire(self) -> float:
-        return self.filter_on_item_type(NominalLedgerItemType.SPACE_HIRE).total_amount()
+        return self.total_for(NominalLedgerItemType.SPACE_HIRE)
 
     @property
     def bar_stock(self) -> float:
-        return self.filter_on_item_type(NominalLedgerItemType.BAR_STOCK).total_amount()
+        return self.total_for(NominalLedgerItemType.BAR_STOCK)
+
+    @property
+    def sound_engineering(self) -> float:
+        return self.total_for(NominalLedgerItemType.SOUND_ENGINEERING)
+
+    @property
+    def security(self) -> float:
+        return self.total_for(NominalLedgerItemType.SECURITY)
+
+    @property
+    def marketing(self) -> float:
+        return self.total_for(NominalLedgerItemType.MARKETING)
 
     @staticmethod
     def from_csv_file(file: Path = None):

@@ -213,7 +213,7 @@ class OutgoingsRange(MonthAccountsRange):
         )]
 
         for i_row, func in [
-            (self.BAND_FEES, lambda w: w.band_fees),
+            (self.BAND_FEES, lambda w: w.musicians_fees),
             (self.ACCOMMODATION, lambda w: w.band_accommodation),
             (self.CATERING, lambda w: w.band_catering),
             (self.PRS, lambda w: w.prs_fee_ex_vat),

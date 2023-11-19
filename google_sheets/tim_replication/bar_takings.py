@@ -29,7 +29,7 @@ class BarTakingsRange(AccountsRange):
 
     def format_requests(self):
         return self.common_requests() + [
-            self[self.SALES].border_request(["bottom", "top"]),
+            # self[self.SALES].border_request(["bottom", "top"]),
             self.tab.group_rows_request(self.i_first_row + self.SALES,
                                         self.i_first_row + self.DELIVERED),
             self.tab.group_rows_request(self.i_first_row + self.EVENING,

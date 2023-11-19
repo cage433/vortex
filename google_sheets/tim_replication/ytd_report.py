@@ -11,6 +11,7 @@ from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
 from google_sheets.tim_replication.audience_numbers_range import AudienceNumbersRange
 from google_sheets.tim_replication.bar_takings import BarTakingsRange
+from google_sheets.tim_replication.gig_costs import GigCostsRange
 from google_sheets.tim_replication.hire_fees_range import HireFeesRange
 from google_sheets.tim_replication.ticket_sales_range import TicketSalesRange
 from google_sheets.tim_replication.vat_rate import VAT_RATE
@@ -91,6 +92,15 @@ class YTD_Report(Tab):
             VAT_RATE
         )
 
+        self.gig_costs_range = GigCostsRange(
+            self.cell("B45"),
+            months,
+            [m.month_name for m in months],
+            gigs_info,
+            nominal_ledger,
+            VAT_RATE
+        )
+
     def _workbook_format_requests(self):
         return self.delete_all_row_groups_requests() + [
             self.set_column_width_request(i_col=1, width=200),
@@ -105,7 +115,8 @@ class YTD_Report(Tab):
             self.audience_numbers_range.format_requests() +
             self.ticket_sales_range.format_requests() +
             self.hire_fees_range.format_requests() +
-            self.bar_takings_range.format_requests()
+            self.bar_takings_range.format_requests() +
+            self.gig_costs_range.format_requests()
         )
 
         self.workbook.batch_update_values(
@@ -116,7 +127,8 @@ class YTD_Report(Tab):
             self.audience_numbers_range.values() +
             self.ticket_sales_range.values() +
             self.hire_fees_range.values() +
-            self.bar_takings_range.values(),
+            self.bar_takings_range.values() +
+            self.gig_costs_range.values()
         )
 
 

@@ -147,7 +147,7 @@ class GigsInfo:
         return self._event_column_sum(EventColumns.BAR_TAKINGS, allow_missing=True) or 0
 
     @property
-    def band_fees(self):
+    def musicians_fees(self):
         return self._contract_column_sum(ContractsColumns.MUSICIANS_FEE, allow_missing=True) or 0
 
     @property

@@ -60,6 +60,9 @@ class AccountsRange(TabRange):
             ),
         ]
 
+    def sum_formula(self, first_row: int, last_row: int, i_col: int):
+        return f"SUM({self[first_row:last_row + 1, i_col].in_a1_notation})"
+
     def sub_period_gigs_row(self, fund: Callable[[GigsInfo], int]) -> list[any]:
         return [fund(gigs) for gigs in self.gigs_by_sub_period]
 
