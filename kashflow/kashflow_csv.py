@@ -18,7 +18,7 @@ class KashflowCSV:
     @staticmethod
     def read_activity_csv_file(file: Path):
         rows = read_csv_file(file)
-        while rows[0][0] != "Date":
+        while rows[0][0] != "CODE":
             rows.pop(0)
         rows.pop(0)
 

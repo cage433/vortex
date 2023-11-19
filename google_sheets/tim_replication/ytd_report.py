@@ -10,7 +10,10 @@ from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
 from google_sheets.tim_replication.audience_numbers_range import AudienceNumbersRange
+from google_sheets.tim_replication.hire_fees_range import HireFeesRange
 from google_sheets.tim_replication.ticket_sales_range import TicketSalesRange
+from google_sheets.tim_replication.vat_rate import VAT_RATE
+from kashflow.nominal_ledger import NominalLedger
 from utils import checked_type
 
 
@@ -51,6 +54,7 @@ class YTD_Report(Tab):
             workbook: Workbook,
             month: AccountingMonth,
             gigs_info: GigsInfo,
+            nominal_ledger: NominalLedger,
     ):
         super().__init__(workbook, tab_name=month.month_name)
         self.month: AccountingMonth = checked_type(month, AccountingMonth)
@@ -75,6 +79,15 @@ class YTD_Report(Tab):
             gigs_info
         )
 
+        self.hire_fees_range = HireFeesRange(
+            self.cell("B31"),
+            months,
+            [m.month_name for m in months],
+            gigs_info,
+            nominal_ledger,
+            VAT_RATE
+        )
+
     def _workbook_format_requests(self):
         return self.delete_all_row_groups_requests() + [
             self.set_column_width_request(i_col=1, width=200),
@@ -82,22 +95,23 @@ class YTD_Report(Tab):
         ]
 
     def update(self):
-        format_requests = self.clear_values_and_formats_requests() \
-                          + self._workbook_format_requests() \
-                          + self.headings_range.format_requests() \
-                          + self.audience_numbers_range.format_requests() \
-                          + self.ticket_sales_range.format_requests()
-        self.workbook.batch_update(format_requests)
+        self.workbook.batch_update(
+            self.clear_values_and_formats_requests() +
+            self._workbook_format_requests() +
+            self.headings_range.format_requests() +
+            self.audience_numbers_range.format_requests() +
+            self.ticket_sales_range.format_requests() +
+            self.hire_fees_range.format_requests()
+        )
 
         self.workbook.batch_update_values(
             self.headings_range.values(),
             value_input_option="RAW"  # Prevent creation of dates
         )
         self.workbook.batch_update_values(
-            self.audience_numbers_range.values(),
-        )
-        self.workbook.batch_update_values(
-            self.ticket_sales_range.values(),
+            self.audience_numbers_range.values() +
+            self.ticket_sales_range.values() +
+            self.hire_fees_range.values()
         )
 
 
@@ -113,18 +127,28 @@ def gig_info(period: DateRange, force: bool = False) -> GigsInfo:
         return shelf[key]
 
 
+def read_nominal_ledger(force: bool = False) -> NominalLedger:
+    key = "nominal_ledger"
+    with shelve.open(str(SHELF)) as shelf:
+        if key not in shelf or force:
+            info = NominalLedger.from_csv_file()
+            shelf[key] = info
+        return shelf[key]
+
+
 if __name__ == '__main__':
     workbook = Workbook(YTD_ACCOUNTS_SPREADSHEET_ID)
     acc_year = AccountingYear(2023)
-    # acc_month = AccountingMonth(acc_year, 9)
+    acc_month = AccountingMonth(acc_year, 9)
     # acc_month = AccountingMonth(AccountingYear(2023), 7)
     # print(acc_month.first_day)
     # print(acc_month.last_day)
     gigs_info_list = []
-    force = True
+    force = False
     for month in acc_year.months:
         month_info = gig_info(month, force)
         gigs_info_list += month_info.contracts_and_events
     gigs_info = GigsInfo(gigs_info_list)
-    tab = YTD_Report(workbook, AccountingMonth(acc_year, 8), gigs_info)
+    nominal_ledger = read_nominal_ledger(force).restrict_to_period(acc_year)
+    tab = YTD_Report(workbook, AccountingMonth(acc_year, 8), gigs_info, nominal_ledger)
     tab.update()
