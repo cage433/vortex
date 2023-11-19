@@ -76,6 +76,7 @@ class EventRecord(AirtableRecord):
         return self.column_float_value(EventColumns.HIRE_FEE, allow_missing=True) or 0.0
 
 
+
 class ContractAndEvents:
     def __init__(self, contract: ContractRecord, events: list[EventRecord]):
         self.contract = checked_type(contract, ContractRecord)

@@ -10,6 +10,7 @@ from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
 from google_sheets.tim_replication.audience_numbers_range import AudienceNumbersRange
+from google_sheets.tim_replication.bar_takings import BarTakingsRange
 from google_sheets.tim_replication.hire_fees_range import HireFeesRange
 from google_sheets.tim_replication.ticket_sales_range import TicketSalesRange
 from google_sheets.tim_replication.vat_rate import VAT_RATE
@@ -18,7 +19,7 @@ from utils import checked_type
 
 
 class HeadingsRange(TabRange):
-    NUM_ROWS = 6
+    NUM_ROWS = 4
     NUM_COLS = 14
 
     def __init__(self, top_left_cell: TabCell, month: AccountingMonth):
@@ -39,12 +40,6 @@ class HeadingsRange(TabRange):
             (self[1, 0], ["Vortex Jazz Club"]),
             (self[2, 0:2], ["Income and Expenditure", f"Year end {month_name}"]),
             (self[3, 0:2], ["Month", month_name]),
-            (self[5, 1:],
-             [
-                 (self.month.year.first_month + i).month_name
-                 for i in range(12)
-             ] + ["Total"]
-             ),
         ]
 
 
@@ -67,20 +62,28 @@ class YTD_Report(Tab):
             if m <= month
         ]
         self.audience_numbers_range = AudienceNumbersRange(
-            self.cell("B10"),
+            self.cell("B8"),
             months,
             [m.month_name for m in months],
             gigs_info
         )
         self.ticket_sales_range = TicketSalesRange(
-            self.cell("B22"),
+            self.cell("B20"),
             months,
             [m.month_name for m in months],
             gigs_info
         )
 
         self.hire_fees_range = HireFeesRange(
-            self.cell("B31"),
+            self.cell("B29"),
+            months,
+            [m.month_name for m in months],
+            gigs_info,
+            nominal_ledger,
+            VAT_RATE
+        )
+        self.bar_takings_range = BarTakingsRange(
+            self.cell("B36"),
             months,
             [m.month_name for m in months],
             gigs_info,
@@ -101,7 +104,8 @@ class YTD_Report(Tab):
             self.headings_range.format_requests() +
             self.audience_numbers_range.format_requests() +
             self.ticket_sales_range.format_requests() +
-            self.hire_fees_range.format_requests()
+            self.hire_fees_range.format_requests() +
+            self.bar_takings_range.format_requests()
         )
 
         self.workbook.batch_update_values(
@@ -111,7 +115,8 @@ class YTD_Report(Tab):
         self.workbook.batch_update_values(
             self.audience_numbers_range.values() +
             self.ticket_sales_range.values() +
-            self.hire_fees_range.values()
+            self.hire_fees_range.values() +
+            self.bar_takings_range.values(),
         )
 
 

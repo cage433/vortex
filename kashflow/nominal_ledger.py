@@ -13,6 +13,7 @@ from utils.logging import log_message
 class NominalLedgerItemType:
     OUTPUT_VAT = "Output VAT"
     SPACE_HIRE = "Space Hire"
+    BAR_STOCK = "Bar Stock"
 
 
 class NominalLedgerItem:
@@ -49,6 +50,10 @@ class NominalLedger:
     @property
     def total_space_hire(self) -> float:
         return self.filter_on_item_type(NominalLedgerItemType.SPACE_HIRE).total_amount()
+
+    @property
+    def bar_stock(self) -> float:
+        return self.filter_on_item_type(NominalLedgerItemType.BAR_STOCK).total_amount()
 
     @staticmethod
     def from_csv_file(file: Path = None):
