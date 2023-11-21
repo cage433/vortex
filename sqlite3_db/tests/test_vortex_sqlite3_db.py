@@ -93,5 +93,5 @@ class VortexSqlite3DBTest(TestCase):
                 self.assertEqual(len(s1.transactions), len(s2.transactions))
                 for t1, t2 in list(zip(s1.transactions, s2.transactions))[0:10]:
                     self.assertEqual(t1, t2)
-                self.assertEqual(s1.balances, s2.balances)
+                self.assertEqual(s1.published_balances, s2.published_balances)
 

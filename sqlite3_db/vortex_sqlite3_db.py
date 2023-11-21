@@ -97,7 +97,7 @@ class VortexSqlite3DB:
                     tr.category3,
                     tr.category4
                 ))
-            for balance_date, balance in statement.balances.items():
+            for balance_date, balance in statement.published_balances.items():
                 cur.execute("""
                 INSERT INTO account_balances 
                 (account_id, balance_date, balance)

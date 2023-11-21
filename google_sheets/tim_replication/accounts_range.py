@@ -1,6 +1,7 @@
 from typing import Callable, List
 
 from airtable_db.contracts_and_events import GigsInfo
+from bank_statements import BankActivity
 from date_range import DateRange
 from google_sheets.tab_range import TabRange, TabCell
 from kashflow.nominal_ledger import NominalLedger
@@ -15,7 +16,8 @@ class AccountsRange(TabRange):
                  sub_periods: List[DateRange],
                  sub_period_titles: List[any],
                  gigs_info: GigsInfo,
-                 nominal_ledger: NominalLedger = None
+                 nominal_ledger: NominalLedger,
+                 bank_activity: BankActivity
                  ):
         super().__init__(top_left_cell, num_rows, len(sub_periods) + 2)
         if len(sub_periods) == 0:
@@ -25,10 +27,13 @@ class AccountsRange(TabRange):
         if len(sub_periods) != len(sub_period_titles):
             raise ValueError("Must have same number of sub-periods and sub-period titles")
         self.gigs_info: GigsInfo = checked_type(gigs_info, GigsInfo)
-        self.nominal_ledger: NominalLedger = checked_type(nominal_ledger or NominalLedger.empty(), NominalLedger)
+        self.nominal_ledger: NominalLedger = checked_type(nominal_ledger, NominalLedger)
+        self.bank_activity: BankActivity = checked_type(bank_activity, BankActivity)
         self.num_sub_periods: int = len(self.sub_periods)
         self.gigs_by_sub_period: list[GigsInfo] = [self.gigs_info.restrict_to_period(w) for w in self.sub_periods]
         self.ledger_by_sub_period: list[NominalLedger] = [self.nominal_ledger.restrict_to_period(w) for w in
+                                                          self.sub_periods]
+        self.bank_activity_by_sub_period: list[BankActivity] = [self.bank_activity.restrict_to_period(w) for w in
                                                           self.sub_periods]
 
     def common_requests(self):

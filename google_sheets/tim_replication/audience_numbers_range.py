@@ -2,9 +2,11 @@ from typing import List
 
 from airtable_db.contracts_and_events import GigsInfo
 from airtable_db.table_columns import TicketPriceLevel, TicketCategory
+from bank_statements import BankActivity
 from date_range import DateRange
 from google_sheets.tab_range import TabCell
 from google_sheets.tim_replication.accounts_range import AccountsRange
+from kashflow.nominal_ledger import NominalLedger
 
 
 class AudienceNumbersRange(AccountsRange):
@@ -14,8 +16,12 @@ class AudienceNumbersRange(AccountsRange):
     def __init__(self, top_left_cell: TabCell,
                  sub_periods: List[DateRange],
                  sub_period_titles: List[any],
-                 gigs_info: GigsInfo):
-        super().__init__(top_left_cell, self.NUM_ROWS, sub_periods, sub_period_titles, gigs_info)
+                 gigs_info: GigsInfo,
+                 nominal_ledger: NominalLedger,
+                 bank_activity: BankActivity,
+                 ):
+        super().__init__(top_left_cell, self.NUM_ROWS, sub_periods, sub_period_titles, gigs_info, nominal_ledger,
+                         bank_activity)
 
     def format_requests(self):
         return super().common_requests() + [

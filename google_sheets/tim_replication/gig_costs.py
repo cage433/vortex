@@ -2,6 +2,8 @@ from numbers import Number
 from typing import List
 
 from airtable_db.contracts_and_events import GigsInfo
+from bank_statements import BankActivity
+from bank_statements.payee_categories import WORK_PERMITS
 from date_range import DateRange
 from google_sheets.tab_range import TabCell
 from google_sheets.tim_replication.accounts_range import AccountsRange
@@ -10,9 +12,9 @@ from utils import checked_type
 
 
 class GigCostsRange(AccountsRange):
-    NUM_ROWS = 15
+    NUM_ROWS = 14
 
-    (TITLE, _, SUB_PERIOD, TOTAL, MUSICIAN_FEES, OTHER_COSTS, ACCOMMODATION, TRAVEL, CATERING, EQUIPMENT,
+    (TITLE, _, SUB_PERIOD, TOTAL, MUSICIAN_FEES, OTHER_COSTS, ACCOMMODATION, TRAVEL, CATERING,
      WORK_PERMITS,
      SECURITY,
      SOUND_ENGINEERING, PRS, MARKETING) = range(NUM_ROWS)
@@ -24,9 +26,11 @@ class GigCostsRange(AccountsRange):
             sub_period_titles: List[any],
             gigs_info: GigsInfo,
             nominal_ledger: NominalLedger,
+            bank_activity: BankActivity,
             vat_rate: float,
     ):
-        super().__init__(top_left_cell, self.NUM_ROWS, sub_periods, sub_period_titles, gigs_info, nominal_ledger)
+        super().__init__(top_left_cell, self.NUM_ROWS, sub_periods, sub_period_titles, gigs_info, nominal_ledger,
+                         bank_activity)
         self.vat_rate: float = checked_type(vat_rate, Number)
 
     def format_requests(self):
@@ -43,7 +47,7 @@ class GigCostsRange(AccountsRange):
         values += [(
             self[:, 0],
             ["Gig Costs", "", "Period", "Total", "Fees", "Other Costs", "Accommodation", "Travel", "Catering",
-             "Equipment (TODO)", "Work Permits (TODO)", "Security", "Sound Engineer", "PRS", "Marketing"]
+             "Work Permits", "Security", "Sound Engineer", "PRS", "Marketing"]
         ), (
             self[self.TOTAL, 1:-1],
             [
@@ -77,6 +81,13 @@ class GigCostsRange(AccountsRange):
         ]:
             values.append(
                 (self[field, 1:-1], [func(ledger) for ledger in self.ledger_by_sub_period])
+            )
+        for (field, category) in [
+            (self.WORK_PERMITS, WORK_PERMITS)
+        ]:
+            values.append(
+                (self[field, 1:-1],
+                 [activity.net_amount_for_category(category) for activity in self.bank_activity_by_sub_period])
             )
 
         # To date values

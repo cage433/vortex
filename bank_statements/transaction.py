@@ -1,10 +1,13 @@
 from typing import Optional
 
-from bank_statements.old_account_mapping_table import OldAccountMappingTable
 from date_range import Day
-from utils import checked_type, checked_optional_type
+from myopt.nothing import Nothing
+from myopt.opt import Opt
+from utils import checked_type
 
 __all__ = ["Transaction"]
+
+from utils.type_checks import checked_optional_type, checked_opt_type
 
 
 class Transaction:
@@ -16,10 +19,7 @@ class Transaction:
             payee: str,
             amount: float,
             transaction_type: str,
-            category1: Optional[str] = None,
-            category2: Optional[str] = None,
-            category3: Optional[str] = None,
-            category4: Optional[str] = None,
+            category: Opt[str],
     ):
         self.account: int = checked_type(account, int)
         self.ftid = checked_type(ftid, str)
@@ -27,30 +27,14 @@ class Transaction:
         self.payee: str = checked_type(payee, str)
         self.amount: float = checked_type(amount, float)
         self.transaction_type: str = checked_type(transaction_type, str)
-        self.category1 = checked_optional_type(category1, str)
-        self.category2 = checked_optional_type(category2, str)
-        self.category3 = checked_optional_type(category3, str)
-        self.category4 = checked_optional_type(category4, str)
-
-    def category(self, n: int) -> str:
-        if n == 1:
-            return self.category1
-        if n == 2:
-            return self.category2
-        if n == 3:
-            return self.category3
-        if n == 4:
-            return self.category4
-        raise ValueError(f"Invalid category number: {n}")
+        self.category: Opt[str] = checked_opt_type(category, str)
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
     def __str__(self):
-        return f"{self.account}: {self.payment_date}, {self.payee}, {self.amount}, {self.transaction_type}, {self.category1}, {self.category2}, {self.category3}, {self.category4}"
+        return f"{self.account}: {self.payment_date}, {self.payee}, {self.amount}, {self.transaction_type}, {self.category}"
 
-    def with_tims_categories(self, mapping_table: OldAccountMappingTable):
-        pass
     def clone(
             self,
             account: Optional[int] = None,
@@ -59,10 +43,7 @@ class Transaction:
             payee: Optional[str] = None,
             amount: Optional[float] = None,
             transaction_type: Optional[str] = None,
-            category1: Optional[str] = None,
-            category2: Optional[str] = None,
-            category3: Optional[str] = None,
-            category4: Optional[str] = None,
+            category: Opt[str] = Nothing,
     ):
         return Transaction(
             account=account or self.account,
@@ -71,8 +52,5 @@ class Transaction:
             payee=payee or self.payee,
             amount=amount or self.amount,
             transaction_type=transaction_type or self.transaction_type,
-            category1=category1 or self.category1,
-            category2=category2 or self.category2,
-            category3=category3 or self.category3,
-            category4=category4 or self.category4,
+            category=category.or_else(self.category),
         )

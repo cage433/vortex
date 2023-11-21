@@ -3,6 +3,7 @@ from pathlib import Path
 
 from airtable_db import VortexDB
 from airtable_db.contracts_and_events import GigsInfo
+from bank_statements import BankActivity
 from date_range import DateRange
 from date_range.accounting_month import AccountingMonth
 from date_range.accounting_year import AccountingYear
@@ -52,6 +53,7 @@ class YTD_Report(Tab):
             month: AccountingMonth,
             gigs_info: GigsInfo,
             nominal_ledger: NominalLedger,
+            bank_activity: BankActivity,
     ):
         super().__init__(workbook, tab_name=month.month_name)
         self.month: AccountingMonth = checked_type(month, AccountingMonth)
@@ -67,13 +69,17 @@ class YTD_Report(Tab):
             self.cell("B6"),
             months,
             [m.month_name for m in months],
-            gigs_info
+            gigs_info,
+            nominal_ledger,
+            bank_activity
         )
         self.ticket_sales_range = TicketSalesRange(
             self.audience_numbers_range.bottom_left_cell.offset(num_rows=2),
             months,
             [m.month_name for m in months],
-            gigs_info
+            gigs_info,
+            nominal_ledger,
+            bank_activity
         )
 
         self.hire_fees_range = HireFeesRange(
@@ -82,6 +88,7 @@ class YTD_Report(Tab):
             [m.month_name for m in months],
             gigs_info,
             nominal_ledger,
+            bank_activity,
             VAT_RATE
         )
         self.bar_takings_range = BarTakingsRange(
@@ -90,6 +97,7 @@ class YTD_Report(Tab):
             [m.month_name for m in months],
             gigs_info,
             nominal_ledger,
+            bank_activity,
             VAT_RATE
         )
 
@@ -99,6 +107,7 @@ class YTD_Report(Tab):
             [m.month_name for m in months],
             gigs_info,
             nominal_ledger,
+            bank_activity,
             VAT_RATE
         )
         self.admin_costs_range = AdminCostsRange(
@@ -107,6 +116,7 @@ class YTD_Report(Tab):
             [m.month_name for m in months],
             gigs_info,
             nominal_ledger,
+            bank_activity,
             VAT_RATE
         )
 
@@ -143,11 +153,11 @@ class YTD_Report(Tab):
         )
 
 
-SHELF = Path(__file__).parent / "_gig_info.shelf"
+SHELF = Path(__file__).parent / "_ytd_report.shelf"
 
 
 def gig_info(period: DateRange, force: bool = False) -> GigsInfo:
-    key = str(period)
+    key = f"gig_info_{period}"
     with shelve.open(str(SHELF)) as shelf:
         if key not in shelf or force:
             info = VortexDB().contracts_and_events_for_period(period)
@@ -161,6 +171,15 @@ def read_nominal_ledger(force: bool = False) -> NominalLedger:
         if key not in shelf or force:
             info = NominalLedger.from_csv_file()
             shelf[key] = info
+        return shelf[key]
+
+
+def read_bank_activity(period: DateRange, force: bool = False) -> BankActivity:
+    key = f"bank_activity_{period}"
+    with shelve.open(str(SHELF)) as shelf:
+        if key not in shelf or force:
+            activity = BankActivity.build().restrict_to_period(period)
+            shelf[key] = activity
         return shelf[key]
 
 
@@ -178,5 +197,6 @@ if __name__ == '__main__':
         gigs_info_list += month_info.contracts_and_events
     gigs_info = GigsInfo(gigs_info_list)
     nominal_ledger = read_nominal_ledger(force).restrict_to_period(acc_year)
-    tab = YTD_Report(workbook, AccountingMonth(acc_year, 8), gigs_info, nominal_ledger)
+    bank_activity = read_bank_activity(acc_year, force=True)
+    tab = YTD_Report(workbook, AccountingMonth(acc_year, 8), gigs_info, nominal_ledger, bank_activity)
     tab.update()
