@@ -9,24 +9,24 @@ WORK_PERMITS = "Work Permits"
 RATES = "Rates"
 
 def _maybe_work_permit(transaction: Transaction) -> Optional[str]:
-    payee = transaction.payee.upper().strip()
+    payee = transaction.payee
     if payee.endswith("UKVI UK"):
         return WORK_PERMITS
-    if payee.endswith("UKVI CREWE"):
+    if payee.endswith("UKVI Crewe"):
         return WORK_PERMITS
     if "HINGWAN K C COS" in payee:
         return WORK_PERMITS
-    if "MR J HILL VJC COS" in payee:
+    if "Mr J Hill VJC COS" in payee:
         return WORK_PERMITS
-    if "FRUSION MEDIA ACCO COS" in payee:
+    if "Frusion Media Acco COS" in payee:
         return WORK_PERMITS
     if transaction.payment_date == Day(2022, 5, 20) and "K HINGWAN VORTEX EXPENSESS" in payee:
         return WORK_PERMITS
     if transaction.payment_date == Day(2022, 11, 2) and "DUSTY KNUC" in payee:
         return WORK_PERMITS
-    if "KLARNA*COS" in payee:
+    if "Klarna*COS" in payee:
         return WORK_PERMITS
-    if "KLARNA*WWW" in payee:
+    if "Klarna*www" in payee:
         return WORK_PERMITS
     return None
 

@@ -108,9 +108,9 @@ if __name__ == '__main__':
     print(f"total = {total}")
     table = []
     tr_by_month = group_into_dict(trans, lambda t: AccountingMonth.containing(t.payment_date))
-    months = sorted(tr_by_month.keys())
-    for m in months:
-        print(f"{m} {len(tr_by_month[m])}, {sum(t.amount for t in tr_by_month[m])}")
+    # months = sorted(tr_by_month.keys())
+    # for m in months:
+    #     print(f"{m} {len(tr_by_month[m])}, {sum(t.amount for t in tr_by_month[m])}")
     for tr in trans:
         acc_month = AccountingMonth.containing(tr.payment_date)
         table.append([
