@@ -72,7 +72,7 @@ class AdminCostsRange(AccountsRange):
             ["Admin", "", "Period", "Total", "Rent", "Rates", "Electricity", "Telephone",
              "Insurance",
              "Salaries", "Rentokil", "Waste Collection", "Bin Hire",
-             "Consolidated Door Security", "Fowlers Alarm", "Daily Cleaning", "Building Maintenance",
+             "Consolidated Door Security", "Alarm (Fowler's)", "Cleaning", "Building Maintenance",
              "Building Works", "Downstairs Building Works", "Piano Tuning", "Equipment Purchase",
              "Equipment Maintenance", "Kashflow", "Operational Costs", "Licensing - Indirect",
              "Credit Card Fees", "BB Loan Payment", "Bank Fees", "Bank Interest"]

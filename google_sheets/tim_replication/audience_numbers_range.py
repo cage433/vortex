@@ -27,7 +27,8 @@ class AudienceNumbersRange(AccountsRange):
         return super().common_requests() + [
             self[self.ONLINE].border_request(["top"]),
             self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE,
-                                        self.i_last_row)
+                                        self.i_last_row),
+            self[self.TOTAL:, 1:].set_decimal_format_request("#,##0"),
         ]
 
     def values(self):

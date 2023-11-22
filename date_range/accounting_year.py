@@ -25,18 +25,17 @@ class AccountingYear(ContiguousDateRange):
         self.y = checked_type(y, int)
 
     @property
-    def first_month(self) -> 'AccountingMonth':
+    def first_accounting_month(self) -> 'AccountingMonth':
         from date_range.accounting_month import AccountingMonth
         return AccountingMonth(self, 9)
 
     @property
-    def months(self) -> list['AccountingMonth']:
-        return [self.first_month + i for i in range(12)]
+    def accounting_months(self) -> list['AccountingMonth']:
+        return [self.first_accounting_month + i for i in range(12)]
 
     @property
     def first_day(self) -> 'Day':
-        from date_range.accounting_month import AccountingMonth
-        return AccountingMonth(self, 9).first_day
+        return self.first_accounting_month.first_day
 
     @property
     def last_day(self) -> 'Day':

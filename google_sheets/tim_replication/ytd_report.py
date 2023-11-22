@@ -62,7 +62,7 @@ class YTD_Report(Tab):
             self.workbook.add_tab(self.tab_name)
 
         months = [
-            m for m in month.year.months
+            m for m in month.year.accounting_months
             if m <= month
         ]
         self.audience_numbers_range = AudienceNumbersRange(
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     # print(acc_month.last_day)
     gigs_info_list = []
     force = False
-    for month in acc_year.months:
+    for month in acc_year.accounting_months:
         month_info = gig_info(month, force)
         gigs_info_list += month_info.contracts_and_events
     gigs_info = GigsInfo(gigs_info_list)

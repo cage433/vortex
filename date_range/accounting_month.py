@@ -68,7 +68,6 @@ class AccountingMonth(ContiguousDateRange):
     def tab_name(self):
         return self.corresponding_calendar_month.first_day.date.strftime("%b %y")
 
-
     @property
     def corresponding_calendar_month(self):
         if self.m >= 9:
