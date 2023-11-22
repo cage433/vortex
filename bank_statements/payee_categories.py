@@ -36,15 +36,16 @@ def _maybe_work_permit(transaction: Transaction) -> Optional[str]:
 
 
 def _maybe_rates(transaction: Transaction) -> Optional[str]:
-    payee = transaction.payee.upper().strip().replace(" ", "")
-    if "LBHACKNEYRATES" in payee:
+    payee = transaction.payee
+    if "LB Hackney rates" in payee:
         return PayeeCategory.RATES
-    if transaction.payment_date == Day(2023, 7, 21) and "LBHACKNEYGENFUNDVORTEX" in payee:
+    if transaction.payment_date == Day(2023, 7, 21) and "LB HACKNEY GENFUND VORTEX" in payee:
         return PayeeCategory.RATES
     return None
 
 
 def category_for_transaction(transaction: Transaction) -> Opt[str]:
     return Opt.of(
-        _maybe_work_permit(transaction) or _maybe_rates(transaction)
+        _maybe_work_permit(transaction) or
+        _maybe_rates(transaction)
     )
