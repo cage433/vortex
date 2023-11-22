@@ -8,9 +8,11 @@ from ofxparse import OfxParser
 
 from bank_statements import Statement, Transaction, BankActivity
 from bank_statements.payee_categories import category_for_transaction, PayeeCategory
-from date_range import Day
+from date_range import Day, DateRange
 from date_range.accounting_month import AccountingMonth
 from date_range.accounting_year import AccountingYear
+from date_range.simple_date_range import SimpleDateRange
+from date_range.year import Year
 from env import STATEMENTS_DIR
 
 __all__ = ["StatementsReader"]
@@ -117,16 +119,20 @@ if __name__ == '__main__':
     force = False
     month = AccountingMonth(AccountingYear(2023), 10)
     statements = StatementsReader.read_statements(STATEMENTS_DIR, force)
-    bank_activity = BankActivity(statements)  # .restrict_to_period(AccountingYear(2023))
+    # restricted_period = SimpleDateRange(Day(2021, 6, 1), Day(2030, 1, 1))
+    bank_activity = BankActivity(statements)
+    # print(f"First bank date {bank_activity.first_date}")
+    # bank_activity = bank_activity.restrict_to_period(Year(2023))
+
     trans = [
         tr for tr in bank_activity.sorted_transactions
-        if tr.category == Opt.of(PayeeCategory.RATES)
+        if tr.category == Opt.of(PayeeCategory.INSURANCE)
     ]
 
     def write_transactions_to_csv():
         table = []
-        for t in trans:
-            table.append([t.payment_date, t.payee, t.amount, t.category.get_or_else("")])
+        for t in bank_activity.sorted_transactions:
+            table.append([t.account, t.payment_date, t.payee, t.amount, t.category.get_or_else("")])
         write_csv_file(Path("/Users/alex/Downloads/transactions.csv"), table)
     total = sum(t.amount for t in trans)
     print(f"total = {total}, num trans = {len(trans)}")
@@ -151,5 +157,6 @@ if __name__ == '__main__':
             ])
         print(tabulate.tabulate(table))
 
-    report_by_trans()
+    write_transactions_to_csv()
+    # report_by_trans()
 

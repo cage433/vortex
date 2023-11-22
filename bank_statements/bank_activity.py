@@ -31,6 +31,12 @@ class BankActivity:
         return sum(s.net_flow(first_day, last_day) for s in self.statements.values())
 
     @property
+    def first_date(self):
+        return min(
+            [s.first_date for s in self.statements.values() if s.first_date is not None]
+        )
+
+    @property
     def initial_balance(self) -> float:
         return sum([statement.earliest_balance for statement in self.statements.values()])
 

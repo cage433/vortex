@@ -44,6 +44,10 @@ class Opt(Generic[T]):
     def non_empty(self) -> bool:
         return not self.is_empty()
 
+    @staticmethod
+    def flatten(values: list['Opt[T]']) -> list[T]:
+        return [v.get for v in values if v.non_empty()]
+
     def __lt__(self, other):
         assert isinstance(other, Opt), f"Cannot compare {type(self)} to {type(other)}"
         if self.is_empty():

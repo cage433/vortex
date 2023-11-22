@@ -23,7 +23,6 @@ class AdminCostsRange(AccountsRange):
      TELEPHONE,
      INSURANCE,
      SALARIES,
-     STAFF_EXPENSES,
      RENTOKIL,
      WASTE_COLLECTION,
      BIN_HIRE,
@@ -36,12 +35,13 @@ class AdminCostsRange(AccountsRange):
      PIANO_TUNING,
      EQUIPMENT_PURCHASE,
      EQUIPMENT_MAINTENANCE,
-     ACCOUNTING,
+     KASHFLOW,
      OPERATIONAL_COSTS,
      LICENSING_INDIRECT,
-     EVENTS,
-     BB_LOAN_PAYMENT,
-     BANK_FEES,) = range(NUM_ROWS)
+     CREDIT_CARD_FEES,
+     BB_LOAN,
+     BANK_FEES,
+     BANK_INTEREST) = range(NUM_ROWS)
 
     def __init__(
             self,
@@ -62,24 +62,24 @@ class AdminCostsRange(AccountsRange):
     def format_requests(self):
         return super().common_requests() + [
             self.tab.group_rows_request(self.i_first_row + self.RENT,
-                                        self.i_first_row + self.BANK_FEES),
+                                        self.i_first_row + self.BANK_INTEREST),
         ]
 
     def values(self):
         values = self.sub_period_values()
         values += [(
             self[:, 0],
-            ["Admin Costs", "", "Period", "Total", "Rent", "Rates", "Electricity (TODO)", "Telephone",
-             "Insurance (TODO)",
-             "Salaries", "Staff Expenses (TODO)", "Rentokil", "Waste Collection", "Bin Hire",
+            ["Admin", "", "Period", "Total", "Rent", "Rates", "Electricity", "Telephone",
+             "Insurance",
+             "Salaries", "Rentokil", "Waste Collection", "Bin Hire",
              "Consolidated Door Security", "Fowlers Alarm", "Daily Cleaning", "Building Maintenance",
              "Building Works", "Downstairs Building Works", "Piano Tuning", "Equipment Purchase",
-             "Equipment Maintenance", "Accounting (TODO)", "Operational Costs", "Licensing - Indirect",
-             "Credit Card Fees (TODO)", "BB Loan Payment (TODO)", "Bank Fees (TODO)", ]
+             "Equipment Maintenance", "Kashflow", "Operational Costs", "Licensing - Indirect",
+             "Credit Card Fees", "BB Loan Payment", "Bank Fees", "Bank Interest"]
         ), (
             self[self.TOTAL, 1:-1],
             [
-                f"={self.sum_formula(self.RENT, self.BANK_FEES, i_col)}"
+                f"={self.sum_formula(self.RENT, self.BANK_INTEREST, i_col)}"
                 for i_col in range(1, self.num_sub_periods + 1)
             ]
         ),
@@ -111,12 +111,21 @@ class AdminCostsRange(AccountsRange):
                 (self[field, 1:-1], [ledger.total_for(ledger_item) for ledger in self.ledger_by_sub_period])
             )
 
-        for (field, category) in [
-            (self.RATES, PayeeCategory.RATES)
+        for (field, category, subtract_vat) in [
+            (self.RATES, PayeeCategory.RATES, False),
+            (self.ELECTRICITY, PayeeCategory.ELECTRICITY, True),
+            (self.INSURANCE, PayeeCategory.INSURANCE, False),
+            (self.KASHFLOW, PayeeCategory.KASHFLOW, True),
+            (self.CREDIT_CARD_FEES, PayeeCategory.CREDIT_CARD_FEES, False),
+            (self.BB_LOAN, PayeeCategory.BB_LOAN, False),
+            (self.BANK_FEES, PayeeCategory.BANK_FEES, False),
+            (self.BANK_INTEREST, PayeeCategory.BANK_INTEREST, False),
         ]:
+            vat_adjustment = 1.2 if subtract_vat else 1.0
             values.append(
                 (self[field, 1:-1],
-                 [activity.net_amount_for_category(category) for activity in self.bank_activity_by_sub_period])
+                 [activity.net_amount_for_category(category) / vat_adjustment
+                  for activity in self.bank_activity_by_sub_period])
             )
 
         # To date values
@@ -125,7 +134,7 @@ class AdminCostsRange(AccountsRange):
                 self[i_row, -1],
                 f"=SUM({self[i_row, 1:self.num_sub_periods + 1].in_a1_notation})"
             )
-            for i_row in range(self.TOTAL, self.BANK_FEES + 1)
+            for i_row in range(self.TOTAL, self.BANK_INTEREST + 1)
 
         ]
 
