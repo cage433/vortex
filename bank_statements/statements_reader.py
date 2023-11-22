@@ -1,4 +1,5 @@
 import codecs
+import shelve
 from pathlib import Path
 from typing import Optional
 
@@ -19,67 +20,88 @@ from myopt.opt import Opt
 from utils.collection_utils import group_into_dict
 
 from utils.file_utils import read_csv_file, write_csv_file
+from utils.logging import log_message
 
 
 class StatementsReader:
+    SHELF = Path(__file__).parent / "_statements_reader.shelf"
+
     @staticmethod
-    def read_published_balances(statements_dir: Path) -> dict[int, dict[Day, float]]:
-        balances = {}
-        for directory in (statements_dir / "csv").glob("*"):
-            if directory.name == ".DS_Store":
-                continue
-            assert directory.is_dir(), f"Expected {directory} to be a directory"
-            account_id = int(directory.name)
-            csv_files = list(directory.glob("*.csv"))
-            account_balances = {}
-            for file in csv_files:
-                rows = read_csv_file(file)[1:]
-                for row in rows:
-                    day = Day.parse(row[0])
-                    maybe_balance = row[5]
-                    if maybe_balance == "":
+    def read_published_balances(statements_dir: Path, force: bool) -> dict[int, dict[Day, float]]:
+        key = f"uncategorised_balances"
+        with shelve.open(str(StatementsReader.SHELF)) as shelf:
+            if key not in shelf or force:
+                balances = {}
+                for directory in (statements_dir / "csv").glob("*"):
+                    if directory.name == ".DS_Store":
                         continue
-                    account_balances[day] = float(maybe_balance)
-            balances[account_id] = account_balances
-        return balances
+                    assert directory.is_dir(), f"Expected {directory} to be a directory"
+                    account_id = int(directory.name)
+                    csv_files = list(directory.glob("*.csv"))
+                    account_balances = {}
+                    for file in csv_files:
+                        rows = read_csv_file(file)[1:]
+                        for row in rows:
+                            day = Day.parse(row[0])
+                            maybe_balance = row[5]
+                            if maybe_balance == "":
+                                continue
+                            account_balances[day] = float(maybe_balance)
+                    balances[account_id] = account_balances
+                shelf[key] = balances
+            return shelf[key]
 
     @staticmethod
-    def read_transactions(statements_dir: Path) -> dict[int, list[Transaction]]:
-        transactions_by_account = {}
-        for directory in (statements_dir / "ofx").glob("*"):
-            if directory.name == ".DS_Store":
-                continue
-            assert directory.is_dir(), f"Expected {directory} to be a directory"
-            account_id = int(directory.name)
-            ofx_files = list(directory.glob("*.ofx"))
-            transactions_for_account = []
-            for file in ofx_files:
-                with codecs.open(file) as fileobj:
-                    ofx = OfxParser.parse(fileobj)
-                for tr in ofx.account.statement.transactions:
-                    trans = Transaction(
-                        account_id,
-                        tr.id,
-                        Day.from_date(tr.date),
-                        tr.payee,
-                        float(tr.amount),
-                        tr.type,
-                        Nothing()
-                    )
-                    category = category_for_transaction(trans)
-                    trans = trans.clone(category=category)
-                    transactions_for_account.append(trans)
-            transactions_by_account[account_id] = transactions_for_account
+    def read_uncategorised_transactions(statements_dir: Path, force: bool) -> dict[int, list[Transaction]]:
+        key = f"uncategorised_transactions"
+        with shelve.open(str(StatementsReader.SHELF)) as shelf:
+            if key not in shelf or force:
+                transactions_by_account = {}
+                for directory in (statements_dir / "ofx").glob("*"):
+                    if directory.name == ".DS_Store":
+                        continue
+                    assert directory.is_dir(), f"Expected {directory} to be a directory"
+                    account_id = int(directory.name)
+                    ofx_files = list(directory.glob("*.ofx"))
+                    transactions_for_account = []
+                    for file in ofx_files:
+                        with codecs.open(file) as fileobj:
+                            ofx = OfxParser.parse(fileobj)
+                        for tr in ofx.account.statement.transactions:
+                            trans = Transaction(
+                                account_id,
+                                tr.id,
+                                Day.from_date(tr.date),
+                                tr.payee,
+                                float(tr.amount),
+                                tr.type,
+                                Nothing()
+                            )
+                            transactions_for_account.append(trans)
+                    transactions_by_account[account_id] = transactions_for_account
+                shelf[key] = transactions_by_account
+            return shelf[key]
+        pass
 
-        return transactions_by_account
+    @staticmethod
+    def read_transactions(statements_dir: Path, force: bool) -> dict[int, list[Transaction]]:
+        uncategorised_transactions = StatementsReader.read_uncategorised_transactions(statements_dir, force)
+        return {
+            id: [
+                tr.clone(category=category_for_transaction(tr))
+                for tr in account_transactions
+            ]
+            for id, account_transactions in uncategorised_transactions.items()
+        }
 
     @staticmethod
     def read_statements(
             statements_dir: Optional[Path] = None,
+            force: bool = False
     ) -> list[Statement]:
         statements_dir = statements_dir or STATEMENTS_DIR
-        balances_by_account = StatementsReader.read_published_balances(statements_dir)
-        transactions_by_account = StatementsReader.read_transactions(statements_dir)
+        balances_by_account = StatementsReader.read_published_balances(statements_dir, force)
+        transactions_by_account = StatementsReader.read_transactions(statements_dir, force)
         assert set(balances_by_account.keys()) == set(transactions_by_account.keys()), \
             "Expected balances and transactions to have the same accounts"
         return [
@@ -93,9 +115,10 @@ class StatementsReader:
 
 
 if __name__ == '__main__':
+    force = False
     month = AccountingMonth(AccountingYear(2023), 10)
-    statements = StatementsReader.read_statements(STATEMENTS_DIR)
-    bank_activity = BankActivity(statements)#.restrict_to_period(AccountingYear(2023))
+    statements = StatementsReader.read_statements(STATEMENTS_DIR, force)
+    bank_activity = BankActivity(statements)  # .restrict_to_period(AccountingYear(2023))
     table = []
     for t in bank_activity.sorted_transactions:
         table.append([t.payment_date, t.payee, t.amount])

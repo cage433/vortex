@@ -7,6 +7,10 @@ from utils import checked_list_type, checked_type, checked_dict_type
 
 __all__ = ["Statement"]
 
+from utils.collection_utils import group_into_dict
+
+from utils.logging import log_message
+
 
 class Statement:
     def __init__(
@@ -29,21 +33,31 @@ class Statement:
         self.initial_balance_date = self.balance_dates[0]
         assert self.initial_balance_date <= self.transactions[
             0].payment_date, f"First balance must be before first transaction"
+        self.transactions_by_date: dict[Day, list[Transaction]] = group_into_dict(self.transactions, lambda t: t.payment_date)
+        self.payment_dates: list[Day] = sorted(self.transactions_by_date.keys())
         self.check_consistency()
 
     def check_consistency(self):
         for d1, d2 in zip(self.balance_dates, self.balance_dates[1:]):
             balance1 = self.published_balances[d1]
             balance2 = self.published_balances[d2]
-            transaction_sum = sum(tr.amount for tr in self.transactions if d1 < tr.payment_date <= d2)
+            payment_dates = [d for d in self.payment_dates if d1 < d <= d2]
+            transaction_sum = sum(
+                sum(tr.amount for tr in self.transactions_by_date[d])
+                for d in payment_dates
+            )
             assert abs(balance2 - balance1 - transaction_sum) < 0.01, "Inconsistent balance"
 
     def balance_at_date(self, date: Day) -> float:
         assert self.initial_balance_date <= date, f"Date {date} is before initial balance date {self.initial_balance_date}"
         nearest_date = max(d for d in self.balance_dates if d <= date)
         nearest_balance = self.published_balances[nearest_date]
-        subsequent_transactions = sum(t.amount for t in self.transactions if nearest_date < t.payment_date <= date)
-        return nearest_balance + subsequent_transactions
+        subsequent_payment_dates = [d for d in self.payment_dates if nearest_date < d <= date]
+        subsequent_transaction_amounts = sum(
+            sum(tr.amount for tr in self.transactions_by_date[d])
+            for d in subsequent_payment_dates
+        )
+        return nearest_balance + subsequent_transaction_amounts
 
     def filter_on_period(self, period: DateRange) -> 'Statement':
         d1 = period.first_day

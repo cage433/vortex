@@ -10,10 +10,15 @@ RATES = "Rates"
 
 def _maybe_work_permit(transaction: Transaction) -> Optional[str]:
     payee = transaction.payee
-    if payee.endswith("UKVI UK"):
+    if any(
+            payee.endswith(suffix)
+            for suffix in ["UKVI UK", "UKVI Crewe",]
+    ):
         return WORK_PERMITS
-    if payee.endswith("UKVI Crewe"):
-        return WORK_PERMITS
+    # if payee.endswith("UKVI UK"):
+    #     return WORK_PERMITS
+    # if payee.endswith("UKVI Crewe"):
+    #     return WORK_PERMITS
     if "HINGWAN K C COS" in payee:
         return WORK_PERMITS
     if "Mr J Hill VJC COS" in payee:
