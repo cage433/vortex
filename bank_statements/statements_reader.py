@@ -7,11 +7,11 @@ import tabulate
 from ofxparse import OfxParser
 
 from bank_statements import Statement, Transaction, BankActivity
-from bank_statements.payee_categories import category_for_transaction, WORK_PERMITS, RATES
+from bank_statements.payee_categories import category_for_transaction, PayeeCategory
 from date_range import Day
 from date_range.accounting_month import AccountingMonth
 from date_range.accounting_year import AccountingYear
-from env import STATEMENTS_DIR, TIMS_MAPPING_CSV
+from env import STATEMENTS_DIR
 
 __all__ = ["StatementsReader"]
 
@@ -20,7 +20,6 @@ from myopt.opt import Opt
 from utils.collection_utils import group_into_dict
 
 from utils.file_utils import read_csv_file, write_csv_file
-from utils.logging import log_message
 
 
 class StatementsReader:
@@ -119,28 +118,38 @@ if __name__ == '__main__':
     month = AccountingMonth(AccountingYear(2023), 10)
     statements = StatementsReader.read_statements(STATEMENTS_DIR, force)
     bank_activity = BankActivity(statements)  # .restrict_to_period(AccountingYear(2023))
-    table = []
-    for t in bank_activity.sorted_transactions:
-        table.append([t.payment_date, t.payee, t.amount])
-    write_csv_file(Path("/Users/alex/Downloads/transactions.csv"), table)
     trans = [
         tr for tr in bank_activity.sorted_transactions
-        if tr.category == Opt.of(WORK_PERMITS)
+        if tr.category == Opt.of(PayeeCategory.RATES)
     ]
+
+    def write_transactions_to_csv():
+        table = []
+        for t in trans:
+            table.append([t.payment_date, t.payee, t.amount, t.category.get_or_else("")])
+        write_csv_file(Path("/Users/alex/Downloads/transactions.csv"), table)
     total = sum(t.amount for t in trans)
-    print(f"total = {total}")
-    table = []
-    tr_by_month = group_into_dict(trans, lambda t: AccountingMonth.containing(t.payment_date))
-    # months = sorted(tr_by_month.keys())
-    # for m in months:
-    #     print(f"{m} {len(tr_by_month[m])}, {sum(t.amount for t in tr_by_month[m])}")
-    for tr in trans:
-        acc_month = AccountingMonth.containing(tr.payment_date)
-        table.append([
-            acc_month,
-            tr.payment_date,
-            tr.payee,
-            tr.amount,
-        ])
-    print(tabulate.tabulate(table))
-    print(len(trans))
+    print(f"total = {total}, num trans = {len(trans)}")
+
+
+    def report_by_month():
+        tr_by_month = group_into_dict(trans, lambda t: AccountingMonth.containing(t.payment_date))
+        months = sorted(tr_by_month.keys())
+        for m in months:
+            print(f"{m} {len(tr_by_month[m])}, {sum(t.amount for t in tr_by_month[m])}")
+
+
+    def report_by_trans():
+        table = []
+        for tr in trans:
+            acc_month = AccountingMonth.containing(tr.payment_date)
+            table.append([
+                acc_month,
+                tr.payment_date,
+                tr.payee,
+                tr.amount,
+            ])
+        print(tabulate.tabulate(table))
+
+    report_by_trans()
+

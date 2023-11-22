@@ -3,7 +3,7 @@ from typing import List
 
 from airtable_db.contracts_and_events import GigsInfo
 from bank_statements import BankActivity
-from bank_statements.payee_categories import WORK_PERMITS
+from bank_statements.payee_categories import PayeeCategory
 from date_range import DateRange
 from google_sheets.tab_range import TabCell
 from google_sheets.tim_replication.accounts_range import AccountsRange
@@ -82,8 +82,9 @@ class GigCostsRange(AccountsRange):
             values.append(
                 (self[field, 1:-1], [func(ledger) for ledger in self.ledger_by_sub_period])
             )
+
         for (field, category) in [
-            (self.WORK_PERMITS, WORK_PERMITS)
+            (self.WORK_PERMITS, PayeeCategory.WORK_PERMITS)
         ]:
             values.append(
                 (self[field, 1:-1],
