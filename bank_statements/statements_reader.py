@@ -102,7 +102,7 @@ if __name__ == '__main__':
     write_csv_file(Path("/Users/alex/Downloads/transactions.csv"), table)
     trans = [
         tr for tr in bank_activity.sorted_transactions
-        if tr.category == Opt.of(RATES)
+        if tr.category == Opt.of(WORK_PERMITS)
     ]
     total = sum(t.amount for t in trans)
     print(f"total = {total}")
