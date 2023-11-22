@@ -2,7 +2,7 @@ from numbers import Number
 from typing import Optional
 
 from google_sheets import Tab
-from utils import checked_type
+from utils import checked_type, checked_list_type
 
 
 class CellCoordinates:
@@ -190,6 +190,7 @@ class TabRange:
         }
 
     def border_request(self, borders, style="SOLID", color=Colors.BLACK):
+        checked_list_type(borders, str)
 
         border_style = {
             "style": style,

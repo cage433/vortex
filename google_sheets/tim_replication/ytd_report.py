@@ -198,5 +198,7 @@ if __name__ == '__main__':
     gigs_info = GigsInfo(gigs_info_list)
     nominal_ledger = read_nominal_ledger(force).restrict_to_period(acc_year)
     bank_activity = read_bank_activity(acc_year, force=True)
-    tab = YTD_Report(workbook, AccountingMonth(acc_year, 8), gigs_info, nominal_ledger, bank_activity)
+    tab = YTD_Report(
+        workbook, AccountingMonth(acc_year, 8), gigs_info, nominal_ledger, bank_activity)
+    print(gigs_info.hire_fees)
     tab.update()
