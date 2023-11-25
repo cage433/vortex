@@ -7,9 +7,11 @@ from bank_statements import Transaction, Statement
 from date_range import Day
 from date_range.tests.fixtures import random_day
 from kashflow.invoice import KashflowInvoice
+from myopt.opt import Opt
 from sqlite3_db.vortex_sqlite3_db import VortexSqlite3DB
 from testing_utils import RandomisedTest
 from utils import RandomNumberGenerator
+from utils.collection_utils import group_into_dict
 
 
 class VortexSqlite3DBTest(TestCase):
@@ -33,8 +35,7 @@ class VortexSqlite3DBTest(TestCase):
             payee=rng.choice("test payee", ""),
             amount=rng.uniform(-100, 100),
             transaction_type=rng.choice("test12", ""),
-            category1=rng.maybe(rng.choice("test2", "")),
-            category2=rng.maybe(rng.choice("test3", ""))
+            category=Opt.of(rng.maybe(rng.choice("test2", ""))),
         )
 
     @RandomisedTest(number_of_runs=20)
@@ -77,11 +78,25 @@ class VortexSqlite3DBTest(TestCase):
             accounts = list(set([rng.randint(0, 100) for _ in range(N_accounts)]))
             N_trans = rng.randint(1, 10)
             N_balances = rng.randint(5)
+
+            def random_statement(account):
+                transactions = [self.__random_transaction(rng, account) for _ in range(N_trans)]
+                trans_by_date = group_into_dict(transactions, lambda tr: tr.payment_date)
+                dates = sorted(trans_by_date.keys())
+                balance = sum(tr.amount for tr in trans_by_date[dates[0]])
+                balances = {dates[0]: balance}
+                for d in dates[1:]:
+                    balance += sum(tr.amount for tr in trans_by_date[d])
+                    if rng.uniform() < 0.5:
+                        balances[d] = balance
+                return Statement(
+                    account,
+                    transactions,
+                    balances
+                )
+
             statements = [
-                Statement(account,
-                          [self.__random_transaction(rng, account) for _ in range(N_trans)],
-                          {random_day(rng):rng.uniform(-100, 100) for _ in range(N_balances)}
-                          )
+                random_statement(account)
                 for account in accounts
 
             ]
@@ -94,4 +109,3 @@ class VortexSqlite3DBTest(TestCase):
                 for t1, t2 in list(zip(s1.transactions, s2.transactions))[0:10]:
                     self.assertEqual(t1, t2)
                 self.assertEqual(s1.published_balances, s2.published_balances)
-

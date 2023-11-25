@@ -12,21 +12,23 @@ class AudienceReportRange(TabRange):
         # Headings
         "", "", "",
         # Ticket sales (numbers)
+        "Gigs",
         "Audience", "", "", "", "", "", "", "",
     ]
     CAT_1_HEADINGS = [
         "", "", "Breakdown",
         # Ticket sales (numbers)
-        "",
+        "", "",
         "Full Price", "Member", "Conc", "Other", "Guest", "Online", "Walk in",
     ]
     CAT_2_HEADINGS = [
         "", "", "",
         # Ticket sales ()
-        "",
+        "", "",
         "", "", "", "", "", "", "",
     ]
     (TITLE, _, PERIOD,
+     NUM_GIGS,
      AUDIENCE_TOTAL, FULL_PRICE_TICKETS, MEMBER_TICKETS, CONC_TICKETS, OTHER_TICKETS, GUEST_TICKETS, ONLINE_TICKETS,
      WALK_IN_TICKETS,
 
@@ -113,6 +115,10 @@ class AudienceReportRange(TabRange):
 
     def _audience_values(self):
         values = []
+        values.append((
+            self.period_range(self.NUM_GIGS),
+            [gigs.number_of_gigs for gigs in self.gigs_by_sub_period]
+        ))
         for i_row, level in [
             (self.FULL_PRICE_TICKETS, TicketPriceLevel.FULL),
             (self.MEMBER_TICKETS, TicketPriceLevel.MEMBER),

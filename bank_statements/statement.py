@@ -31,7 +31,7 @@ class Statement:
         self.initial_balance_date = self.balance_dates[0]
         if len(self.transactions) > 0:
             assert self.initial_balance_date <= self.transactions[
-                0].payment_date, f"First balance must be before first transaction"
+                0].payment_date, f"First balance must be on or before first transaction"
         self.transactions_by_date: dict[Day, list[Transaction]] = group_into_dict(self.transactions, lambda t: t.payment_date)
         self.payment_dates: list[Day] = sorted(self.transactions_by_date.keys())
         self.check_consistency()

@@ -103,6 +103,10 @@ class GigsInfo:
     def __init__(self, contracts_and_events: list[ContractAndEvents]):
         self.contracts_and_events = checked_list_type(contracts_and_events, ContractAndEvents)
 
+    @property
+    def number_of_gigs(self):
+        return len(self.contracts_and_events)
+
     def restrict_to_period(self, period: DateRange) -> 'GigsInfo':
         return GigsInfo(
             [c for c in self.contracts_and_events if period.contains_day(c.contract.performance_date)])

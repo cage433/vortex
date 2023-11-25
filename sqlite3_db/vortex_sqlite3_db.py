@@ -7,6 +7,7 @@ from date_range import Day
 from env import VORTEX_DB_PATH
 from kashflow.invoice import KashflowInvoice
 from kashflow.invoices import KashflowInvoices
+from myopt.opt import Opt
 from sqlite3_db.sqlite3_context import Sqlite3
 from utils import checked_type
 
@@ -41,10 +42,7 @@ class VortexSqlite3DB:
                 amount real not null,
                 transaction_type TEXT not null,
                 payee TEXT not null,
-                category1 TEXT,
-                category2 TEXT,
-                category3 TEXT,
-                category4 TEXT
+                category TEXT
             )
             """)
             res = cur.execute("""
@@ -83,8 +81,8 @@ class VortexSqlite3DB:
             for tr in statement.transactions:
                 cur.execute("""
                 INSERT INTO bank_statements 
-                (account_id, ftid, payment_date, amount, transaction_type, payee, category1, category2, category3, category4)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (account_id, ftid, payment_date, amount, transaction_type, payee, category)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, (
                     tr.account,
                     tr.ftid,
@@ -92,10 +90,7 @@ class VortexSqlite3DB:
                     tr.amount,
                     tr.transaction_type,
                     tr.payee,
-                    tr.category1,
-                    tr.category2,
-                    tr.category3,
-                    tr.category4
+                    tr.category.get_or_else(None),
                 ))
             for balance_date, balance in statement.published_balances.items():
                 cur.execute("""
@@ -272,7 +267,7 @@ class VortexSqlite3DB:
         last_day = last_day or Day(9999, 12, 31)
         with Sqlite3(str(self.path)) as cur:
             res = cur.execute("""
-            SELECT ftid, payment_date, amount, transaction_type, payee, category1, category2, category3, category4
+            SELECT ftid, payment_date, amount, transaction_type, payee, category
             FROM bank_statements
             WHERE payment_date >= ?
             and payment_date <= ?
@@ -292,10 +287,7 @@ class VortexSqlite3DB:
                     payee=row[4],
                     amount=float(row[2]),
                     transaction_type=row[3],
-                    category1=row[5],
-                    category2=row[6],
-                    category3=row[7],
-                    category4=row[8]
+                    category=Opt.of(row[5]),
                 ))
             res = cur.execute("""
             SELECT balance_date, balance
