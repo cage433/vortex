@@ -13,17 +13,152 @@ from date_range.accounting_year import AccountingYear
 from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
-from google_sheets.tim_replication.constants import VAT_RATE
-from kashflow.nominal_ledger import NominalLedger
+from google_sheets.tim_replication.constants import VAT_RATE, QUARTERLY_RENT, QUARTERLY_RENTOKILL, \
+    QUARTERLY_WASTE_COLLECTION, QUARTERLY_BIN_HIRE_EX_VAT, YEARLY_DOOR_SECURITY, MONTHLY_FOWLERS_ALARM
+from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
 from utils import checked_type, checked_list_type
 
 
-class AccountingReportRange(TabRange):
+class AudienceReportRange(TabRange):
     ROW_HEADINGS = [
         # Headings
         "", "", "",
         # Ticket sales (numbers)
         "Audience", "", "", "", "", "", "", "",
+    ]
+    CAT_1_HEADINGS = [
+        "", "", "Breakdown",
+        # Ticket sales (numbers)
+        "",
+        "Full Price", "Member", "Conc", "Other", "Guest", "Online", "Walk in",
+    ]
+    CAT_2_HEADINGS = [
+        "", "", "",
+        # Ticket sales ()
+        "",
+        "", "", "", "", "", "", "",
+    ]
+    (TITLE, _, PERIOD,
+     AUDIENCE_TOTAL, FULL_PRICE_TICKETS, MEMBER_TICKETS, CONC_TICKETS, OTHER_TICKETS, GUEST_TICKETS, ONLINE_TICKETS,
+     WALK_IN_TICKETS,
+
+     ) = range(len(ROW_HEADINGS))
+
+    (ROW_TITLE, CAT_1, CAT_2, PERIOD_1) = range(4)
+
+    def __init__(
+            self,
+            top_left_cell: TabCell,
+            title: str,
+            periods: List[DateRange],
+            period_titles: List[str],
+            gigs_info: GigsInfo,
+    ):
+        super().__init__(top_left_cell, len(self.ROW_HEADINGS), len(periods) + 4)
+        self.title = checked_type(title, str)
+        self.periods: List[DateRange] = checked_list_type(periods, DateRange)
+        self.period_titles: List[str] = checked_list_type(period_titles, str)
+        self.num_periods: int = len(self.periods)
+        self.gigs_by_sub_period: list[GigsInfo] = [
+            gigs_info.restrict_to_period(period)
+            for period in self.periods
+        ]
+        self.LAST_PERIOD = self.PERIOD_1 + self.num_periods - 1
+        self.TO_DATE = self.PERIOD_1 + self.num_periods
+        self.NUM_ROWS = len(self.ROW_HEADINGS)
+
+    def format_requests(self):
+        return [
+
+            # Headings
+            self.outline_border_request(),
+            self[self.TITLE].merge_columns_request(),
+            self[self.TITLE].center_text_request(),
+            self[self.PERIOD, self.PERIOD_1:].right_align_text_request(),
+            self[self.PERIOD].border_request(["bottom"]),
+            self[self.TITLE:self.PERIOD + 1].set_bold_text_request(),
+            self[:, self.ROW_TITLE].set_bold_text_request(),
+            self[2:, self.CAT_2].border_request(["right"]),
+            self[2:, self.TO_DATE].border_request(["left"]),
+
+            # Audience
+            self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE_TICKETS,
+                                        self.i_first_row + self.WALK_IN_TICKETS),
+            self[self.AUDIENCE_TOTAL:self.WALK_IN_TICKETS + 1, self.PERIOD_1:].set_decimal_format_request("#,##0"),
+            self[self.ONLINE_TICKETS].border_request(["top"]),
+            self[self.WALK_IN_TICKETS].border_request(["bottom"]),
+
+            # last row
+            self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
+        ]
+
+    def period_range(self, i_row):
+        return self[i_row, self.PERIOD_1:self.LAST_PERIOD + 1]
+
+    def raw_values(self):
+        # Dates we want to display as strings
+        return [
+            (
+                self.period_range(self.PERIOD),
+                [w for w in self.period_titles]
+            ),
+            (
+                self[self.PERIOD, self.TO_DATE], ["To Date"]
+            ),
+        ]
+
+    def _heading_values(self):
+        values = []
+
+        values.append((self[2:, self.ROW_TITLE], self.ROW_HEADINGS[2:]))
+        values.append((self[2:, self.CAT_1], self.CAT_1_HEADINGS[2:]))
+        values.append((self[2:, self.CAT_2], self.CAT_2_HEADINGS[2:]))
+        values.append((self[self.TITLE], [f"Audience Numbers"]))
+
+        # To date totals
+        for i_row in range(self.AUDIENCE_TOTAL, self.NUM_ROWS):
+            week_range = self.period_range(i_row)
+            values.append(
+                (self[i_row, self.TO_DATE], f"=Sum({week_range.in_a1_notation})")
+            )
+        return values
+
+    def _audience_values(self):
+        values = []
+        for i_row, level in [
+            (self.FULL_PRICE_TICKETS, TicketPriceLevel.FULL),
+            (self.MEMBER_TICKETS, TicketPriceLevel.MEMBER),
+            (self.CONC_TICKETS, TicketPriceLevel.CONCESSION),
+            (self.OTHER_TICKETS, TicketPriceLevel.OTHER),
+        ]:
+            values.append((
+                self.period_range(i_row),
+                [gigs.num_paid_tickets(price_level=level) for gigs in self.gigs_by_sub_period]
+            ))
+        values.append(
+            (self.period_range(self.GUEST_TICKETS),
+             [gigs.num_free_tickets for gigs in self.gigs_by_sub_period])
+        )
+        for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):  # +1 for MTD
+            breakdown_values = self[self.FULL_PRICE_TICKETS:self.GUEST_TICKETS + 1, i_col]
+            values.append(
+                (self[self.AUDIENCE_TOTAL, i_col], f"=Sum({breakdown_values.in_a1_notation})")
+            )
+        for i_row, category in [
+            (self.ONLINE_TICKETS, TicketCategory.ONLINE),
+            (self.WALK_IN_TICKETS, TicketCategory.WALK_IN)
+        ]:
+            values.append((self.period_range(i_row),
+                           [gig.num_paid_tickets(category=category) for gig in self.gigs_by_sub_period]))
+        return values
+
+    def values(self):
+        return self._heading_values() + self._audience_values()
+
+class AccountingReportRange(TabRange):
+    ROW_HEADINGS = [
+        # Headings
+        "", "", "",
         # P&L
         "P&L",
         "Gigs",
@@ -31,17 +166,19 @@ class AccountingReportRange(TabRange):
         "Ticket Sales", "", "", "", "",
 
         # gig costs
-        "Gig costs", "", "", "", "", "", "", "", "", "", "",
+        "Gig costs", "", "", "", "", "", "", "", "", "", "", "",
         # Hire fees
         "Hire Fees", "", "",
         # Bar
-        "Bar", "", "", "", "",
+        "Bar", "", "", "", "", "",
+        # CAP EX
+        "Cap Ex", "", "", "",
+        # Costs
+        "Costs", "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "", "",
     ]
     CAT_1_HEADINGS = [
         "", "", "Breakdown 1",
-        # Ticket sales (numbers)
-        "",
-        "Full Price", "Member", "Conc", "Other", "Guest", "Online", "Walk in",
         # P&L
         "",
         "",
@@ -59,6 +196,7 @@ class AccountingReportRange(TabRange):
         "PRS",
         "Marketing",
         "Work Permits",
+        "Piano Tuning",
         "Other Costs",
         "",
         "",
@@ -66,29 +204,53 @@ class AccountingReportRange(TabRange):
         # Hire fees
         "", "Evening", "Day",
         # Bar
-        "", "Sales", "Purchases", "", "",
+        "", "Sales", "Purchases", "", "", "Zettle Fees",
+        # CAP EX
+        "", "Building works", "Downstairs works", "Equipment",
+        # Costs
+        "",
+        "Salaries",
+        "Rent",
+        "Rates",
+        "Cleaning",
+        "Operational Costs",
+        "BB Loan Payment",
+        "Electricity",
+        "Insurance",
+        "Building Maintenance",
+        "Rentokil",
+        "Waste Collection",
+        "Telephone",
+        "Licensing - Indirect",
+        "Bank Fees",
+        "Bank Interest",
+        "Bin Hire",
+        "Consolidated Door Security",
+        "Alarm (Fowler's)",
+        "Equipment Maintenance",
+        "Kashflow",
     ]
     CAT_2_HEADINGS = [
         "", "", "Breakdown 2",
-        # Ticket sales (numbers)
-        "",
-        "", "", "", "", "", "", "",
         # P&L
         "",
         "",
         # Ticket sales (money)
         "", "", "", "", "",
         # gig costs
-        "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
         "", "Accommodation", "Travel", "Catering",
         # Hire fees
         "", "", "",
         # Bar
-        "", "", "", "Evening", "Delivered",
+        "", "", "", "Evening", "Delivered", "",
+        # CAP EX
+        "", "", "", "",
+        # Costs
+        "", "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "",
     ]
     (TITLE, _, PERIOD,
-     AUDIENCE_TOTAL, FULL_PRICE_TICKETS, MEMBER_TICKETS, CONC_TICKETS, OTHER_TICKETS, GUEST_TICKETS, ONLINE_TICKETS,
-     WALK_IN_TICKETS,
      P_AND_L,
      GIG_P_AND_L,
      TICKET_SALES_TOTAL, FULL_PRICE_SALES, MEMBER_SALES, CONC_SALES, OTHER_TICKET_SALES,
@@ -96,11 +258,37 @@ class AccountingReportRange(TabRange):
      WORK_PERMITS,
      SECURITY,
      SOUND_ENGINEERING, PRS, MARKETING,
+     PIANO_TUNING,
      OTHER_COSTS, ACCOMMODATION, TRAVEL, CATERING,
 
      HIRE_FEES, EVENING_HIRE_FEES, DAY_HIRE_FEES,
 
-     BAR_P_AND_L, BAR_SALES, BAR_PURCHASES, BAR_EVENING, BAR_DELIVERED
+     BAR_P_AND_L, BAR_SALES, BAR_PURCHASES, BAR_EVENING, BAR_DELIVERED, ZETTLE_FEES,
+
+     CAP_EX, BUILDING_WORKS, DOWNSTAIRS_WORKS, EQUIPMENT_PURCHASE,
+
+     COSTS_TOTAL,
+     SALARIES,
+     RENT,
+     RATES,
+     DAILY_CLEANING,
+     OPERATIONAL_COSTS,
+     BB_LOAN,
+     ELECTRICITY,
+     INSURANCE,
+     BUILDING_MAINTENANCE,
+     RENTOKIL,
+     WASTE_COLLECTION,
+     TELEPHONE,
+     LICENSING_INDIRECT,
+     BANK_FEES,
+     BANK_INTEREST,
+     BIN_HIRE,
+     CONSOLIDATED_DOOR_SECURITY,
+     FOWLERS_ALARM,
+     EQUIPMENT_MAINTENANCE,
+     KASHFLOW,
+
      ) = range(len(ROW_HEADINGS))
 
     (ROW_TITLE, CAT_1, CAT_2, PERIOD_1) = range(4)
@@ -152,15 +340,8 @@ class AccountingReportRange(TabRange):
             self[2:, self.CAT_2].border_request(["right"]),
             self[2:, self.TO_DATE].border_request(["left"]),
 
-            # Ticket sales (numbers)
-            self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE_TICKETS,
-                                        self.i_first_row + self.WALK_IN_TICKETS),
-            self[self.AUDIENCE_TOTAL:self.WALK_IN_TICKETS + 1, self.PERIOD_1:].set_decimal_format_request("#,##0"),
-            self[self.ONLINE_TICKETS].border_request(["top"]),
-            self[self.WALK_IN_TICKETS].border_request(["bottom"]),
             # P&L
             self[self.P_AND_L].border_request(["top", "bottom"]),
-            self[self.AUDIENCE_TOTAL, 0].right_align_text_request(),
             # Ticket sales (money)
             self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE_SALES,
                                         self.i_first_row + self.OTHER_TICKET_SALES),
@@ -186,9 +367,18 @@ class AccountingReportRange(TabRange):
             # Bar
             self[self.BAR_P_AND_L].border_request(["top"]),
             self.tab.group_rows_request(self.i_first_row + self.BAR_SALES,
-                                        self.i_first_row + self.BAR_DELIVERED),
+                                        self.i_first_row + self.ZETTLE_FEES),
             self.tab.group_rows_request(self.i_first_row + self.BAR_EVENING,
                                         self.i_first_row + self.BAR_DELIVERED),
+            # CAP EX
+            self[self.CAP_EX].border_request(["top"]),
+            self.tab.group_rows_request(self.i_first_row + self.BUILDING_WORKS,
+                                        self.i_first_row + self.EQUIPMENT_PURCHASE),
+            # Costs
+            self[self.COSTS_TOTAL].border_request(["top"]),
+            self.tab.group_rows_request(self.i_first_row + self.SALARIES,
+                                        self.i_first_row + self.KASHFLOW),
+
             # last row
             self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
         ]
@@ -217,40 +407,11 @@ class AccountingReportRange(TabRange):
         values.append((self[self.TITLE], [f"Accounts {self.title}"]))
 
         # To date totals
-        for i_row in range(self.AUDIENCE_TOTAL, self.NUM_ROWS):
+        for i_row in range(self.P_AND_L, self.NUM_ROWS):
             week_range = self.period_range(i_row)
             values.append(
                 (self[i_row, self.TO_DATE], f"=Sum({week_range.in_a1_notation})")
             )
-        return values
-
-    def _audience_values(self):
-        values = []
-        for i_row, level in [
-            (self.FULL_PRICE_TICKETS, TicketPriceLevel.FULL),
-            (self.MEMBER_TICKETS, TicketPriceLevel.MEMBER),
-            (self.CONC_TICKETS, TicketPriceLevel.CONCESSION),
-            (self.OTHER_TICKETS, TicketPriceLevel.OTHER),
-        ]:
-            values.append((
-                self.period_range(i_row),
-                [gigs.num_paid_tickets(price_level=level) for gigs in self.gigs_by_sub_period]
-            ))
-        values.append(
-            (self.period_range(self.GUEST_TICKETS),
-             [gigs.num_free_tickets for gigs in self.gigs_by_sub_period])
-        )
-        for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):  # +1 for MTD
-            breakdown_values = self[self.FULL_PRICE_TICKETS:self.GUEST_TICKETS + 1, i_col]
-            values.append(
-                (self[self.AUDIENCE_TOTAL, i_col], f"=Sum({breakdown_values.in_a1_notation})")
-            )
-        for i_row, category in [
-            (self.ONLINE_TICKETS, TicketCategory.ONLINE),
-            (self.WALK_IN_TICKETS, TicketCategory.WALK_IN)
-        ]:
-            values.append((self.period_range(i_row),
-                           [gig.num_paid_tickets(category=category) for gig in self.gigs_by_sub_period]))
         return values
 
     def _ticket_sales_values(self):
@@ -297,6 +458,7 @@ class AccountingReportRange(TabRange):
             (self.SOUND_ENGINEERING, lambda ledger: ledger.sound_engineering),
             (self.SECURITY, lambda ledger: ledger.security),
             (self.MARKETING, lambda ledger: ledger.marketing),
+            (self.PIANO_TUNING, lambda ledger: ledger.piano_tuning),
         ]:
             values.append(
                 (self.period_range(i_row), [func(ledger) for ledger in self.ledger_by_sub_period])
@@ -352,7 +514,12 @@ class AccountingReportRange(TabRange):
             values += [
                 (
                     self[self.BAR_P_AND_L, i_col],
-                    f"={self[self.BAR_SALES, i_col].in_a1_notation} + {self[self.BAR_PURCHASES, i_col].in_a1_notation}"
+                    "=" +
+                    "+".join(
+                        [self[i_row, i_col].in_a1_notation
+                         for i_row in [self.BAR_SALES, self.BAR_PURCHASES, self.ZETTLE_FEES]
+                         ]
+                    )
                 ),
                 (
                     self[self.BAR_PURCHASES, i_col],
@@ -371,17 +538,111 @@ class AccountingReportRange(TabRange):
             (
                 self.period_range(self.BAR_DELIVERED),
                 [ledger.bar_stock for ledger in self.ledger_by_sub_period]
+            ),
+            (
+                self.period_range(self.ZETTLE_FEES),
+                [activity.net_amount_for_category(PayeeCategory.CREDIT_CARD_FEES)
+                 for activity in self.bank_activity_by_sub_period]
             )
         ]
         return values
 
+    def _cap_ex_values(self):
+        values = []
+        for (i_row, ledger_item) in [
+            (self.BUILDING_WORKS, NominalLedgerItemType.BUILDING_WORKS),
+            (self.DOWNSTAIRS_WORKS, NominalLedgerItemType.DOWNSTAIRS_BUILDING_WORKS),
+            (self.EQUIPMENT_PURCHASE, NominalLedgerItemType.EQUIPMENT_PURCHASE),
+        ]:
+            values.append(
+                (self.period_range(i_row), [ledger.total_for(ledger_item) for ledger in self.ledger_by_sub_period])
+            )
+        for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
+            values.append(
+                (
+                    self[self.CAP_EX, i_col],
+                    f"={self.sum_formula(self.BUILDING_WORKS, self.EQUIPMENT_PURCHASE, i_col)}"
+                )
+            )
+        return values
+
+    def _costs_values(self):
+        values = []
+        values += [
+            (self.period_range(self.RENT), [-QUARTERLY_RENT / 3.0 for _ in range(self.num_periods)]),
+            (self.period_range(self.RENTOKIL), [-QUARTERLY_RENTOKILL / 3.0 for _ in range(self.num_periods)]),
+            (self.period_range(self.WASTE_COLLECTION),
+             [-QUARTERLY_WASTE_COLLECTION / 3.0 for _ in range(self.num_periods)]),
+            (self.period_range(self.BIN_HIRE), [-QUARTERLY_BIN_HIRE_EX_VAT / 3.0 for _ in range(self.num_periods)]),
+            (self.period_range(self.CONSOLIDATED_DOOR_SECURITY),
+             [-YEARLY_DOOR_SECURITY / 12.0 for _ in range(self.num_periods)]),
+            (self.period_range(self.FOWLERS_ALARM), [-MONTHLY_FOWLERS_ALARM for _ in range(self.num_periods)]),
+        ]
+        for (i_row, ledger_item) in [
+            (self.TELEPHONE, NominalLedgerItemType.TELEPHONE),
+            (self.SALARIES, NominalLedgerItemType.STAFF_COSTS),
+            (self.DAILY_CLEANING, NominalLedgerItemType.CLEANING),
+            (self.BUILDING_MAINTENANCE, NominalLedgerItemType.BUILDING_MAINTENANCE),
+            (self.EQUIPMENT_PURCHASE, NominalLedgerItemType.EQUIPMENT_PURCHASE),
+            (self.EQUIPMENT_MAINTENANCE, NominalLedgerItemType.EQUIPMENT_MAINTENANCE),
+            (self.OPERATIONAL_COSTS, NominalLedgerItemType.OPERATIONAL_COSTS),
+            (self.LICENSING_INDIRECT, NominalLedgerItemType.LICENSING_INDIRECT),
+        ]:
+            values.append(
+                (self.period_range(i_row), [ledger.total_for(ledger_item) for ledger in self.ledger_by_sub_period])
+            )
+
+        for (i_row, category, subtract_vat) in [
+            (self.RATES, PayeeCategory.RATES, False),
+            (self.ELECTRICITY, PayeeCategory.ELECTRICITY, True),
+            (self.INSURANCE, PayeeCategory.INSURANCE, False),
+            (self.KASHFLOW, PayeeCategory.KASHFLOW, True),
+            (self.BB_LOAN, PayeeCategory.BB_LOAN, False),
+            (self.BANK_FEES, PayeeCategory.BANK_FEES, False),
+            (self.BANK_INTEREST, PayeeCategory.BANK_INTEREST, False),
+        ]:
+            vat_adjustment = 1.2 if subtract_vat else 1.0
+            values.append(
+                (self.period_range(i_row),
+                 [activity.net_amount_for_category(category) / vat_adjustment
+                  for activity in self.bank_activity_by_sub_period])
+            )
+
+        for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
+            values.append(
+                (
+                    self[self.COSTS_TOTAL, i_col],
+                    f"={self.sum_formula(self.SALARIES, self.KASHFLOW, i_col)}"
+                )
+            )
+        return values
+
+    def _p_and_l_values(self):
+        values = []
+        for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
+            values.append(
+                (
+                    self[self.P_AND_L, i_col],
+                    "=" +
+                    "+".join(
+                        [self[i_row, i_col].in_a1_notation
+                         for i_row in
+                         [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L, self.CAP_EX, self.COSTS_TOTAL]
+                         ]
+                    )
+                ),
+            )
+        return values
+
     def values(self):
         values = self._heading_values() \
-                 + self._audience_values() \
                  + self._ticket_sales_values() \
                  + self._gig_costs_values() \
                  + self._hire_fee_values() \
-                 + self._bar_values()
+                 + self._bar_values() \
+                 + self._costs_values() \
+                 + self._cap_ex_values() \
+                 + self._p_and_l_values()
 
         return values
 
@@ -409,15 +670,22 @@ class AccountingReport(Tab):
             bank_activity,
             VAT_RATE
         )
+        self.audience_numbers_range = AudienceReportRange(
+            self.report_range.bottom_left_cell.offset(num_rows=2),
+            title,
+            periods,
+            period_titles,
+            gigs_info,
+        )
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
 
     def _workbook_format_requests(self):
         return self.delete_all_row_groups_requests() + [
             # Workbook
-            self.set_column_width_request(i_col=1, width=200),
-            self.set_columns_width_request(i_first_col=2, i_last_col=14, width=75),
-        ] + self.report_range.format_requests()
+            self.set_columns_width_request(i_first_col=2, i_last_col=4, width=150),
+            self.set_columns_width_request(i_first_col=5, i_last_col=14, width=75),
+        ] + self.report_range.format_requests() + self.audience_numbers_range.format_requests()
 
     def update(self):
         self.workbook.batch_update(
@@ -426,11 +694,11 @@ class AccountingReport(Tab):
         )
 
         self.workbook.batch_update_values(
-            self.report_range.raw_values(),
+            self.report_range.raw_values() + self.audience_numbers_range.raw_values(),
             value_input_option="RAW"  # Prevent creation of dates
         )
         self.workbook.batch_update_values(
-            self.report_range.values()
+            self.report_range.values() + self.audience_numbers_range.values()
         )
 
 
@@ -478,6 +746,6 @@ if __name__ == '__main__':
     nominal_ledger = read_nominal_ledger(force).restrict_to_period(acc_year)
     bank_activity = read_bank_activity(acc_year, force=True)
     period_titles = [m.month_name for m in acc_months]
-    tab = AccountingReport(workbook, "YTD 2023", str(acc_year.y),
+    tab = AccountingReport(workbook, "YTD 2023", "YTD 2023",
                            acc_months, period_titles, gigs_info, nominal_ledger, bank_activity)
     tab.update()

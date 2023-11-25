@@ -83,6 +83,10 @@ class NominalLedger:
     def marketing(self) -> float:
         return self.total_for(NominalLedgerItemType.MARKETING)
 
+    @property
+    def piano_tuning(self) -> float:
+        return self.total_for(NominalLedgerItemType.PIANO_TUNING)
+
     @staticmethod
     def from_csv_file(file: Path = None):
         file = file or NominalLedger.latest_csv_file()

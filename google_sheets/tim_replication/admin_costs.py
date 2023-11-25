@@ -16,7 +16,8 @@ from utils import checked_type
 class AdminCostsRange(AccountsRange):
     NUM_ROWS = 29
 
-    (TITLE, _, SUB_PERIOD, TOTAL,
+    (TITLE, _, SUB_PERIOD,
+     TOTAL,
      RENT,
      RATES,
      ELECTRICITY,
