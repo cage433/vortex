@@ -1,159 +1,19 @@
-import shelve
 from numbers import Number
-from pathlib import Path
 from typing import List
 
-from airtable_db import VortexDB
 from airtable_db.contracts_and_events import GigsInfo
-from airtable_db.table_columns import TicketPriceLevel, TicketCategory
+from airtable_db.table_columns import TicketPriceLevel
 from bank_statements import BankActivity
 from bank_statements.payee_categories import PayeeCategory
 from date_range import DateRange
-from date_range.accounting_year import AccountingYear
-from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
+from google_sheets.tim_replication.audience_report_range import AudienceReportRange
 from google_sheets.tim_replication.constants import VAT_RATE, QUARTERLY_RENT, QUARTERLY_RENTOKILL, \
     QUARTERLY_WASTE_COLLECTION, QUARTERLY_BIN_HIRE_EX_VAT, YEARLY_DOOR_SECURITY, MONTHLY_FOWLERS_ALARM
 from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
 from utils import checked_type, checked_list_type
 
-
-class AudienceReportRange(TabRange):
-    ROW_HEADINGS = [
-        # Headings
-        "", "", "",
-        # Ticket sales (numbers)
-        "Audience", "", "", "", "", "", "", "",
-    ]
-    CAT_1_HEADINGS = [
-        "", "", "Breakdown",
-        # Ticket sales (numbers)
-        "",
-        "Full Price", "Member", "Conc", "Other", "Guest", "Online", "Walk in",
-    ]
-    CAT_2_HEADINGS = [
-        "", "", "",
-        # Ticket sales ()
-        "",
-        "", "", "", "", "", "", "",
-    ]
-    (TITLE, _, PERIOD,
-     AUDIENCE_TOTAL, FULL_PRICE_TICKETS, MEMBER_TICKETS, CONC_TICKETS, OTHER_TICKETS, GUEST_TICKETS, ONLINE_TICKETS,
-     WALK_IN_TICKETS,
-
-     ) = range(len(ROW_HEADINGS))
-
-    (ROW_TITLE, CAT_1, CAT_2, PERIOD_1) = range(4)
-
-    def __init__(
-            self,
-            top_left_cell: TabCell,
-            title: str,
-            periods: List[DateRange],
-            period_titles: List[str],
-            gigs_info: GigsInfo,
-    ):
-        super().__init__(top_left_cell, len(self.ROW_HEADINGS), len(periods) + 4)
-        self.title = checked_type(title, str)
-        self.periods: List[DateRange] = checked_list_type(periods, DateRange)
-        self.period_titles: List[str] = checked_list_type(period_titles, str)
-        self.num_periods: int = len(self.periods)
-        self.gigs_by_sub_period: list[GigsInfo] = [
-            gigs_info.restrict_to_period(period)
-            for period in self.periods
-        ]
-        self.LAST_PERIOD = self.PERIOD_1 + self.num_periods - 1
-        self.TO_DATE = self.PERIOD_1 + self.num_periods
-        self.NUM_ROWS = len(self.ROW_HEADINGS)
-
-    def format_requests(self):
-        return [
-
-            # Headings
-            self.outline_border_request(),
-            self[self.TITLE].merge_columns_request(),
-            self[self.TITLE].center_text_request(),
-            self[self.PERIOD, self.PERIOD_1:].right_align_text_request(),
-            self[self.PERIOD].border_request(["bottom"]),
-            self[self.TITLE:self.PERIOD + 1].set_bold_text_request(),
-            self[:, self.ROW_TITLE].set_bold_text_request(),
-            self[2:, self.CAT_2].border_request(["right"]),
-            self[2:, self.TO_DATE].border_request(["left"]),
-
-            # Audience
-            self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE_TICKETS,
-                                        self.i_first_row + self.WALK_IN_TICKETS),
-            self[self.AUDIENCE_TOTAL:self.WALK_IN_TICKETS + 1, self.PERIOD_1:].set_decimal_format_request("#,##0"),
-            self[self.ONLINE_TICKETS].border_request(["top"]),
-            self[self.WALK_IN_TICKETS].border_request(["bottom"]),
-
-            # last row
-            self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
-        ]
-
-    def period_range(self, i_row):
-        return self[i_row, self.PERIOD_1:self.LAST_PERIOD + 1]
-
-    def raw_values(self):
-        # Dates we want to display as strings
-        return [
-            (
-                self.period_range(self.PERIOD),
-                [w for w in self.period_titles]
-            ),
-            (
-                self[self.PERIOD, self.TO_DATE], ["To Date"]
-            ),
-        ]
-
-    def _heading_values(self):
-        values = []
-
-        values.append((self[2:, self.ROW_TITLE], self.ROW_HEADINGS[2:]))
-        values.append((self[2:, self.CAT_1], self.CAT_1_HEADINGS[2:]))
-        values.append((self[2:, self.CAT_2], self.CAT_2_HEADINGS[2:]))
-        values.append((self[self.TITLE], [f"Audience Numbers"]))
-
-        # To date totals
-        for i_row in range(self.AUDIENCE_TOTAL, self.NUM_ROWS):
-            week_range = self.period_range(i_row)
-            values.append(
-                (self[i_row, self.TO_DATE], f"=Sum({week_range.in_a1_notation})")
-            )
-        return values
-
-    def _audience_values(self):
-        values = []
-        for i_row, level in [
-            (self.FULL_PRICE_TICKETS, TicketPriceLevel.FULL),
-            (self.MEMBER_TICKETS, TicketPriceLevel.MEMBER),
-            (self.CONC_TICKETS, TicketPriceLevel.CONCESSION),
-            (self.OTHER_TICKETS, TicketPriceLevel.OTHER),
-        ]:
-            values.append((
-                self.period_range(i_row),
-                [gigs.num_paid_tickets(price_level=level) for gigs in self.gigs_by_sub_period]
-            ))
-        values.append(
-            (self.period_range(self.GUEST_TICKETS),
-             [gigs.num_free_tickets for gigs in self.gigs_by_sub_period])
-        )
-        for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):  # +1 for MTD
-            breakdown_values = self[self.FULL_PRICE_TICKETS:self.GUEST_TICKETS + 1, i_col]
-            values.append(
-                (self[self.AUDIENCE_TOTAL, i_col], f"=Sum({breakdown_values.in_a1_notation})")
-            )
-        for i_row, category in [
-            (self.ONLINE_TICKETS, TicketCategory.ONLINE),
-            (self.WALK_IN_TICKETS, TicketCategory.WALK_IN)
-        ]:
-            values.append((self.period_range(i_row),
-                           [gig.num_paid_tickets(category=category) for gig in self.gigs_by_sub_period]))
-        return values
-
-    def values(self):
-        return self._heading_values() + self._audience_values()
 
 class AccountingReportRange(TabRange):
     ROW_HEADINGS = [
@@ -701,51 +561,3 @@ class AccountingReport(Tab):
             self.report_range.values() + self.audience_numbers_range.values()
         )
 
-
-SHELF = Path(__file__).parent / "_ytd_report.shelf"
-
-
-def gig_info(period: DateRange, force: bool = False) -> GigsInfo:
-    key = f"gig_info_{period}"
-    with shelve.open(str(SHELF)) as shelf:
-        if key not in shelf or force:
-            info = VortexDB().contracts_and_events_for_period(period)
-            shelf[key] = info
-        return shelf[key]
-
-
-def read_nominal_ledger(force: bool = False) -> NominalLedger:
-    key = "nominal_ledger"
-    with shelve.open(str(SHELF)) as shelf:
-        if key not in shelf or force:
-            info = NominalLedger.from_csv_file()
-            shelf[key] = info
-        return shelf[key]
-
-
-def read_bank_activity(period: DateRange, force: bool = False) -> BankActivity:
-    key = f"bank_activity_{period}"
-    with shelve.open(str(SHELF)) as shelf:
-        if key not in shelf or force:
-            activity = BankActivity.build().restrict_to_period(period)
-            shelf[key] = activity
-        return shelf[key]
-
-
-if __name__ == '__main__':
-    workbook = Workbook(YTD_ACCOUNTS_SPREADSHEET_ID)
-    acc_year = AccountingYear(2023)
-    m = acc_year.first_accounting_month
-    gigs_info_list = []
-    force = False
-    acc_months = acc_year.accounting_months
-    for month in acc_months:
-        month_info = gig_info(month, force)
-        gigs_info_list += month_info.contracts_and_events
-    gigs_info = GigsInfo(gigs_info_list)
-    nominal_ledger = read_nominal_ledger(force).restrict_to_period(acc_year)
-    bank_activity = read_bank_activity(acc_year, force=True)
-    period_titles = [m.month_name for m in acc_months]
-    tab = AccountingReport(workbook, "YTD 2023", "YTD 2023",
-                           acc_months, period_titles, gigs_info, nominal_ledger, bank_activity)
-    tab.update()
