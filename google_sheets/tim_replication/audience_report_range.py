@@ -74,7 +74,7 @@ class AudienceReportRange(TabRange):
             # Audience
             self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE_TICKETS,
                                         self.i_first_row + self.WALK_IN_TICKETS),
-            self[self.AUDIENCE_TOTAL:self.WALK_IN_TICKETS + 1, self.PERIOD_1:].set_decimal_format_request("#,##0"),
+            self[self.NUM_GIGS:self.WALK_IN_TICKETS + 1, self.PERIOD_1:].set_decimal_format_request("#,##0"),
             self[self.ONLINE_TICKETS].border_request(["top"]),
             self[self.WALK_IN_TICKETS].border_request(["bottom"]),
 
@@ -106,7 +106,7 @@ class AudienceReportRange(TabRange):
         values.append((self[self.TITLE], [f"Audience Numbers"]))
 
         # To date totals
-        for i_row in range(self.AUDIENCE_TOTAL, self.NUM_ROWS):
+        for i_row in range(self.NUM_GIGS, self.NUM_ROWS):
             week_range = self.period_range(i_row)
             values.append(
                 (self[i_row, self.TO_DATE], f"=Sum({week_range.in_a1_notation})")

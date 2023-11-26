@@ -3,6 +3,8 @@ from typing import Optional
 from airtable_db.airtable_record import AirtableRecord
 from airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
 from date_range import Day, DateRange
+from myopt.opt import Opt
+from myopt.something import Something
 from utils import checked_type, checked_list_type
 
 
@@ -25,12 +27,17 @@ class ContractRecord(AirtableRecord):
     def ticket_price(self, price_level: TicketPriceLevel) -> int:
         price = self._airtable_value(ContractsColumns.ticket_price_column(price_level), allow_missing=True)
         if price is None:
-            price = self._airtable_value(ContractsColumns.ticket_price_column(TicketPriceLevel.FULL), allow_missing=False)
+            price = self._airtable_value(ContractsColumns.ticket_price_column(TicketPriceLevel.FULL),
+                                         allow_missing=False)
         return price
 
     @property
+    def contract_type(self) -> Opt[str]:
+        return Opt.of(self._airtable_value(ContractsColumns.TYPE, allow_missing=True))
+
+    @property
     def is_hire(self):
-        return self._airtable_value(ContractsColumns.TYPE, allow_missing=True) == "Hire"
+        return self.contract_type == Something("Hire")
 
 
 class EventRecord(AirtableRecord):
@@ -76,7 +83,6 @@ class EventRecord(AirtableRecord):
         return self.column_float_value(EventColumns.HIRE_FEE, allow_missing=True) or 0.0
 
 
-
 class ContractAndEvents:
     def __init__(self, contract: ContractRecord, events: list[EventRecord]):
         self.contract = checked_type(contract, ContractRecord)
@@ -94,10 +100,6 @@ class ContractAndEvents:
                     sales += num_tickets * ticket_price
         return sales
 
-    @property
-    def is_hire(self):
-        return self.contract.is_hire
-
 
 class GigsInfo:
     def __init__(self, contracts_and_events: list[ContractAndEvents]):
@@ -105,7 +107,13 @@ class GigsInfo:
 
     @property
     def number_of_gigs(self):
-        return len(self.contracts_and_events)
+        return len(
+            [
+                ce for ce in
+                self.contracts_and_events
+                if ce.contract.contract_type in [Something("Performance"), Something("Hire")]
+            ]
+        )
 
     def restrict_to_period(self, period: DateRange) -> 'GigsInfo':
         return GigsInfo(

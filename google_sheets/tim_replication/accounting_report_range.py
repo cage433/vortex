@@ -20,7 +20,8 @@ class AccountingReportRange(TabRange):
         # Headings
         "", "", "",
         # P&L
-        "P&L",
+        "Bank P&L",
+        "Calculated P&L",
         "Gigs",
         # Ticket sales (money)
         "Ticket Sales", "", "", "", "",
@@ -40,6 +41,7 @@ class AccountingReportRange(TabRange):
     CAT_1_HEADINGS = [
         "", "", "Breakdown 1",
         # P&L
+        "",
         "",
         "",
         # Ticket sales (money)
@@ -95,6 +97,7 @@ class AccountingReportRange(TabRange):
         # P&L
         "",
         "",
+        "",
         # Ticket sales (money)
         "", "", "", "", "",
         # gig costs
@@ -111,13 +114,14 @@ class AccountingReportRange(TabRange):
         "", "", "", "", "", "", "", "", "",
     ]
     (TITLE, _, PERIOD,
+     BANK_P_AND_L,
      P_AND_L,
      GIG_P_AND_L,
      TICKET_SALES_TOTAL, FULL_PRICE_SALES, MEMBER_SALES, CONC_SALES, OTHER_TICKET_SALES,
      GIG_COSTS, MUSICIAN_FEES,
-     WORK_PERMITS,
      SECURITY,
      SOUND_ENGINEERING, PRS, MARKETING,
+     WORK_PERMITS,
      PIANO_TUNING,
      OTHER_COSTS, ACCOMMODATION, TRAVEL, CATERING,
 
@@ -205,7 +209,7 @@ class AccountingReportRange(TabRange):
             # Ticket sales (money)
             self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE_SALES,
                                         self.i_first_row + self.OTHER_TICKET_SALES),
-            self[self.TICKET_SALES_TOTAL:, self.PERIOD_1:].set_decimal_format_request("#,##0.00"),
+            self[self.BANK_P_AND_L:, self.PERIOD_1:].set_decimal_format_request("#,##0"),
             self[self.TICKET_SALES_TOTAL, 0].right_align_text_request(),
             self[self.FULL_PRICE_SALES].border_request(["top"]),
             self[self.OTHER_TICKET_SALES].border_request(["bottom"]),
@@ -267,7 +271,7 @@ class AccountingReportRange(TabRange):
         values.append((self[self.TITLE], [f"Accounts {self.title}"]))
 
         # To date totals
-        for i_row in range(self.P_AND_L, self.NUM_ROWS):
+        for i_row in range(self.BANK_P_AND_L, self.NUM_ROWS):
             week_range = self.period_range(i_row)
             values.append(
                 (self[i_row, self.TO_DATE], f"=Sum({week_range.in_a1_notation})")
@@ -304,6 +308,8 @@ class AccountingReportRange(TabRange):
 
     def _gig_costs_values(self):
         values = []
+        prs_values = [gig.prs_fee_ex_vat for gig in self.gigs_by_sub_period]
+        print(f"PRS values: {prs_values}")
         for (i_row, func) in [
             (self.MUSICIAN_FEES, lambda gig: -gig.musicians_fees),
             (self.ACCOMMODATION, lambda gig: -gig.band_accommodation),
@@ -478,7 +484,14 @@ class AccountingReportRange(TabRange):
         return values
 
     def _p_and_l_values(self):
-        values = []
+        values = [
+            (self.period_range(self.BANK_P_AND_L),
+             [
+                 ba.balance_at_eod(period.last_day) - ba.balance_at_sod(period.first_day)
+                 for ba, period in zip(self.bank_activity_by_sub_period, self.periods)
+             ]
+             )
+        ]
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
             values.append(
                 (
@@ -560,4 +573,3 @@ class AccountingReport(Tab):
         self.workbook.batch_update_values(
             self.report_range.values() + self.audience_numbers_range.values()
         )
-
