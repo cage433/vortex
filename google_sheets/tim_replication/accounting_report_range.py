@@ -6,12 +6,15 @@ from airtable_db.table_columns import TicketPriceLevel
 from bank_statements import BankActivity
 from bank_statements.payee_categories import PayeeCategory
 from date_range import DateRange
+from date_range.accounting_month import AccountingMonth
+from date_range.week import Week
 from env import CHARITABLE_ACCOUNT_ID, BBL_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, CURRENT_ACCOUNT_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
 from google_sheets.tim_replication.audience_report_range import AudienceReportRange
 from google_sheets.tim_replication.constants import VAT_RATE, QUARTERLY_RENT, QUARTERLY_RENTOKILL, \
-    QUARTERLY_WASTE_COLLECTION, QUARTERLY_BIN_HIRE_EX_VAT, YEARLY_DOOR_SECURITY, MONTHLY_FOWLERS_ALARM
+    QUARTERLY_WASTE_COLLECTION, QUARTERLY_BIN_HIRE_EX_VAT, YEARLY_DOOR_SECURITY, MONTHLY_FOWLERS_ALARM, MONTHLY_RENT, \
+    MONTHLY_RENTOKILL, MONTHLY_WASTE_COLLECTION, MONTHLY_BIN_HIRE_EX_VAT, MONTHLY_DOOR_SECURITY
 from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
 from utils import checked_type, checked_list_type
 
@@ -37,8 +40,10 @@ class AccountingReportRange(TabRange):
         # CAP EX
         "Cap Ex", "", "", "",
         "Rates",
+        "Salaries",
+        "Rent",
         # Costs
-        "Costs", "", "", "", "", "", "", "", "", "",
+        "Costs", "", "", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "", "",
     ]
     CAT_1_HEADINGS = [
@@ -58,11 +63,10 @@ class AccountingReportRange(TabRange):
         "", "Sales", "Purchases", "", "", "Zettle Fees",
         # CAP EX
         "", "Building works", "Downstairs works", "Equipment",
-        "",
+        # Rates, Salaries, Rent
+        "", "", "",
         # Costs
         "",
-        "Salaries",
-        "Rent",
         "Cleaning",
         "Operational Costs",
         "BB Loan Payment",
@@ -111,10 +115,10 @@ class AccountingReportRange(TabRange):
         "", "", "", "Evening", "Delivered", "",
         # CAP EX
         "", "", "", "",
-        # Rates
-        "",
+        # Rates, Salaries, Rent
+        "", "", "",
         # Costs
-        "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "",
     ]
     (TITLE, PERIOD_START, PERIOD,
@@ -137,10 +141,9 @@ class AccountingReportRange(TabRange):
      CAP_EX, BUILDING_WORKS, DOWNSTAIRS_WORKS, EQUIPMENT_PURCHASE,
 
      RATES,
-
-     COSTS_TOTAL,
      SALARIES,
      RENT,
+     COSTS_TOTAL,
      DAILY_CLEANING,
      OPERATIONAL_COSTS,
      BB_LOAN,
@@ -246,7 +249,7 @@ class AccountingReportRange(TabRange):
             self.tab.group_rows_request(self.i_first_row + self.BUILDING_WORKS,
                                         self.i_first_row + self.EQUIPMENT_PURCHASE),
             # Costs
-            self.tab.group_rows_request(self.i_first_row + self.SALARIES,
+            self.tab.group_rows_request(self.i_first_row + self.DAILY_CLEANING,
                                         self.i_first_row + self.KASHFLOW),
 
             # last row
@@ -442,15 +445,30 @@ class AccountingReportRange(TabRange):
 
     def _costs_values(self):
         values = []
+        if isinstance(self.periods[0], Week):
+            is_weekly = True
+        elif isinstance(self.periods[0], AccountingMonth):
+            is_weekly = False
+        else:
+            raise ValueError(f"Unexpected period type {type(self.periods[0])}")
+
+        def period_cost(monthly_cost):
+            if is_weekly:
+                return monthly_cost / self.num_periods
+            else:
+                return monthly_cost
+
         values += [
-            (self.period_range(self.RENT), [-QUARTERLY_RENT / 3.0 for _ in range(self.num_periods)]),
-            (self.period_range(self.RENTOKIL), [-QUARTERLY_RENTOKILL / 3.0 for _ in range(self.num_periods)]),
+            (self.period_range(self.RENT), [period_cost(-MONTHLY_RENT) for _ in range(self.num_periods)]),
+            (self.period_range(self.RENTOKIL), [period_cost(-MONTHLY_RENTOKILL) for _ in range(self.num_periods)]),
             (self.period_range(self.WASTE_COLLECTION),
-             [-QUARTERLY_WASTE_COLLECTION / 3.0 for _ in range(self.num_periods)]),
-            (self.period_range(self.BIN_HIRE), [-QUARTERLY_BIN_HIRE_EX_VAT / 3.0 for _ in range(self.num_periods)]),
+             [period_cost(-MONTHLY_WASTE_COLLECTION) for _ in range(self.num_periods)]),
+            (
+            self.period_range(self.BIN_HIRE), [period_cost(-MONTHLY_BIN_HIRE_EX_VAT) for _ in range(self.num_periods)]),
             (self.period_range(self.CONSOLIDATED_DOOR_SECURITY),
-             [-YEARLY_DOOR_SECURITY / 12.0 for _ in range(self.num_periods)]),
-            (self.period_range(self.FOWLERS_ALARM), [-MONTHLY_FOWLERS_ALARM for _ in range(self.num_periods)]),
+             [period_cost(-MONTHLY_DOOR_SECURITY) for _ in range(self.num_periods)]),
+            (self.period_range(self.FOWLERS_ALARM),
+             [period_cost(-MONTHLY_FOWLERS_ALARM) for _ in range(self.num_periods)]),
         ]
         for (i_row, ledger_item) in [
             (self.TELEPHONE, NominalLedgerItemType.TELEPHONE),
@@ -486,7 +504,7 @@ class AccountingReportRange(TabRange):
             values.append(
                 (
                     self[self.COSTS_TOTAL, i_col],
-                    f"={self.sum_formula(self.SALARIES, self.KASHFLOW, i_col)}"
+                    f"={self.sum_formula(self.DAILY_CLEANING, self.KASHFLOW, i_col)}"
                 )
             )
         return values
@@ -527,7 +545,8 @@ class AccountingReportRange(TabRange):
                     "+".join(
                         [self[i_row, i_col].in_a1_notation
                          for i_row in
-                         [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L, self.CAP_EX, self.RATES, self.COSTS_TOTAL]
+                         [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L, self.CAP_EX, self.RATES, self.SALARIES,
+                          self.RENT, self.COSTS_TOTAL]
                          ]
                     )
                 ),
