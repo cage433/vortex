@@ -6,6 +6,7 @@ from airtable_db.table_columns import TicketPriceLevel
 from bank_statements import BankActivity
 from bank_statements.payee_categories import PayeeCategory
 from date_range import DateRange
+from env import CHARITABLE_ACCOUNT_ID, BBL_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, CURRENT_ACCOUNT_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
 from google_sheets.tim_replication.audience_report_range import AudienceReportRange
@@ -21,6 +22,7 @@ class AccountingReportRange(TabRange):
         "", "", "",
         # P&L
         "Bank P&L",
+        "", "", "", "",
         "Calculated P&L",
         "Gigs",
         # Ticket sales (money)
@@ -42,6 +44,7 @@ class AccountingReportRange(TabRange):
         "", "", "Breakdown 1",
         # P&L
         "",
+        "Current", "Savings", "BBL", "Charitable",
         "",
         "",
         # Ticket sales (money)
@@ -96,6 +99,7 @@ class AccountingReportRange(TabRange):
         "", "", "Breakdown 2",
         # P&L
         "",
+        "", "", "", "",
         "",
         "",
         # Ticket sales (money)
@@ -115,6 +119,7 @@ class AccountingReportRange(TabRange):
     ]
     (TITLE, _, PERIOD,
      BANK_P_AND_L,
+     CURRENT_ACC_P_AND_L, SAVINGS_ACC_P_AND_L, BBL_P_AND_L, CHARITABLE_ACC_P_AND_L,
      P_AND_L,
      GIG_P_AND_L,
      TICKET_SALES_TOTAL, FULL_PRICE_SALES, MEMBER_SALES, CONC_SALES, OTHER_TICKET_SALES,
@@ -206,12 +211,13 @@ class AccountingReportRange(TabRange):
 
             # P&L
             self[self.P_AND_L].border_request(["top", "bottom"]),
+            self[self.BANK_P_AND_L:, self.PERIOD_1:].set_decimal_format_request("#,##0"),
+            self.tab.group_rows_request(self.i_first_row + self.CURRENT_ACC_P_AND_L,
+                                        self.i_first_row + self.CHARITABLE_ACC_P_AND_L),
             # Ticket sales (money)
             self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE_SALES,
                                         self.i_first_row + self.OTHER_TICKET_SALES),
-            self[self.BANK_P_AND_L:, self.PERIOD_1:].set_decimal_format_request("#,##0"),
             self[self.TICKET_SALES_TOTAL, 0].right_align_text_request(),
-            self[self.FULL_PRICE_SALES].border_request(["top"]),
             self[self.OTHER_TICKET_SALES].border_request(["bottom"]),
 
             # gig costs
@@ -309,7 +315,6 @@ class AccountingReportRange(TabRange):
     def _gig_costs_values(self):
         values = []
         prs_values = [gig.prs_fee_ex_vat for gig in self.gigs_by_sub_period]
-        print(f"PRS values: {prs_values}")
         for (i_row, func) in [
             (self.MUSICIAN_FEES, lambda gig: -gig.musicians_fees),
             (self.ACCOMMODATION, lambda gig: -gig.band_accommodation),
@@ -485,13 +490,33 @@ class AccountingReportRange(TabRange):
 
     def _p_and_l_values(self):
         values = [
-            (self.period_range(self.BANK_P_AND_L),
-             [
-                 ba.balance_at_eod(period.last_day) - ba.balance_at_sod(period.first_day)
-                 for ba, period in zip(self.bank_activity_by_sub_period, self.periods)
-             ]
-             )
+            (
+                self.period_range(self.BANK_P_AND_L),
+                [
+                    f"=SUM({self[self.CURRENT_ACC_P_AND_L:self.CHARITABLE_ACC_P_AND_L + 1, i_col].in_a1_notation})"
+                    for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1)
+                ]
+            )
         ]
+
+        account_ids  = [CURRENT_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, BBL_ACCOUNT_ID, CHARITABLE_ACCOUNT_ID]
+        account_names = ["Current", "Savings", "BBL", "Charitable"]
+        for (i_row, account_id, account_name) in zip(
+                [self.CURRENT_ACC_P_AND_L, self.SAVINGS_ACC_P_AND_L, self.BBL_P_AND_L, self.CHARITABLE_ACC_P_AND_L],
+                account_ids,
+                account_names
+        ):
+            values.append(
+                (self.period_range(i_row),
+                 [
+                     bacc.balance_at_eod(period.last_day) - bacc.balance_at_sod(period.first_day)
+                     for ba, period in zip(self.bank_activity_by_sub_period, self.periods)
+                     for bacc in [ba.restrict_to_account(account_id)]
+                 ]
+                 )
+            )
+
+
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
             values.append(
                 (
@@ -564,6 +589,9 @@ class AccountingReport(Tab):
         self.workbook.batch_update(
             self.clear_values_and_formats_requests() +
             self._workbook_format_requests()
+        )
+        self.workbook.batch_update(
+            self.collapse_all_group_rows_requests()
         )
 
         self.workbook.batch_update_values(

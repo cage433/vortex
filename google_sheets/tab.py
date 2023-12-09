@@ -52,6 +52,7 @@ class Tab:
                 ["userEnteredValue", "userEnteredFormat"]
             ),
             self.unmerge_all_request(),
+            self.unhide_rows_request(),
         ]
 
     def group_rows_request(self, i_first_row, i_last_row):
@@ -66,7 +67,28 @@ class Tab:
             }
         }
 
-    def row_groups(self) -> list[tuple[int, int]]:
+    def collapse_all_group_rows_requests(self):
+        foo = [
+            {
+                "update_dimension_group": {
+                    "dimension_group": {
+                        "range": {
+                            "sheet_id": self.tab_id,
+                            "dimension": "ROWS",
+                            "start_index": start_index,
+                            "end_index": end_index
+                        },
+                        "depth": depth,
+                        "collapsed": True
+                },
+                    "fields": "collapsed"
+                }
+            }
+            for (start_index, end_index, depth) in self.row_groups()
+        ]
+        return foo
+
+    def row_groups(self) -> list[tuple[int, int, int]]:
         return self.workbook.row_groups_for_tab_id(self.tab_id)
 
     def delete_all_row_groups_requests(self):
@@ -81,8 +103,24 @@ class Tab:
                     }
                 }
             }
-            for (start_index, end_index) in self.row_groups()
+            for (start_index, end_index, _) in self.row_groups()
         ]
+
+    def unhide_rows_request(self):
+        return {
+            "updateDimensionProperties": {
+                "properties": {
+                    "hiddenByUser": False
+                },
+                "fields": "hiddenByUser",
+                "range": {
+                    "sheet_id": self.tab_id,
+                    "dimension": "ROWS",
+                    "start_index": 0,
+                    "end_index": 1000
+                },
+            }
+        }
 
     def set_column_width_request(self, i_col: int, width: int):
         return self.set_columns_width_request(i_col, i_col, width)

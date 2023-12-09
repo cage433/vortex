@@ -58,6 +58,9 @@ class BankActivity:
     def current_account_statement(self):
         return self.statements[CURRENT_ACCOUNT_ID]
 
+    def restrict_to_account(self, account_id: int) -> 'BankActivity':
+        return BankActivity([self.statements[account_id]])
+
     def formatted_by_category(self, first_day: Optional[Day] = None, last_day: Optional[Day] = None):
         first_day = first_day or Day(1970, 1, 1)
         last_day = last_day or Day(2100, 1, 1)

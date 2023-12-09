@@ -54,6 +54,8 @@ class Statement:
             assert abs(balance2 - balance1 - transaction_sum) < 0.01, f"Inconsistent balance {error} between {d1} and {d2}, sum trans {transaction_sum}, balance1 {balance1}, balance2 {balance2}"
 
     def balance_at_eod(self, date: Day) -> float:
+        if self.initial_balance_date > date:
+            return 0
         assert self.initial_balance_date <= date, f"Date {date} is before initial balance date {self.initial_balance_date}"
         nearest_date = max(d for d in self.balance_dates if d <= date)
         nearest_balance = self.published_balances[nearest_date]

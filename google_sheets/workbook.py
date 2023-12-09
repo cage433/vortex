@@ -40,7 +40,8 @@ class Workbook:
                 for row_group in sheet.get("rowGroups", []):
                     start_index = row_group["range"]["startIndex"]
                     end_index = row_group["range"]["endIndex"]
-                    groups.append((start_index, end_index))
+                    depth = row_group["depth"]
+                    groups.append((start_index, end_index, depth))
                 return groups
         raise ValueError("No sheet with id #{self.tab_id} found")
 
