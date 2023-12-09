@@ -24,12 +24,12 @@ class AccountingReportRange(TabRange):
         "Bank P&L",
         "", "", "", "",
         "Calculated P&L",
-        "Gigs",
-        # Ticket sales (money)
-        "Ticket Sales", "", "", "", "",
+        "Gig P&L",
+        # Ticket sales
+        "", "", "", "", "",
 
         # gig costs
-        "Gig costs", "", "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "", "", "", "",
         # Hire fees
         "Hire Fees", "", "",
         # Bar
@@ -48,25 +48,10 @@ class AccountingReportRange(TabRange):
         "Current", "Savings", "BBL", "Charitable",
         "",
         "",
-        # Ticket sales (money)
-        "",
-        "Full Price",
-        "Member",
-        "Conc",
-        "Other",
+        "Ticket Sales",
+        "", "", "", "",
         # gig costs
-        "",
-        "Musicians Fees",
-        "Security",
-        "Sound Engineer",
-        "PRS",
-        "Marketing",
-        "Work Permits",
-        "Piano Tuning",
-        "Other Costs",
-        "",
-        "",
-        "",
+        "Gig costs", "", "", "", "", "", "", "", "", "", "", "",
         # Hire fees
         "", "Evening", "Day",
         # Bar
@@ -104,10 +89,22 @@ class AccountingReportRange(TabRange):
         "",
         "",
         # Ticket sales (money)
-        "", "", "", "", "",
+        "",
+        "Full Price",
+        "Member",
+        "Conc",
+        "Other",
         # gig costs
-        "", "", "", "", "", "", "", "",
-        "", "Accommodation", "Travel", "Catering",
+        "",
+        "Musicians Fees",
+        "Security",
+        "Sound Engineer",
+        "PRS",
+        "Marketing",
+        "Work Permits",
+        "Piano Tuning",
+        "Other Costs",
+        "Accommodation", "Travel", "Catering",
         # Hire fees
         "", "", "",
         # Bar
@@ -123,7 +120,7 @@ class AccountingReportRange(TabRange):
     (TITLE, PERIOD_START, PERIOD,
      BANK_P_AND_L,
      CURRENT_ACC_P_AND_L, SAVINGS_ACC_P_AND_L, BBL_P_AND_L, CHARITABLE_ACC_P_AND_L,
-     P_AND_L,
+     CALCULATED_P_AND_L,
      GIG_P_AND_L,
      TICKET_SALES_TOTAL, FULL_PRICE_SALES, MEMBER_SALES, CONC_SALES, OTHER_TICKET_SALES,
      GIG_COSTS, MUSICIAN_FEES,
@@ -211,19 +208,22 @@ class AccountingReportRange(TabRange):
             self[self.PERIOD].border_request(["bottom"]),
             self[self.TITLE:self.PERIOD + 1].set_bold_text_request(),
             self[:, self.ROW_TITLE].set_bold_text_request(),
-            self[2:, self.CAT_2].border_request(["right"]),
-            self[2:, self.TO_DATE].border_request(["left"]),
+            self[1:, self.CAT_2].border_request(["right"]),
+            self[1:, self.TO_DATE].border_request(["left"]),
 
             # P&L
-            self[self.P_AND_L].border_request(["top", "bottom"]),
+            self[self.CALCULATED_P_AND_L].border_request(["bottom"]),
             self[self.BANK_P_AND_L:, self.PERIOD_1:].set_decimal_format_request("#,##0"),
             self.tab.group_rows_request(self.i_first_row + self.CURRENT_ACC_P_AND_L,
                                         self.i_first_row + self.CHARITABLE_ACC_P_AND_L),
+
+            # Gig P&L
+            self.tab.group_rows_request(self.i_first_row + self.TICKET_SALES_TOTAL,
+                                        self.i_first_row + self.CATERING),
             # Ticket sales (money)
             self.tab.group_rows_request(self.i_first_row + self.FULL_PRICE_SALES,
                                         self.i_first_row + self.OTHER_TICKET_SALES),
             self[self.TICKET_SALES_TOTAL, 0].right_align_text_request(),
-            self[self.OTHER_TICKET_SALES].border_request(["bottom"]),
 
             # gig costs
             self[self.GIG_COSTS, 0].right_align_text_request(),
@@ -236,21 +236,16 @@ class AccountingReportRange(TabRange):
             # # Hire fees
             self.tab.group_rows_request(self.i_first_row + self.EVENING_HIRE_FEES,
                                         self.i_first_row + self.DAY_HIRE_FEES),
-            self[self.HIRE_FEES].border_request(["top"]),
-            self[self.DAY_HIRE_FEES].border_request(["bottom"]),
 
             # Bar
-            self[self.BAR_P_AND_L].border_request(["top"]),
             self.tab.group_rows_request(self.i_first_row + self.BAR_SALES,
                                         self.i_first_row + self.ZETTLE_FEES),
             self.tab.group_rows_request(self.i_first_row + self.BAR_EVENING,
                                         self.i_first_row + self.BAR_DELIVERED),
             # CAP EX
-            self[self.CAP_EX].border_request(["top"]),
             self.tab.group_rows_request(self.i_first_row + self.BUILDING_WORKS,
                                         self.i_first_row + self.EQUIPMENT_PURCHASE),
             # Costs
-            self[self.COSTS_TOTAL].border_request(["top"]),
             self.tab.group_rows_request(self.i_first_row + self.SALARIES,
                                         self.i_first_row + self.KASHFLOW),
 
@@ -527,7 +522,7 @@ class AccountingReportRange(TabRange):
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
             values.append(
                 (
-                    self[self.P_AND_L, i_col],
+                    self[self.CALCULATED_P_AND_L, i_col],
                     "=" +
                     "+".join(
                         [self[i_row, i_col].in_a1_notation
