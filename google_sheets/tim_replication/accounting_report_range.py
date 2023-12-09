@@ -42,8 +42,10 @@ class AccountingReportRange(TabRange):
         "Rates",
         "Salaries",
         "Rent",
+        "Operational Costs",
+        "Building Maintenance",
         # Costs
-        "Costs", "", "", "", "", "", "", "",
+        "Regular Costs", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "", "",
     ]
     CAT_1_HEADINGS = [
@@ -63,16 +65,14 @@ class AccountingReportRange(TabRange):
         "", "Sales", "Purchases", "", "", "Zettle Fees",
         # CAP EX
         "", "Building works", "Downstairs works", "Equipment",
-        # Rates, Salaries, Rent
-        "", "", "",
+        # Rates, Salaries, Rent, Operational Costs, Building Maintenance
+        "", "", "", "", "",
         # Costs
         "",
         "Cleaning",
-        "Operational Costs",
         "BB Loan Payment",
         "Electricity",
         "Insurance",
-        "Building Maintenance",
         "Rentokil",
         "Waste Collection",
         "Telephone",
@@ -115,10 +115,10 @@ class AccountingReportRange(TabRange):
         "", "", "", "Evening", "Delivered", "",
         # CAP EX
         "", "", "", "",
-        # Rates, Salaries, Rent
-        "", "", "",
+        # Rates, Salaries, Rent, Operational Costs, Building Maintenance
+        "", "", "", "", "",
         # Costs
-        "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "",
     ]
     (TITLE, PERIOD_START, PERIOD,
@@ -143,13 +143,15 @@ class AccountingReportRange(TabRange):
      RATES,
      SALARIES,
      RENT,
+     OPERATIONAL_COSTS,
+     BUILDING_MAINTENANCE,
+
+
      COSTS_TOTAL,
      DAILY_CLEANING,
-     OPERATIONAL_COSTS,
      BB_LOAN,
      ELECTRICITY,
      INSURANCE,
-     BUILDING_MAINTENANCE,
      RENTOKIL,
      WASTE_COLLECTION,
      TELEPHONE,
@@ -546,7 +548,7 @@ class AccountingReportRange(TabRange):
                         [self[i_row, i_col].in_a1_notation
                          for i_row in
                          [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L, self.CAP_EX, self.RATES, self.SALARIES,
-                          self.RENT, self.COSTS_TOTAL]
+                          self.RENT, self.OPERATIONAL_COSTS, self.BUILDING_MAINTENANCE, self.COSTS_TOTAL]
                          ]
                     )
                 ),
