@@ -33,7 +33,7 @@ class Week(ContiguousDateRange):
         return Week(year, week_no)
 
     def __str__(self):
-        return f"Week({self.year}, {self.week_no})"
+        return f"{self.year.y} W{self.week_no}"
 
     def __repr__(self):
         return str(self)

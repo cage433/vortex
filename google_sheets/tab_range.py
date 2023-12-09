@@ -229,10 +229,10 @@ class TabRange:
             }
         }
 
-    def set_decimal_format_request(self, format):
+    def set_decimal_format_request(self, format: str):
         return self.number_format_request({"type": "NUMBER", "pattern": format})
 
-    def date_format_request(self, format):
+    def date_format_request(self, format: str):
         return self.number_format_request({"type": "DATE", "pattern": format})
 
     def percentage_format_request(self):

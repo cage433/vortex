@@ -120,7 +120,7 @@ class AccountingReportRange(TabRange):
         "", "", "", "", "", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "",
     ]
-    (TITLE, _, PERIOD,
+    (TITLE, PERIOD_START, PERIOD,
      BANK_P_AND_L,
      CURRENT_ACC_P_AND_L, SAVINGS_ACC_P_AND_L, BBL_P_AND_L, CHARITABLE_ACC_P_AND_L,
      P_AND_L,
@@ -206,6 +206,7 @@ class AccountingReportRange(TabRange):
             self.outline_border_request(),
             self[self.TITLE].merge_columns_request(),
             self[self.TITLE].center_text_request(),
+            self[self.PERIOD_START].date_format_request("d Mmm"),
             self[self.PERIOD, self.PERIOD_1:].right_align_text_request(),
             self[self.PERIOD].border_request(["bottom"]),
             self[self.TITLE:self.PERIOD + 1].set_bold_text_request(),
@@ -276,15 +277,19 @@ class AccountingReportRange(TabRange):
         values = []
 
         values.append((self[2:, self.ROW_TITLE], self.ROW_HEADINGS[2:]))
+        values.append((
+            self.period_range(self.PERIOD_START),
+            [w.first_day.date for w in self.periods]
+        ))
         values.append((self[2:, self.CAT_1], self.CAT_1_HEADINGS[2:]))
         values.append((self[2:, self.CAT_2], self.CAT_2_HEADINGS[2:]))
         values.append((self[self.TITLE], [f"Accounts {self.title}"]))
 
         # To date totals
         for i_row in range(self.BANK_P_AND_L, self.NUM_ROWS):
-            week_range = self.period_range(i_row)
+            period_range = self.period_range(i_row)
             values.append(
-                (self[i_row, self.TO_DATE], f"=Sum({week_range.in_a1_notation})")
+                (self[i_row, self.TO_DATE], f"=Sum({period_range.in_a1_notation})")
             )
         return values
 
@@ -318,7 +323,6 @@ class AccountingReportRange(TabRange):
 
     def _gig_costs_values(self):
         values = []
-        prs_values = [gig.prs_fee_ex_vat for gig in self.gigs_by_sub_period]
         for (i_row, func) in [
             (self.MUSICIAN_FEES, lambda gig: -gig.musicians_fees),
             (self.ACCOMMODATION, lambda gig: -gig.band_accommodation),
@@ -503,7 +507,7 @@ class AccountingReportRange(TabRange):
             )
         ]
 
-        account_ids  = [CURRENT_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, BBL_ACCOUNT_ID, CHARITABLE_ACCOUNT_ID]
+        account_ids = [CURRENT_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, BBL_ACCOUNT_ID, CHARITABLE_ACCOUNT_ID]
         account_names = ["Current", "Savings", "BBL", "Charitable"]
         for (i_row, account_id, account_name) in zip(
                 [self.CURRENT_ACC_P_AND_L, self.SAVINGS_ACC_P_AND_L, self.BBL_P_AND_L, self.CHARITABLE_ACC_P_AND_L],
@@ -519,7 +523,6 @@ class AccountingReportRange(TabRange):
                  ]
                  )
             )
-
 
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
             values.append(

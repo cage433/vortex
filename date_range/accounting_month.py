@@ -75,7 +75,7 @@ class AccountingMonth(ContiguousDateRange):
         return Month(self.year.y, self.m)
 
     @property
-    def weeks(self):
+    def weeks(self) -> list['Week']:
         from date_range.week import Week
         ws = []
         w = Week.containing(self.first_day)

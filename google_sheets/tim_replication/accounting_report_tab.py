@@ -20,14 +20,13 @@ class AccountingReportTab(Tab):
             self,
             workbook: Workbook,
             title: str,
-            tab_name: str,
             periods: List[DateRange],
             period_titles: List[str],
             gigs_info: GigsInfo,
             nominal_ledger: NominalLedger,
             bank_activity: BankActivity,
     ):
-        super().__init__(workbook, tab_name=tab_name)
+        super().__init__(workbook, tab_name=title)
         self.report_range = AccountingReportRange(
             self.cell("B2"),
             title,
