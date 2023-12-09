@@ -58,7 +58,9 @@ class AccountingReportTab(Tab):
     def update(self):
         self.workbook.batch_update(
             self.clear_values_and_formats_requests() +
-            self._workbook_format_requests() +
+            self._workbook_format_requests()
+        )
+        self.workbook.batch_update(
             self.collapse_all_group_rows_requests()
         )
 

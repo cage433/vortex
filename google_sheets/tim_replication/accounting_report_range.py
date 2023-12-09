@@ -36,8 +36,9 @@ class AccountingReportRange(TabRange):
         "Bar", "", "", "", "", "",
         # CAP EX
         "Cap Ex", "", "", "",
+        "Rates",
         # Costs
-        "Costs", "", "", "", "", "", "", "", "", "", "",
+        "Costs", "", "", "", "", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "", "",
     ]
     CAT_1_HEADINGS = [
@@ -72,11 +73,11 @@ class AccountingReportRange(TabRange):
         "", "Sales", "Purchases", "", "", "Zettle Fees",
         # CAP EX
         "", "Building works", "Downstairs works", "Equipment",
+        "",
         # Costs
         "",
         "Salaries",
         "Rent",
-        "Rates",
         "Cleaning",
         "Operational Costs",
         "BB Loan Payment",
@@ -113,8 +114,10 @@ class AccountingReportRange(TabRange):
         "", "", "", "Evening", "Delivered", "",
         # CAP EX
         "", "", "", "",
+        # Rates
+        "",
         # Costs
-        "", "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "",
     ]
     (TITLE, _, PERIOD,
@@ -136,10 +139,11 @@ class AccountingReportRange(TabRange):
 
      CAP_EX, BUILDING_WORKS, DOWNSTAIRS_WORKS, EQUIPMENT_PURCHASE,
 
+     RATES,
+
      COSTS_TOTAL,
      SALARIES,
      RENT,
-     RATES,
      DAILY_CLEANING,
      OPERATIONAL_COSTS,
      BB_LOAN,
@@ -525,7 +529,7 @@ class AccountingReportRange(TabRange):
                     "+".join(
                         [self[i_row, i_col].in_a1_notation
                          for i_row in
-                         [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L, self.CAP_EX, self.COSTS_TOTAL]
+                         [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L, self.CAP_EX, self.RATES, self.COSTS_TOTAL]
                          ]
                     )
                 ),
