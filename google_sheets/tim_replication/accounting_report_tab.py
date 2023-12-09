@@ -11,8 +11,10 @@ from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tim_replication.accounting_report_range import AccountingReportRange
 from google_sheets.tim_replication.audience_report_range import AudienceReportRange
+from google_sheets.tim_replication.bank_activity_range import BankActivityRange
 from google_sheets.tim_replication.constants import VAT_RATE
 from kashflow.nominal_ledger import NominalLedger
+from utils import checked_type
 
 
 class AccountingReportTab(Tab):
@@ -25,6 +27,7 @@ class AccountingReportTab(Tab):
             gigs_info: GigsInfo,
             nominal_ledger: NominalLedger,
             bank_activity: BankActivity,
+            show_transactions: bool
     ):
         super().__init__(workbook, tab_name=title)
         self.report_range = AccountingReportRange(
@@ -44,14 +47,20 @@ class AccountingReportTab(Tab):
             period_titles,
             gigs_info,
         )
+        self.show_transactions = checked_type(show_transactions, bool)
+        if self.show_transactions:
+            self.transaction_range = BankActivityRange(
+                self.audience_numbers_range.bottom_right_cell.offset(num_rows=2, num_cols=2),
+                bank_activity
+            )
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
 
     def _workbook_format_requests(self):
         return self.delete_all_row_groups_requests() + [
             # Workbook
-            self.set_columns_width_request(i_first_col=2, i_last_col=4, width=150),
-            self.set_columns_width_request(i_first_col=5, i_last_col=14, width=75),
+            self.set_columns_width_request(i_first_col=1, i_last_col=3, width=75),
+            self.set_columns_width_request(i_first_col=4, i_last_col=14, width=75),
         ] + self.report_range.format_requests() + self.audience_numbers_range.format_requests()
 
     def update(self):
@@ -70,6 +79,14 @@ class AccountingReportTab(Tab):
         self.workbook.batch_update_values(
             self.report_range.values() + self.audience_numbers_range.values()
         )
+
+        if self.show_transactions:
+            self.workbook.batch_update(
+                self.transaction_range.format_requests()
+            )
+            self.workbook.batch_update_values(
+                self.transaction_range.values()
+            )
 
 
 SHELF = Path(__file__).parent / "_ytd_report.shelf"

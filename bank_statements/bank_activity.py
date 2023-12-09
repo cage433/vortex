@@ -26,6 +26,14 @@ class BankActivity:
             key=lambda t: (t.payment_date, t.payee),
         )
 
+    @property
+    def num_payment_dates(self):
+        return len(set([t.payment_date for t in self.sorted_transactions]))
+
+    @property
+    def num_transactions(self):
+        return len(self.sorted_transactions)
+
     def net_flow(self, first_day: Optional[Day] = None, last_day: Optional[Day] = None):
         return sum(s.net_flow(first_day, last_day) for s in self.statements.values())
 

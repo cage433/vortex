@@ -1,6 +1,7 @@
 from typing import Optional
 
 from date_range import Day
+from env import CURRENT_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, BBL_ACCOUNT_ID, CHARITABLE_ACCOUNT_ID
 from myopt.nothing import Nothing
 from myopt.opt import Opt
 from utils import checked_type
@@ -28,6 +29,18 @@ class Transaction:
         self.amount: float = checked_type(amount, float)
         self.transaction_type: str = checked_type(transaction_type, str)
         self.category: Opt[str] = checked_opt_type(category, str)
+
+    @property
+    def account_name(self):
+        if self.account == CURRENT_ACCOUNT_ID:
+            return "Current"
+        if self.account == SAVINGS_ACCOUNT_ID:
+            return "Savings"
+        if self.account == BBL_ACCOUNT_ID:
+            return "BBL"
+        if self.account == CHARITABLE_ACCOUNT_ID:
+            return "Charitable"
+        return f"Unregistered account {self.account}"
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__

@@ -12,9 +12,8 @@ from env import CHARITABLE_ACCOUNT_ID, BBL_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, CURRE
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
 from google_sheets.tim_replication.audience_report_range import AudienceReportRange
-from google_sheets.tim_replication.constants import VAT_RATE, QUARTERLY_RENT, QUARTERLY_RENTOKILL, \
-    QUARTERLY_WASTE_COLLECTION, QUARTERLY_BIN_HIRE_EX_VAT, YEARLY_DOOR_SECURITY, MONTHLY_FOWLERS_ALARM, MONTHLY_RENT, \
-    MONTHLY_RENTOKILL, MONTHLY_WASTE_COLLECTION, MONTHLY_BIN_HIRE_EX_VAT, MONTHLY_DOOR_SECURITY
+from google_sheets.tim_replication.constants import VAT_RATE, MONTHLY_FOWLERS_ALARM, MONTHLY_RENT, \
+    MONTHLY_RENTOKILL, MONTHLY_WASTE_COLLECTION, MONTHLY_BIN_HIRE_EX_VAT, MONTHLY_DOOR_SECURITY, GRANTS, PRS_PAYMENTS
 from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
 from utils import checked_type, checked_list_type
 
@@ -37,6 +36,10 @@ class AccountingReportRange(TabRange):
         "Hire Fees", "", "",
         # Bar
         "Bar", "", "", "", "", "",
+        # Grants
+        "Grants",
+        # PRS Special
+        "PRS Special",
         # CAP EX
         "Cap Ex", "", "", "",
         "Rates",
@@ -49,7 +52,7 @@ class AccountingReportRange(TabRange):
         "", "", "", "", "", "", "", "", "", "",
     ]
     CAT_1_HEADINGS = [
-        "", "", "Breakdown 1",
+        "", "", "",
         # P&L
         "",
         "Current", "Savings", "BBL", "Charitable",
@@ -63,6 +66,10 @@ class AccountingReportRange(TabRange):
         "", "Evening", "Day",
         # Bar
         "", "Sales", "Purchases", "", "", "Zettle Fees",
+        # Grants
+        "",
+        # PRS Special
+        "",
         # CAP EX
         "", "Building works", "Downstairs works", "Equipment",
         # Rates, Salaries, Rent, Operational Costs, Building Maintenance
@@ -86,7 +93,7 @@ class AccountingReportRange(TabRange):
         "Kashflow",
     ]
     CAT_2_HEADINGS = [
-        "", "", "Breakdown 2",
+        "", "", "",
         # P&L
         "",
         "", "", "", "",
@@ -113,6 +120,10 @@ class AccountingReportRange(TabRange):
         "", "", "",
         # Bar
         "", "", "", "Evening", "Delivered", "",
+        # Grants
+        "",
+        # PRS Special
+        "",
         # CAP EX
         "", "", "", "",
         # Rates, Salaries, Rent, Operational Costs, Building Maintenance
@@ -138,6 +149,8 @@ class AccountingReportRange(TabRange):
 
      BAR_P_AND_L, BAR_SALES, BAR_PURCHASES, BAR_EVENING, BAR_DELIVERED, ZETTLE_FEES,
 
+     GRANTS,
+     PRS_SPECIAL,
      CAP_EX, BUILDING_WORKS, DOWNSTAIRS_WORKS, EQUIPMENT_PURCHASE,
 
      RATES,
@@ -145,7 +158,6 @@ class AccountingReportRange(TabRange):
      RENT,
      OPERATIONAL_COSTS,
      BUILDING_MAINTENANCE,
-
 
      COSTS_TOTAL,
      DAILY_CLEANING,
@@ -387,6 +399,25 @@ class AccountingReportRange(TabRange):
         ]
         return values
 
+    def _grant_and_prs_values(self):
+        values = []
+        for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
+            values += [
+                (
+                    (
+                        self.period_range(self.GRANTS),
+                        [GRANTS.total_for_period(period) for period in self.periods]
+                    )
+                ),
+                (
+                    (
+                        self.period_range(self.PRS_SPECIAL),
+                        [PRS_PAYMENTS.total_for_period(period) for period in self.periods]
+                    )
+                )
+            ]
+        return values
+
     def _bar_values(self):
         values = []
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
@@ -466,7 +497,8 @@ class AccountingReportRange(TabRange):
             (self.period_range(self.WASTE_COLLECTION),
              [period_cost(-MONTHLY_WASTE_COLLECTION) for _ in range(self.num_periods)]),
             (
-            self.period_range(self.BIN_HIRE), [period_cost(-MONTHLY_BIN_HIRE_EX_VAT) for _ in range(self.num_periods)]),
+                self.period_range(self.BIN_HIRE),
+                [period_cost(-MONTHLY_BIN_HIRE_EX_VAT) for _ in range(self.num_periods)]),
             (self.period_range(self.CONSOLIDATED_DOOR_SECURITY),
              [period_cost(-MONTHLY_DOOR_SECURITY) for _ in range(self.num_periods)]),
             (self.period_range(self.FOWLERS_ALARM),
@@ -547,8 +579,9 @@ class AccountingReportRange(TabRange):
                     "+".join(
                         [self[i_row, i_col].in_a1_notation
                          for i_row in
-                         [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L, self.CAP_EX, self.RATES, self.SALARIES,
-                          self.RENT, self.OPERATIONAL_COSTS, self.BUILDING_MAINTENANCE, self.COSTS_TOTAL]
+                         [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L, self.GRANTS, self.PRS_SPECIAL,
+                          self.CAP_EX, self.RATES,
+                          self.SALARIES, self.RENT, self.OPERATIONAL_COSTS, self.BUILDING_MAINTENANCE, self.COSTS_TOTAL]
                          ]
                     )
                 ),
@@ -560,67 +593,10 @@ class AccountingReportRange(TabRange):
                  + self._ticket_sales_values() \
                  + self._gig_costs_values() \
                  + self._hire_fee_values() \
+                 + self._grant_and_prs_values() \
                  + self._bar_values() \
                  + self._costs_values() \
                  + self._cap_ex_values() \
                  + self._p_and_l_values()
 
         return values
-
-
-class AccountingReport(Tab):
-    def __init__(
-            self,
-            workbook: Workbook,
-            title: str,
-            tab_name: str,
-            periods: List[DateRange],
-            period_titles: List[str],
-            gigs_info: GigsInfo,
-            nominal_ledger: NominalLedger,
-            bank_activity: BankActivity,
-    ):
-        super().__init__(workbook, tab_name=tab_name)
-        self.report_range = AccountingReportRange(
-            self.cell("B2"),
-            title,
-            periods,
-            period_titles,
-            gigs_info,
-            nominal_ledger,
-            bank_activity,
-            VAT_RATE
-        )
-        self.audience_numbers_range = AudienceReportRange(
-            self.report_range.bottom_left_cell.offset(num_rows=2),
-            title,
-            periods,
-            period_titles,
-            gigs_info,
-        )
-        if not self.workbook.has_tab(self.tab_name):
-            self.workbook.add_tab(self.tab_name)
-
-    def _workbook_format_requests(self):
-        return self.delete_all_row_groups_requests() + [
-            # Workbook
-            self.set_columns_width_request(i_first_col=2, i_last_col=4, width=150),
-            self.set_columns_width_request(i_first_col=5, i_last_col=14, width=75),
-        ] + self.report_range.format_requests() + self.audience_numbers_range.format_requests()
-
-    def update(self):
-        self.workbook.batch_update(
-            self.clear_values_and_formats_requests() +
-            self._workbook_format_requests()
-        )
-        self.workbook.batch_update(
-            self.collapse_all_group_rows_requests()
-        )
-
-        self.workbook.batch_update_values(
-            self.report_range.raw_values() + self.audience_numbers_range.raw_values(),
-            value_input_option="RAW"  # Prevent creation of dates
-        )
-        self.workbook.batch_update_values(
-            self.report_range.values() + self.audience_numbers_range.values()
-        )
