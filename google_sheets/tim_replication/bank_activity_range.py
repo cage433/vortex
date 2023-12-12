@@ -18,7 +18,7 @@ class BankActivityRange(TabRange):
         ]
 
     def values(self):
-        transactions = sorted(self.bank_activity.sorted_transactions, key=lambda t: -t.amount)
+        transactions = sorted(self.bank_activity.sorted_transactions, key=lambda t: t.amount)
         return [
             (self[0], ["Date", "Account", "Payee", "Amount"]),
             (self[2:, self.DATE_COLUMN], [t.payment_date.date for t in transactions]),

@@ -44,7 +44,7 @@ class AccountingReportRange(TabRange):
         # Hire fees
         "Hire Fees", "", "",
         # Bar
-        "Bar", "", "", "", "", "",
+        "Bar", "", "", "",
         "Rates",
         "Salaries",
         "Rent",
@@ -81,7 +81,7 @@ class AccountingReportRange(TabRange):
         # Hire fees
         "", "Evening", "Day",
         # Bar
-        "", "Sales", "Purchases", "", "", "Zettle Fees",
+        "", "Sales", "Purchases", "Zettle Fees",
         # Rates, Salaries, Rent, Operational Costs, Building Maintenance
         "", "", "", "", "",
         # VAT Payments
@@ -143,7 +143,7 @@ class AccountingReportRange(TabRange):
         # Hire fees
         "", "", "",
         # Bar
-        "", "", "", "Evening", "Delivered", "",
+        "", "", "", "",
         # Rates, Salaries, Rent, Operational Costs, Building Maintenance
         "", "", "", "", "",
         # VAT Payments
@@ -171,7 +171,7 @@ class AccountingReportRange(TabRange):
 
      HIRE_FEES, EVENING_HIRE_FEES, DAY_HIRE_FEES,
 
-     BAR_P_AND_L, BAR_SALES, BAR_PURCHASES, BAR_EVENING, BAR_DELIVERED, ZETTLE_FEES,
+     BAR_P_AND_L, BAR_SALES, BAR_PURCHASES, ZETTLE_FEES,
 
      RATES,
      SALARIES,
@@ -280,8 +280,6 @@ class AccountingReportRange(TabRange):
             # Bar
             self.tab.group_rows_request(self.i_first_row + self.BAR_SALES,
                                         self.i_first_row + self.ZETTLE_FEES),
-            self.tab.group_rows_request(self.i_first_row + self.BAR_EVENING,
-                                        self.i_first_row + self.BAR_DELIVERED),
             # CAP EX
             self.tab.group_rows_request(self.i_first_row + self.BUILDING_WORKS,
                                         self.i_first_row + self.EQUIPMENT_PURCHASE),
@@ -460,10 +458,6 @@ class AccountingReportRange(TabRange):
                          ]
                     )
                 ),
-                (
-                    self[self.BAR_PURCHASES, i_col],
-                    f"={self[self.BAR_EVENING, i_col].in_a1_notation} + {self[self.BAR_DELIVERED, i_col].in_a1_notation}"
-                )
             ]
         values += [
             (
@@ -471,11 +465,7 @@ class AccountingReportRange(TabRange):
                 [gig.bar_takings / (1 + self.vat_rate) for gig in self.gigs_by_sub_period]
             ),
             (
-                self.period_range(self.BAR_EVENING),
-                [- gig.evening_purchases / (1 + self.vat_rate) for gig in self.gigs_by_sub_period]
-            ),
-            (
-                self.period_range(self.BAR_DELIVERED),
+                self.period_range(self.BAR_PURCHASES),
                 [ledger.bar_stock for ledger in self.ledger_by_sub_period]
             ),
             (
