@@ -9,10 +9,8 @@ from date_range import DateRange
 from date_range.accounting_month import AccountingMonth
 from date_range.week import Week
 from env import CHARITABLE_ACCOUNT_ID, BBL_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, CURRENT_ACCOUNT_ID
-from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
-from google_sheets.tim_replication.audience_report_range import AudienceReportRange
-from google_sheets.tim_replication.constants import VAT_RATE, MONTHLY_FOWLERS_ALARM, MONTHLY_RENT, \
+from google_sheets.tim_replication.constants import MONTHLY_FOWLERS_ALARM, MONTHLY_RENT, \
     MONTHLY_RENTOKILL, MONTHLY_WASTE_COLLECTION, MONTHLY_BIN_HIRE_EX_VAT, MONTHLY_DOOR_SECURITY, GRANTS, PRS_PAYMENTS, \
     INSURANCE_PAYMENTS
 from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
@@ -24,11 +22,19 @@ class AccountingReportRange(TabRange):
         # Headings
         "", "", "",
         # P&L
-        "Bank P&L",
+        "P&L",
+        # CAP EX
+        "Cap Ex", "", "", "",
+        # Grants
+        "Grants",
+        # Insurance Comp
+        "Insurance Comp",
+        # PRS Special
+        "PRS Special",
+        "Bank Balance Change",
+        # Bank accounts
         "", "", "", "",
-        "Calculated P&L (ex VAT)",
-        "VAT Payments",
-        "Expected Bank P&L",
+        "Expected Bank Balance Change",
         "Gig P&L",
         # Ticket sales
         "", "", "", "", "",
@@ -39,30 +45,33 @@ class AccountingReportRange(TabRange):
         "Hire Fees", "", "",
         # Bar
         "Bar", "", "", "", "", "",
-        # Grants
-        "Grants",
-        # Insurance Comp
-        "Insurance Comp",
-        # PRS Special
-        "PRS Special",
-        # CAP EX
-        "Cap Ex", "", "", "",
         "Rates",
         "Salaries",
         "Rent",
         "Operational Costs",
         "Building Maintenance",
+        "VAT Payments",
         # Costs
         "Regular Costs", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "", "",
     ]
     CAT_1_HEADINGS = [
         "", "", "",
-        # Bank P&L
+        # Calculated P&L
+        "",
+        # CAP EX
+        "", "Building works", "Downstairs works", "Equipment",
+        # Grants
+        "",
+        # Insurance Comp
+        "",
+        # PRS Special
+        "",
+        # Bank Balance change
         "",
         "Current", "Savings", "BBL", "Charitable",
-        # Calculated P&L
-        "", "", "",
+        # Expected Bank P&L
+        "",
         # Gig P&L
         "",
         "Ticket Sales",
@@ -73,16 +82,10 @@ class AccountingReportRange(TabRange):
         "", "Evening", "Day",
         # Bar
         "", "Sales", "Purchases", "", "", "Zettle Fees",
-        # Grants
-        "",
-        # Insurance Comp
-        "",
-        # PRS Special
-        "",
-        # CAP EX
-        "", "Building works", "Downstairs works", "Equipment",
         # Rates, Salaries, Rent, Operational Costs, Building Maintenance
         "", "", "", "", "",
+        # VAT Payments
+        "",
         # Costs
         "",
         "Cleaning",
@@ -103,11 +106,21 @@ class AccountingReportRange(TabRange):
     ]
     CAT_2_HEADINGS = [
         "", "", "",
+        # Calculated P&L
+        "",
+        # CAP EX
+        "", "", "", "",
+        # Grants
+        "",
+        # Insurance Comp
+        "",
+        # PRS Special
+        "",
         # Bank P&L
         "",
         "", "", "", "",
-        # Calculated P&L
-        "", "", "",
+        # Expected Bank P&L
+        "",
         # Gig P&L
         "",
         # Ticket sales (money)
@@ -131,25 +144,21 @@ class AccountingReportRange(TabRange):
         "", "", "",
         # Bar
         "", "", "", "Evening", "Delivered", "",
-        # Grants
-        "",
-        # Insurance Comp
-        "",
-        # PRS Special
-        "",
-        # CAP EX
-        "", "", "", "",
         # Rates, Salaries, Rent, Operational Costs, Building Maintenance
         "", "", "", "", "",
+        # VAT Payments
+        "",
         # Costs
         "", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "",
     ]
     (TITLE, PERIOD_START, PERIOD,
-     BANK_P_AND_L,
-     CURRENT_ACC_P_AND_L, SAVINGS_ACC_P_AND_L, BBL_P_AND_L, CHARITABLE_ACC_P_AND_L,
-     CALC_P_AND_L_EX_VAT,
-     VAT_PAYMENTS,
+     P_AND_L,
+     CAP_EX, BUILDING_WORKS, DOWNSTAIRS_WORKS, EQUIPMENT_PURCHASE,
+     GRANTS,
+     INSURANCE_COMP,
+     PRS_SPECIAL,
+     BANK_P_AND_L, CURRENT_ACC_P_AND_L, SAVINGS_ACC_P_AND_L, BBL_P_AND_L, CHARITABLE_ACC_P_AND_L,
      EXPECTED_BANK_P_AND_L,
      GIG_P_AND_L,
      TICKET_SALES_TOTAL, FULL_PRICE_SALES, MEMBER_SALES, CONC_SALES, OTHER_TICKET_SALES,
@@ -164,17 +173,13 @@ class AccountingReportRange(TabRange):
 
      BAR_P_AND_L, BAR_SALES, BAR_PURCHASES, BAR_EVENING, BAR_DELIVERED, ZETTLE_FEES,
 
-     GRANTS,
-     INSURANCE_COMP,
-     PRS_SPECIAL,
-     CAP_EX, BUILDING_WORKS, DOWNSTAIRS_WORKS, EQUIPMENT_PURCHASE,
-
      RATES,
      SALARIES,
      RENT,
      OPERATIONAL_COSTS,
      BUILDING_MAINTENANCE,
 
+     VAT_PAYMENTS,
      COSTS_TOTAL,
      DAILY_CLEANING,
      BB_LOAN,
@@ -245,10 +250,11 @@ class AccountingReportRange(TabRange):
             self[1:, self.TO_DATE].border_request(["left"]),
 
             # P&L
-            self[self.BANK_P_AND_L:, self.PERIOD_1:].set_decimal_format_request("#,##0"),
+            self[self.P_AND_L:, self.PERIOD_1:].set_decimal_format_request("#,##0"),
             self.tab.group_rows_request(self.i_first_row + self.CURRENT_ACC_P_AND_L,
                                         self.i_first_row + self.CHARITABLE_ACC_P_AND_L),
 
+            self[self.PRS_SPECIAL].border_request(["bottom"]),
             self[self.EXPECTED_BANK_P_AND_L].border_request(["bottom"]),
 
             # Gig P&L
@@ -315,7 +321,7 @@ class AccountingReportRange(TabRange):
         values.append((self[self.TITLE], [f"Accounts {self.title}"]))
 
         # To date totals
-        for i_row in range(self.BANK_P_AND_L, self.NUM_ROWS):
+        for i_row in range(self.P_AND_L, self.NUM_ROWS):
             period_range = self.period_range(i_row)
             values.append(
                 (self[i_row, self.TO_DATE], f"=Sum({period_range.in_a1_notation})")
@@ -604,17 +610,18 @@ class AccountingReportRange(TabRange):
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
             values.append(
                 (
-                    self[self.CALC_P_AND_L_EX_VAT, i_col],
+                    self[self.P_AND_L, i_col],
                     "=" +
                     "+".join(
                         [self[i_row, i_col].in_a1_notation
                          for i_row in
-                         [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L, self.GRANTS, self.INSURANCE_COMP,
-                          self.PRS_SPECIAL, self.CAP_EX, self.RATES,
-                          self.SALARIES, self.RENT, self.OPERATIONAL_COSTS, self.BUILDING_MAINTENANCE, self.COSTS_TOTAL]
-                         ]
-                    )
-                ),
+                         [self.GIG_P_AND_L, self.HIRE_FEES, self.BAR_P_AND_L,
+                          self.RATES,
+                          self.SALARIES, self.RENT, self.OPERATIONAL_COSTS, self.BUILDING_MAINTENANCE,
+                          self.VAT_PAYMENTS, self.COSTS_TOTAL]
+                    ]
+                )
+            ),
             )
             values.append(
                 (
@@ -623,7 +630,11 @@ class AccountingReportRange(TabRange):
                     "+".join(
                         [self[i_row, i_col].in_a1_notation
                          for i_row in
-                         [self.CALC_P_AND_L_EX_VAT, self.VAT_PAYMENTS]]
+                         [
+                             self.P_AND_L,
+                             self.CAP_EX,
+                             self.GRANTS, self.INSURANCE_COMP, self.PRS_SPECIAL,
+                         ]]
                     )
                 ),
             )

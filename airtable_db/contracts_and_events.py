@@ -115,6 +115,14 @@ class GigsInfo:
             ]
         )
 
+    @property
+    def first_day(self):
+        return min(ce.contract.performance_date for ce in self.contracts_and_events)
+
+    @property
+    def last_day(self):
+        return max(ce.contract.performance_date for ce in self.contracts_and_events)
+
     def restrict_to_period(self, period: DateRange) -> 'GigsInfo':
         return GigsInfo(
             [c for c in self.contracts_and_events if period.contains_day(c.contract.performance_date)])
@@ -145,6 +153,13 @@ class GigsInfo:
 
     def ticket_sales(self, price_level: TicketPriceLevel) -> float:
         return sum(ce.ticket_sales(price_level) for ce in self.contracts_and_events)
+
+    @property
+    def total_ticket_sales(self) -> float:
+        return sum(
+            self.ticket_sales(p) for p in
+            [TicketPriceLevel.FULL, TicketPriceLevel.MEMBER, TicketPriceLevel.CONCESSION]
+        ) + self.other_ticket_sales
 
     @property
     def other_ticket_sales(self) -> float:
