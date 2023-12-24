@@ -1,7 +1,7 @@
 from myopt.nothing import Nothing
-from pivot_report.pivot_field import DimensionField, MeasureField, PivotField
-from pivot_report.pivot_filter import PivotFilter
-from pivot_report.pivot_table import PivotTable
+from pivot.pivot_field import DimensionField, MeasureField, PivotField
+from pivot.pivot_filter import PivotFilter
+from pivot.pivot_table import PivotTable
 from utils import checked_type, checked_list_type
 
 

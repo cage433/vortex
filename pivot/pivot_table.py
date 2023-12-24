@@ -1,5 +1,5 @@
-from pivot_report.pivot_field import PivotField
-from pivot_report.pivot_value import PivotValue
+from pivot.pivot_field import PivotField
+from pivot.pivot_value import PivotValue
 from utils import checked_dict_type, checked_list_type
 from utils.collection_utils import group_into_dict
 from utils.type_checks import checked_set_type

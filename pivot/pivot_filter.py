@@ -1,9 +1,9 @@
 from typing import Callable
 
 from date_range import DateRange
-from pivot_report.pivot_field import PivotField
-from pivot_report.pivot_table import PivotRow
-from pivot_report.pivot_value import PivotValue, StringPivotValue, DayPivotValue
+from pivot.pivot_field import PivotField
+from pivot.pivot_table import PivotRow
+from pivot.pivot_value import PivotValue, StringPivotValue, DayPivotValue
 from utils import checked_type
 
 

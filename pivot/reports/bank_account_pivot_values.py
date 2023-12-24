@@ -1,6 +1,6 @@
-from pivot_report.pivot_field import PivotField, CategoryField, TimsDescriptionField, TransactionValueField, PayeeField, \
+from pivot.pivot_field import PivotField, CategoryField, TimsDescriptionField, TransactionValueField, PayeeField, \
     DateField
-from pivot_report.pivot_value import PivotValue, OptionalStringPivotValue, StringPivotValue, NumericValue, DayPivotValue
+from pivot.pivot_value import PivotValue, OptionalStringPivotValue, StringPivotValue, NumericValue, DayPivotValue
 from tims_sheets.bank_account_data import BankAccountDataItem
 from utils import checked_type
 

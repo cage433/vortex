@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from numbers import Number
 
 from date_range import Day
-from pivot_report.pivot_value import PivotValue, NumericValue
+from pivot.pivot_value import PivotValue, NumericValue
 from utils import checked_type
 from utils.type_checks import checked_opt_type
 
