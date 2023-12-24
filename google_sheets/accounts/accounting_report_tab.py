@@ -9,10 +9,10 @@ from date_range import DateRange
 from date_range.accounting_year import AccountingYear
 from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
-from google_sheets.tim_replication.accounting_report_range import AccountingReportRange
-from google_sheets.tim_replication.audience_report_range import AudienceReportRange
-from google_sheets.tim_replication.bank_activity_range import BankActivityRange
-from google_sheets.tim_replication.constants import VAT_RATE
+from google_sheets.accounts.accounting_report_range import AccountingReportRange
+from google_sheets.accounts.audience_report_range import AudienceReportRange
+from google_sheets.accounts.bank_activity_range import BankActivityRange
+from google_sheets.accounts.constants import VAT_RATE
 from kashflow.nominal_ledger import NominalLedger
 from utils import checked_type
 

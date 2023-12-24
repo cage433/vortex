@@ -10,7 +10,7 @@ from date_range.accounting_month import AccountingMonth
 from date_range.week import Week
 from env import CHARITABLE_ACCOUNT_ID, BBL_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, CURRENT_ACCOUNT_ID
 from google_sheets.tab_range import TabRange, TabCell
-from google_sheets.tim_replication.constants import MONTHLY_FOWLERS_ALARM, MONTHLY_RENT, \
+from google_sheets.accounts.constants import MONTHLY_FOWLERS_ALARM, MONTHLY_RENT, \
     MONTHLY_RENTOKILL, MONTHLY_WASTE_COLLECTION, MONTHLY_BIN_HIRE_EX_VAT, MONTHLY_DOOR_SECURITY, GRANTS, PRS_PAYMENTS, \
     INSURANCE_PAYMENTS
 from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
