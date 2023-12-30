@@ -33,13 +33,15 @@ def checked_optional_type(obj, expected_type):
 
 
 def checked_opt_type(obj, expected_type):
+    if not isinstance(obj, Opt):
+        print("here")
     checked_type(obj, Opt)
     obj.for_each(lambda x: checked_type(x, expected_type))
     return obj
 
 
 def checked_dict_type(obj, key_type, value_type):
-    assert isinstance(obj, dict), f"{obj} is of type {type(obj)}, expected list"
+    assert isinstance(obj, dict), f"{obj} is of type {type(obj)}, expected dict"
     for k, v in obj.items():
         checked_type(k, key_type)
         checked_type(v, value_type)
