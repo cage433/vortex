@@ -11,18 +11,22 @@ from date_range.accounting_year import AccountingYear
 from date_range.week import Week
 from myopt.nothing import Nothing
 from myopt.opt import Opt
-from utils import checked_dict_type
 from utils.type_checks import checked_opt_type, checked_type, checked_list_type
 
 T = TypeVar("T", bound=Number)
 
 
 class WeeklyBreakdown(Generic[T]):
-    def __init__(self, weeks: List[Week], values: List[T], vat_estimate: Opt[T]):
+    def __init__(self, term: str, weeks: List[Week], values: List[T], mtd_value, vat_estimate: Opt[T]):
+        self.term = checked_type(term, str)
         self.weeks = checked_list_type(weeks, Week)
         self.weekly_values: List[T] = checked_list_type(values, Number)
+        self.mtd_value: T = checked_type(mtd_value, Number)
         self.vat_estimate: Opt[T] = checked_opt_type(vat_estimate, Number)
 
+    @property
+    def has_inconsistent_mtd_value(self):
+        return abs(self.mtd_value - sum(self.weekly_values)) > 0.01
 
 class MonthlyGigReport:
     month = "month"
@@ -96,11 +100,12 @@ class MonthlyGigReport:
             self,
             month: AccountingMonth,
             audience_number: WeeklyBreakdown[int],
-            breakdowns: Dict[str, WeeklyBreakdown[decimal]],
+            breakdowns: List[WeeklyBreakdown[decimal]],
     ):
         self.month: AccountingMonth = checked_type(month, AccountingMonth)
         self.audience_number = checked_type(audience_number, WeeklyBreakdown)
-        self.breakdowns: Dict[str, WeeklyBreakdown[decimal]] = checked_dict_type(breakdowns, str, WeeklyBreakdown)
+        self.breakdowns: List[WeeklyBreakdown[decimal]] = checked_list_type(breakdowns, WeeklyBreakdown)
+        self.breakdowns_by_term: Dict[str, WeeklyBreakdown[decimal]] = {b.term: b for b in breakdowns}
 
     @staticmethod
     def from_spreadsheet(path: Path, month: AccountingMonth) -> 'MonthlyGigReport':
@@ -119,22 +124,26 @@ class MonthlyGigReport:
         ]
         rows = [row for row in rows if not exclude_row(row)]
         sheet_as_dict = {row[0].lower(): row[1:] for row in rows}
+        mtd_column = sheet_as_dict[MonthlyGigReport.week].index("MTD")
+        vat_column = sheet_as_dict[MonthlyGigReport.week].index("VAT estimate")
         weeks = [
             Week(month.year, int(w))
             for w in sheet_as_dict[MonthlyGigReport.week][:-2]
             if int(w) <= month.year.num_weeks  # Blank extra week in Aug 21 report
         ]
-        dict = {}
+        breakdowns = []
         for term in MonthlyGigReport.TERMS:
             if term == MonthlyGigReport.week:
                 continue
-            dict[term] = {}
-            values = sheet_as_dict[term][:len(weeks)]
+            terms = sheet_as_dict[term]
+            week_values = terms[:len(weeks)]
             vat = Nothing()
-            if values[-1] is not np.nan:
-                vat = Opt.of(values[-1])
-            print(f"{term} {len(weeks)} {len(values)} {vat}")
-            dict[term] = WeeklyBreakdown(weeks, values, vat)
+            mtd_value = terms[mtd_column]
+            if terms[vat_column] is not np.nan:
+                vat = Opt.of(terms[vat_column])
+            breakdown = WeeklyBreakdown(term, weeks, week_values, mtd_value, vat)
+            breakdowns.append(breakdown)
+
 
 def path_for_accounting_month(month: AccountingMonth) -> Path:
     reports_path = Path(
@@ -143,6 +152,7 @@ def path_for_accounting_month(month: AccountingMonth) -> Path:
     name = month.corresponding_calendar_month.first_day.date.strftime("%b %Y")
     path = reports_path / f"{month.year.y}" / f"Gig Report Month {month.m}  - {name}.xlsx"
     return path
+
 
 if __name__ == '__main__':
     month = AccountingMonth(AccountingYear(2019), 3)
