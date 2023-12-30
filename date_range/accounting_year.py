@@ -27,7 +27,7 @@ class AccountingYear(ContiguousDateRange):
     @property
     def first_accounting_month(self) -> 'AccountingMonth':
         from date_range.accounting_month import AccountingMonth
-        return AccountingMonth(self, 9)
+        return AccountingMonth(self, 1)
 
     @property
     def accounting_months(self) -> list['AccountingMonth']:
@@ -40,7 +40,7 @@ class AccountingYear(ContiguousDateRange):
     @property
     def last_day(self) -> 'Day':
         from date_range.accounting_month import AccountingMonth
-        return AccountingMonth(self, 8).last_day
+        return AccountingMonth(self, 12).last_day
 
     def __eq__(self, other):
         return isinstance(other, AccountingYear) and self.y == other.y
@@ -73,9 +73,9 @@ class AccountingYear(ContiguousDateRange):
 
     @staticmethod
     def containing(day: Day) -> 'AccountingYear':
-        year = AccountingYear(day.y)
-        if year.contains_day(day):
-            return year
-        year = year + 1
-        assert year.contains_day(day), f"Day {day} is not in an accounting year"
-        return year
+        year = AccountingYear(day.y - 1)
+        for i in range(3):
+            y = year + i
+            if y.contains_day(day):
+                return y
+        raise ValueError(f"Day {day} is not in an accounting year")

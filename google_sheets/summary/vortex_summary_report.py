@@ -4,8 +4,8 @@ from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange
 from env import VORTEX_TICKET_SALES_SPREADSHEET_ID
 from google_sheets import Workbook
-from google_sheets.ticket_sales.vortex_summary_tab import VortexSummaryTab
 from google_sheets.accounts.accounting_report_tab import gig_info, read_nominal_ledger
+from google_sheets.summary.vortex_summary_tab import VortexSummaryTab
 
 
 def run_report(period: DateRange, title: str):

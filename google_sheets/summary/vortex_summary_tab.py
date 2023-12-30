@@ -1,7 +1,7 @@
 from airtable_db.contracts_and_events import GigsInfo
 from google_sheets import Workbook, Tab
-from google_sheets.ticket_sales.vortex_summary_range import AudienceRange, TicketSalesRange, BarTakingsRange, \
-    BarProfitRange, RehearsalAndHireFeesRange
+from google_sheets.summary.vortex_summary_range import AudienceRange, TicketSalesRange, BarTakingsRange, BarProfitRange, \
+    RehearsalAndHireFeesRange
 from kashflow.nominal_ledger import NominalLedger
 
 

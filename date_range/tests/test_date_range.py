@@ -81,7 +81,7 @@ class AccountingYearTests(TestCase):
 
 
 class AccountingMonthTests(TestCase):
-    @RandomisedTest(number_of_runs=10)
+    @RandomisedTest(number_of_runs=10, seed=71102509)
     def test_addition(self, rng):
         am = random_accounting_month(rng)
         n = rng.randint(-20, 20)
@@ -95,17 +95,17 @@ class AccountingMonthTests(TestCase):
             self.assertEqual(am.last_day + 1, (am + 1).first_day)
             am += 1
 
-    @RandomisedTest()
+    @RandomisedTest(seed=12987897)
     def test_containing(self, rng):
         month = random_accounting_month(rng)
         for day in month.days:
             self.assertEqual(AccountingMonth.containing(day), month)
 
     def test_explicit_increments(self):
-        self.assertEqual(AccountingMonth(AccountingYear(2017), 8) + 1, AccountingMonth(AccountingYear(2018), 9))
-        self.assertEqual(AccountingMonth(AccountingYear(2018), 9) - 1, AccountingMonth(AccountingYear(2017), 8))
-        self.assertEqual(AccountingMonth(AccountingYear(2018), 12) + 1, AccountingMonth(AccountingYear(2018), 1))
-        self.assertEqual(AccountingMonth(AccountingYear(2018), 1) - 1, AccountingMonth(AccountingYear(2018), 12))
+        self.assertEqual(AccountingMonth(AccountingYear(2017), 12) + 1, AccountingMonth(AccountingYear(2018), 1))
+        self.assertEqual(AccountingMonth(AccountingYear(2018), 1) - 1, AccountingMonth(AccountingYear(2017), 12))
+        self.assertEqual(AccountingMonth(AccountingYear(2018), 12) + 1, AccountingMonth(AccountingYear(2019), 1))
+        self.assertEqual(AccountingMonth(AccountingYear(2018), 1) - 1, AccountingMonth(AccountingYear(2017), 12))
 
     @RandomisedTest(number_of_runs=10)
     def test_weeks(self, rng):
