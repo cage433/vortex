@@ -28,72 +28,73 @@ class WeeklyBreakdown(Generic[T]):
     def has_inconsistent_mtd_value(self):
         return abs(self.mtd_value - sum(self.weekly_values)) > 0.01
 
-class MonthlyGigReport:
-    month = "month"
-    week = "week"
 
-    audience_number = "audience number"
-    advance_ticket_sales = "advance ticket sales"
-    credit_card_sales = "credit card ticket sales"
-    cash_ticket_sales = "cash ticket sales"
-    total_ticket_sales = "total ticket sales"
-    evening_hire_fee = "evening hire fee"
-    day_hire = "day hire"
-    bar_takings = "bar takings"
-    total_income = "total income"
-    deal_fee = "deal fee"
-    cash_paid_to_musicians = "j cash paid to musicians"
-    musician_internet = "musician internet"
-    musician_fees = "musician fees"
-    accommodation = "accommodation"
-    travel = "travel"
-    catering = "catering"
-    equipment_hire = "equipment hire"
-    work_permits = "work permits"
-    sound_engineering = "sound engineering"
-    hire_fees = "hire fees"
-    musician_costs = "musician costs"
-    prs = "prs"
-    volunteer_costs = "volunteer costs"
-    bar_cash_purchases = "bar cash purchases"
-    drinks_cash_purchases = "drinks cash purchases"
-    drinks_bank = "drinks bank"
-    drinks_card = "drinks card"
-    bar_expenditure = "bar expenditure"
-    security = "security"
-    marketing = "marketing"
+class MonthlyGigReportSheet:
+    MONTH = "month"
+    WEEK = "week"
+
+    AUDIENCE_NUMBER = "audience number"
+    ADVANCE_TICKET_SALES = "advance ticket sales"
+    CREDIT_CARD_SALES = "credit card ticket sales"
+    CASH_TICKET_SALES = "cash ticket sales"
+    TOTAL_TICKET_SALES = "total ticket sales"
+    EVENING_HIRE_FEE = "evening hire fee"
+    DAY_HIRE = "day hire"
+    BAR_TAKINGS = "bar takings"
+    TOTAL_INCOME = "total income"
+    DEAL_FEE = "deal fee"
+    CASH_PAID_TO_MUSICIANS = "j cash paid to musicians"
+    MUSICIAN_INTERNET = "musician internet"
+    MUSICIAN_FEES = "musician fees"
+    ACCOMMODATION = "accommodation"
+    TRAVEL = "travel"
+    CATERING = "catering"
+    EQUIPMENT_HIRE = "equipment hire"
+    WORK_PERMITS = "work permits"
+    SOUND_ENGINEERING = "sound engineering"
+    HIRE_FEES = "hire fees"
+    MUSICIAN_COSTS = "musician costs"
+    PRS = "prs"
+    VOLUNTEER_COSTS = "volunteer costs"
+    BAR_CASH_PURCHASES = "bar cash purchases"
+    DRINKS_CASH_PURCHASES = "drinks cash purchases"
+    DRINKS_BANK = "drinks bank"
+    DRINKS_CARD = "drinks card"
+    BAR_EXPENDITURE = "bar expenditure"
+    SECURITY = "security"
+    MARKETING = "marketing"
 
     TERMS = [
-        audience_number,
-        advance_ticket_sales,
-        credit_card_sales,
-        cash_ticket_sales,
-        total_ticket_sales,
-        evening_hire_fee,
-        day_hire,
-        bar_takings,
-        total_income,
-        deal_fee,
-        cash_paid_to_musicians,
-        musician_internet,
-        musician_fees,
-        accommodation,
-        travel,
-        catering,
-        equipment_hire,
-        work_permits,
-        sound_engineering,
-        hire_fees,
-        musician_costs,
-        prs,
-        volunteer_costs,
-        bar_cash_purchases,
-        drinks_cash_purchases,
-        drinks_bank,
-        drinks_card,
-        bar_expenditure,
-        security,
-        marketing,
+        AUDIENCE_NUMBER,
+        ADVANCE_TICKET_SALES,
+        CREDIT_CARD_SALES,
+        CASH_TICKET_SALES,
+        TOTAL_TICKET_SALES,
+        EVENING_HIRE_FEE,
+        DAY_HIRE,
+        BAR_TAKINGS,
+        TOTAL_INCOME,
+        DEAL_FEE,
+        CASH_PAID_TO_MUSICIANS,
+        MUSICIAN_INTERNET,
+        MUSICIAN_FEES,
+        ACCOMMODATION,
+        TRAVEL,
+        CATERING,
+        EQUIPMENT_HIRE,
+        WORK_PERMITS,
+        SOUND_ENGINEERING,
+        HIRE_FEES,
+        MUSICIAN_COSTS,
+        PRS,
+        VOLUNTEER_COSTS,
+        BAR_CASH_PURCHASES,
+        DRINKS_CASH_PURCHASES,
+        DRINKS_BANK,
+        DRINKS_CARD,
+        BAR_EXPENDITURE,
+        SECURITY,
+        MARKETING,
     ]
 
     def __init__(
@@ -108,7 +109,7 @@ class MonthlyGigReport:
         self.breakdowns_by_term: Dict[str, WeeklyBreakdown[decimal]] = {b.term: b for b in breakdowns}
 
     @staticmethod
-    def from_spreadsheet(path: Path, month: AccountingMonth) -> 'MonthlyGigReport':
+    def from_spreadsheet(path: Path, month: AccountingMonth) -> 'MonthlyGigReportSheet':
         def exclude_row(row):
             if row[0] is np.nan:
                 return True
@@ -124,16 +125,16 @@ class MonthlyGigReport:
         ]
         rows = [row for row in rows if not exclude_row(row)]
         sheet_as_dict = {row[0].lower(): row[1:] for row in rows}
-        mtd_column = sheet_as_dict[MonthlyGigReport.week].index("MTD")
-        vat_column = sheet_as_dict[MonthlyGigReport.week].index("VAT estimate")
+        mtd_column = sheet_as_dict[MonthlyGigReportSheet.WEEK].index("MTD")
+        vat_column = sheet_as_dict[MonthlyGigReportSheet.WEEK].index("VAT estimate")
         weeks = [
             Week(month.year, int(w))
-            for w in sheet_as_dict[MonthlyGigReport.week][:-2]
+            for w in sheet_as_dict[MonthlyGigReportSheet.WEEK][:-2]
             if int(w) <= month.year.num_weeks  # Blank extra week in Aug 21 report
         ]
         breakdowns = []
-        for term in MonthlyGigReport.TERMS:
-            if term == MonthlyGigReport.week:
+        for term in MonthlyGigReportSheet.TERMS:
+            if term == MonthlyGigReportSheet.WEEK:
                 continue
             terms = sheet_as_dict[term]
             week_values = terms[:len(weeks)]
@@ -149,15 +150,14 @@ def path_for_accounting_month(month: AccountingMonth) -> Path:
     reports_path = Path(
         "/Users/alex/Dropbox (Personal)/vortex/Tim stuff/memory stick/Gig reports monthly/"
     )
-    name = month.corresponding_calendar_month.first_day.date.strftime("%b %Y")
-    path = reports_path / f"{month.year.y}" / f"Gig Report Month {month.m}  - {name}.xlsx"
-    return path
+    month_name = month.corresponding_calendar_month.first_day.date.strftime("%b %Y")
+    return reports_path / f"{month.year.y}" / f"Gig Report Month {month.m}  - {month_name}.xlsx"
 
 
 if __name__ == '__main__':
     month = AccountingMonth(AccountingYear(2019), 3)
     path = path_for_accounting_month(month)
-    gig_report = MonthlyGigReport.from_spreadsheet(path, month)
+    gig_report = MonthlyGigReportSheet.from_spreadsheet(path, month)
 
     # reports_path = Path(
     #     "/Users/alex/Dropbox (Personal)/vortex/Tim stuff/memory stick/Gig reports monthly/"

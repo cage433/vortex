@@ -115,3 +115,9 @@ class AccountingMonthTests(TestCase):
         self.assertEqual(weeks[-1].last_day, am.last_day)
         for w0, w1 in zip(weeks, weeks[1:]):
             self.assertEqual(w0.last_day + 1, w1.first_day)
+
+    def test_specific_month(self):
+        m = AccountingMonth(AccountingYear(2024), 3)
+        print(m.corresponding_calendar_month)
+        print(m.first_day)
+        print(m.last_day)
