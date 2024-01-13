@@ -215,28 +215,93 @@ class QuarterVatSheet:
     DOOR_SECURITY = "Consolidated - door security"
     ALARM = "Fowlers - alarm"
     DAILY_CLEANING = "Daily cleaning"
-    BULIDING_MAINTENANCE = "Building maintenance"
+    BUILDING_MAINTENANCE = "Building maintenance"
+    BUILDING_WORKS = "Building Works"
+    DOWNSTAIRS_BUILDING_WORKS = "Downstairs building works"
     STEINWAY = "Steinway"
+    PIANO_TUNING = "Piano Tuning"
+    EQUIPMENT_PURCHASES = "Equipment Purchases"
     EQUIPMENT_MAINTENANCE = "Equipment maintenance"
     WEBSITE = "Website"
     ACCOUNTING = "Accounting"
     OPERATIONAL_COSTS = "Operational costs"
+    LICENSING_INDIRECT = "Licensing Indirect"
     EQUIPMENT_PURCHASE = "Equipment Purchase"
     EVENTS = "Events"
     SUBSCRIPTIONS = "Subscriptons"
     CREDIT_CARD_FEES = "Credit card fees"
     BANK_FEES = "Bank fees"
 
-    INPUTS = [
+    INPUTS_1 = [
         DEAL_FEE, MUSICIANS_CASH, MUSICIANS_INTERNET, MUSICIANS_FEES, ACCOMODATION,
         TRAVEL, CATERING, EQUIPMENT_HIRE, WORK_PERMITS, SOUND_ENGINEERING,
         HIRE_FEES, MUSICIAN_COSTS, PRS, VOLUNTEER_COSTS, BAR_CASH_PURCHASES,
         DRINKS_CASH_PURPOSES, DRINKS_BANK, DRINKS_CARD, BAR_EXPENDITURE, SECURITY,
         MARKETING, RENT, RATES, ELECTRICITY, TELEPHONE, INSURANCE, SALARIES,
         STAFF_EXPENSES, RENTOKIL, GAS, WASTE_COLLECTION, BIN_HIRE, DOOR_SECURITY,
-        ALARM, DAILY_CLEANING, BULIDING_MAINTENANCE, STEINWAY, EQUIPMENT_MAINTENANCE, WEBSITE,
+        ALARM, DAILY_CLEANING, BUILDING_MAINTENANCE, STEINWAY, EQUIPMENT_MAINTENANCE, WEBSITE,
         ACCOUNTING, OPERATIONAL_COSTS, EQUIPMENT_PURCHASE, EVENTS, SUBSCRIPTIONS,
         CREDIT_CARD_FEES, BANK_FEES,
+    ]
+    INPUTS_2 = [
+        DEAL_FEE, MUSICIANS_CASH, MUSICIANS_INTERNET, MUSICIANS_FEES, ACCOMODATION,
+        TRAVEL, CATERING, EQUIPMENT_HIRE, WORK_PERMITS, SOUND_ENGINEERING,
+        HIRE_FEES, MUSICIAN_COSTS, PRS, VOLUNTEER_COSTS, BAR_CASH_PURCHASES,
+        DRINKS_CASH_PURPOSES, DRINKS_BANK, DRINKS_CARD, BAR_EXPENDITURE, SECURITY,
+        MARKETING, RENT, RATES, ELECTRICITY, TELEPHONE, INSURANCE, SALARIES,
+        STAFF_EXPENSES, RENTOKIL, GAS, WASTE_COLLECTION, BIN_HIRE, DOOR_SECURITY,
+        ALARM, DAILY_CLEANING, BUILDING_MAINTENANCE,
+
+        #STEINWAY,
+        PIANO_TUNING,
+        EQUIPMENT_PURCHASES,
+
+        EQUIPMENT_MAINTENANCE, WEBSITE,
+        ACCOUNTING, OPERATIONAL_COSTS,
+
+        #EQUIPMENT_PURCHASE,
+        LICENSING_INDIRECT,
+
+        EVENTS, SUBSCRIPTIONS,
+        CREDIT_CARD_FEES, BANK_FEES,
+    ]
+    INPUTS_3 = [
+        DEAL_FEE, MUSICIANS_CASH, MUSICIANS_INTERNET, MUSICIANS_FEES, ACCOMODATION,
+        TRAVEL, CATERING, EQUIPMENT_HIRE, WORK_PERMITS, SOUND_ENGINEERING,
+        HIRE_FEES, MUSICIAN_COSTS, PRS, VOLUNTEER_COSTS, BAR_CASH_PURCHASES,
+        DRINKS_CASH_PURPOSES, DRINKS_BANK, DRINKS_CARD, BAR_EXPENDITURE, SECURITY,
+        MARKETING, RENT, RATES, ELECTRICITY, TELEPHONE, INSURANCE, SALARIES,
+        STAFF_EXPENSES, RENTOKIL, GAS, WASTE_COLLECTION, BIN_HIRE, DOOR_SECURITY,
+        ALARM, DAILY_CLEANING, BUILDING_MAINTENANCE,
+
+        BUILDING_WORKS,
+        STEINWAY,
+        #PIANO_TUNING,
+        #EQUIPMENT_PURCHASES,
+
+        EQUIPMENT_MAINTENANCE, WEBSITE,
+        ACCOUNTING, OPERATIONAL_COSTS,
+
+        EQUIPMENT_PURCHASE,
+        #LICENSING_INDIRECT,
+
+        EVENTS, SUBSCRIPTIONS,
+        CREDIT_CARD_FEES, BANK_FEES,
+    ]
+
+    INPUTS_4 = [
+        DEAL_FEE, MUSICIANS_CASH, MUSICIANS_INTERNET, MUSICIANS_FEES, ACCOMODATION,
+        TRAVEL, CATERING, EQUIPMENT_HIRE, WORK_PERMITS, SOUND_ENGINEERING,
+        HIRE_FEES, MUSICIAN_COSTS, PRS, VOLUNTEER_COSTS, BAR_CASH_PURCHASES,
+        DRINKS_CASH_PURPOSES, DRINKS_BANK, DRINKS_CARD, BAR_EXPENDITURE, SECURITY,
+        MARKETING, RENT, RATES, ELECTRICITY, TELEPHONE, INSURANCE, SALARIES,
+        STAFF_EXPENSES, RENTOKIL, GAS, WASTE_COLLECTION, BIN_HIRE, DOOR_SECURITY,
+        ALARM, DAILY_CLEANING, BUILDING_MAINTENANCE, BUILDING_WORKS,
+
+        DOWNSTAIRS_BUILDING_WORKS,
+
+        STEINWAY, EQUIPMENT_MAINTENANCE, WEBSITE, ACCOUNTING, OPERATIONAL_COSTS,
+        EQUIPMENT_PURCHASE, EVENTS, SUBSCRIPTIONS, CREDIT_CARD_FEES, BANK_FEES,
     ]
 
     def __init__(
@@ -267,10 +332,12 @@ class QuarterVatSheet:
             row.values
             for row in rows2
         ]
+
         def trim_safe(term):
             if isinstance(term, str):
                 return term.strip()
             return term
+
         headings = [trim_safe(row[0]) for row in rows3]
 
         months = [month - 2, month - 1, month]
@@ -286,9 +353,11 @@ class QuarterVatSheet:
                 row = rows3[i]
                 term = trim_safe(row[0])
                 expected_term = expected_terms[i - breakdown_heading_row - 1]
-                assert term == expected_term, f"Expected [{expected_term}] at row {i}, found [{term}]"
+                if not isinstance(term, str) and np.isnan(term) and expected_term == QuarterVatSheet.RATES:
+                    term = QuarterVatSheet.RATES
+                assert term.lower() == expected_term.lower(), f"Expected [{expected_term}] at row {i}, found [{term}]"
                 breakdown = QuarterBreakdown(
-                    term,
+                    expected_term,
                     months,
                     [row[1], row[2], row[3]],
                     row[4],
@@ -297,22 +366,30 @@ class QuarterVatSheet:
                 by_term[term] = breakdown
             return by_term
 
-        inputs = extract_breakdown("INPUTS", QuarterVatSheet.INPUTS)
+        if month < AccountingMonth(AccountingYear(2020), 12):
+            expected_inputs = QuarterVatSheet.INPUTS_1
+        elif month < AccountingMonth(AccountingYear(2021), 3):
+            expected_inputs = QuarterVatSheet.INPUTS_2
+        elif month < AccountingMonth(AccountingYear(2021), 12):
+            expected_inputs = QuarterVatSheet.INPUTS_1
+        elif month < AccountingMonth(AccountingYear(2022), 3):
+            expected_inputs = QuarterVatSheet.INPUTS_3
+        else:
+            expected_inputs = QuarterVatSheet.INPUTS_4
+        inputs = extract_breakdown(
+            "INPUTS",
+            expected_inputs,
+        )
         outputs = extract_breakdown("OUTPUTS", QuarterVatSheet.OUTPUTS)
         return QuarterVatSheet(inputs, outputs)
 
 
 if __name__ == '__main__':
-    month = AccountingMonth(AccountingYear(2019), 3)
-    path = path_for_accounting_month(month)
-    gig_report = MonthlyGigReportSheet.from_spreadsheet(path, month)
-    vat_report = QuarterVatSheet.from_spreadsheet(path, month)
+    for y in range(2019, 2024):
+        for m in [3, 6, 9, 12]:
+            print(f"Determining path for {y}-{m}")
+            month = AccountingMonth(AccountingYear(y), m)
+            path = path_for_accounting_month(month)
+            gig_report = MonthlyGigReportSheet.from_spreadsheet(path, month)
+            vat_report = QuarterVatSheet.from_spreadsheet(path, month)
 
-    # reports_path = Path(
-    #     "/Users/alex/Dropbox (Personal)/vortex/Tim stuff/memory stick/Gig reports monthly/"
-    # )
-    # for y in [AccountingYear(y) for y in range(2019, 2024)]:
-    #     for i, m in enumerate(y.accounting_months):
-    #         name = m.corresponding_calendar_month.first_day.date.strftime("%b %Y")
-    #         path = reports_path / f"{y.y}" / f"Gig Report Month {i + 1}  - {name}.xlsx"
-    #         gig_report = MonthlyGigReport.from_spreadsheet(path, m)
