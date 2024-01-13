@@ -1,4 +1,3 @@
-import decimal
 from decimal import Decimal
 from numbers import Number
 from pathlib import Path
@@ -6,6 +5,7 @@ from typing import Dict, TypeVar, Generic, List
 
 import numpy as np
 import pandas as pd
+from tabulate import tabulate
 
 from date_range.accounting_month import AccountingMonth
 from date_range.accounting_year import AccountingYear
@@ -160,9 +160,9 @@ class QuarterBreakdown:
                  vat: Opt[Decimal]):
         self.term = checked_type(term, str)
         self.months = checked_list_type(months, AccountingMonth)
-        self.month_values: List[Decimal] = checked_list_type(month_values, Number)
-        self.qtr_value: Decimal = checked_type(qtr_value, Number)
-        self.vat: Opt[Decimal] = checked_opt_type(vat, Number)
+        self.month_values: List[Number] = checked_list_type(month_values, Number)
+        self.qtr_value: Number = checked_type(qtr_value, Number)
+        self.vat: Opt[Number] = checked_opt_type(vat, Number)
 
         if self.has_inconsistent_qtr_value:
             raise ValueError(f"Qtr value {self.qtr_value} is inconsistent with month values {self.month_values}")
@@ -252,14 +252,14 @@ class QuarterVatSheet:
         STAFF_EXPENSES, RENTOKIL, GAS, WASTE_COLLECTION, BIN_HIRE, DOOR_SECURITY,
         ALARM, DAILY_CLEANING, BUILDING_MAINTENANCE,
 
-        #STEINWAY,
+        # STEINWAY,
         PIANO_TUNING,
         EQUIPMENT_PURCHASES,
 
         EQUIPMENT_MAINTENANCE, WEBSITE,
         ACCOUNTING, OPERATIONAL_COSTS,
 
-        #EQUIPMENT_PURCHASE,
+        # EQUIPMENT_PURCHASE,
         LICENSING_INDIRECT,
 
         EVENTS, SUBSCRIPTIONS,
@@ -276,14 +276,14 @@ class QuarterVatSheet:
 
         BUILDING_WORKS,
         STEINWAY,
-        #PIANO_TUNING,
-        #EQUIPMENT_PURCHASES,
+        # PIANO_TUNING,
+        # EQUIPMENT_PURCHASES,
 
         EQUIPMENT_MAINTENANCE, WEBSITE,
         ACCOUNTING, OPERATIONAL_COSTS,
 
         EQUIPMENT_PURCHASE,
-        #LICENSING_INDIRECT,
+        # LICENSING_INDIRECT,
 
         EVENTS, SUBSCRIPTIONS,
         CREDIT_CARD_FEES, BANK_FEES,
@@ -312,15 +312,69 @@ class QuarterVatSheet:
         self.inputs = checked_dict_type(inputs, str, QuarterBreakdown)
         self.outputs = checked_dict_type(outputs, str, QuarterBreakdown)
 
+    @property
+    def total_sales_ex_vat(self) -> float:
+        return sum([b.qtr_value for b in self.outputs.values()])
+
+    @property
+    def total_sales_vat(self) -> float:
+        return sum(
+            [b.vat.get_or_else(0.0) for item, b in self.outputs.items() if item != QuarterVatSheet.TOTAL_TICKET_SALES])
+
+    @property
+    def total_ticket_sales_ex_vat(self):
+        return self.outputs[QuarterVatSheet.TOTAL_TICKET_SALES].qtr_value
+
+    @property
+    def vat_partial_exemption(self) -> float:
+        all_sales = self.total_sales_ex_vat
+        ticket_sales = self.total_ticket_sales_ex_vat
+        return (all_sales - ticket_sales) / all_sales
+
+    @property
+    def total_purchases_ex_vat(self) -> float:
+        return sum([b.qtr_value for b in self.inputs.values()])
+
+    @property
+    def drinks_vat_paid(self):
+        return sum([
+            b.vat.get_or_else(0.0)
+            for item, b in self.inputs.items()
+            if item in [QuarterVatSheet.DRINKS_BANK, QuarterVatSheet.DRINKS_CARD]
+        ])
+
+    @property
+    def downstairs_works_vat_paid(self):
+        return sum([
+            b.vat.get_or_else(0.0)
+            for item, b in self.inputs.items()
+            if item in [QuarterVatSheet.DOWNSTAIRS_BUILDING_WORKS]
+        ])
+
+    @property
+    def total_vat_paid(self):
+        return sum([
+            b.vat.get_or_else(0.0)
+            for item, b in self.inputs.items()
+            if item not in [QuarterVatSheet.MUSICIANS_FEES, QuarterVatSheet.MUSICIAN_COSTS,
+                            QuarterVatSheet.BAR_EXPENDITURE]
+        ])
+
+    @property
+    def vat_owed_using_old_method(self):
+        partially_exempt_vat_paid = self.total_vat_paid - self.downstairs_works_vat_paid
+        return self.total_sales_vat - partially_exempt_vat_paid * self.vat_partial_exemption - self.downstairs_works_vat_paid
+
+    @property
+    def vat_owed_using_new_method(self):
+        partially_exempt_vat_paid = self.total_vat_paid - self.drinks_vat_paid - self.downstairs_works_vat_paid
+        return (self.total_sales_vat
+                - partially_exempt_vat_paid * self.vat_partial_exemption
+                - self.drinks_vat_paid
+                - self.downstairs_works_vat_paid)
+
     @staticmethod
     def from_spreadsheet(path: Path, month: AccountingMonth) -> 'QuarterVatSheet':
-        def exclude_row(row):
-            if row[0] is np.nan:
-                return True
-            if pd.isna(row[0]):
-                return True
-            return False
-
         xls = pd.ExcelFile(path)
         sheet = pd.read_excel(xls, 'VAT', header=None)
         rows1 = list(sheet.iterrows())
@@ -356,12 +410,17 @@ class QuarterVatSheet:
                 if not isinstance(term, str) and np.isnan(term) and expected_term == QuarterVatSheet.RATES:
                     term = QuarterVatSheet.RATES
                 assert term.lower() == expected_term.lower(), f"Expected [{expected_term}] at row {i}, found [{term}]"
+                vat = row[5]
+                if isinstance(vat, Number) and np.isnan(vat):
+                    vat = Nothing()
+                else:
+                    vat = Opt.of(vat)
                 breakdown = QuarterBreakdown(
                     expected_term,
                     months,
                     [row[1], row[2], row[3]],
                     row[4],
-                    Opt.of(row[5]),
+                    vat,
                 )
                 by_term[term] = breakdown
             return by_term
@@ -385,11 +444,31 @@ class QuarterVatSheet:
 
 
 if __name__ == '__main__':
+    # May 22 omitted drinks VAT entirely
+    # Feb 23 didn't apply the full rebate to downstairs works
+    table = []
+    total_diff = 0.0
     for y in range(2019, 2024):
         for m in [3, 6, 9, 12]:
-            print(f"Determining path for {y}-{m}")
             month = AccountingMonth(AccountingYear(y), m)
             path = path_for_accounting_month(month)
             gig_report = MonthlyGigReportSheet.from_spreadsheet(path, month)
             vat_report = QuarterVatSheet.from_spreadsheet(path, month)
-
+            old_vat = vat_report.vat_owed_using_old_method
+            new_vat = vat_report.vat_owed_using_new_method
+            diff = old_vat - new_vat
+            total_diff += diff
+            row = [month,
+                   old_vat,
+                   vat_report.vat_partial_exemption * 100.0,
+                   new_vat, diff, total_diff]
+            table.append(row)
+    print(
+        tabulate(
+            table,
+            headers=["Month", "VAT owed (old)", "partial exemption",
+                     "VAT owed (new)", "Overpayment", "Running Total"],
+            floatfmt=".2f"
+        )
+    )
+    print(f"Total diff: {total_diff}")
