@@ -11,6 +11,13 @@ from myopt.opt import Opt
 
 
 class MembersRecord(AirtableRecord):
+
+    @property
+    def ignore_record(self) -> bool:
+        # hack due to my discovering a dodgy record. Might remove after determining the cau
+        # with Pauline and Daniel
+        return self._airtable_value(MembersColumns.FIRST_NAME, allow_missing=True) is None
+
     @property
     def first_name(self) -> str:
         return self._airtable_value(MembersColumns.FIRST_NAME, allow_missing=False)
@@ -86,7 +93,8 @@ class MembersTable:
         members = []
         for rec in self.table.all(sort=[MembersColumns.MEMBERSHIP_START_DATE]):
             member = MembersRecord(rec)
-            members.append(member.to_member)
+            if not member.ignore_record:
+                members.append(member.to_member)
         return members
 
 

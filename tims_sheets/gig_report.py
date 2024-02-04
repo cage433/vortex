@@ -1,3 +1,4 @@
+import csv
 from decimal import Decimal
 from numbers import Number
 from pathlib import Path
@@ -12,6 +13,7 @@ from date_range.accounting_year import AccountingYear
 from date_range.week import Week
 from myopt.nothing import Nothing
 from myopt.opt import Opt
+from utils.file_utils import write_csv_file
 from utils.type_checks import checked_opt_type, checked_type, checked_list_type, checked_dict_type
 
 T = TypeVar("T", bound=Number)
@@ -231,6 +233,7 @@ class QuarterVatSheet:
     SUBSCRIPTIONS = "Subscriptons"
     CREDIT_CARD_FEES = "Credit card fees"
     BANK_FEES = "Bank fees"
+    THIS_IS_THE_VAT_TO_PAY = "This is the VAT to pay"
 
     INPUTS_1 = [
         DEAL_FEE, MUSICIANS_CASH, MUSICIANS_INTERNET, MUSICIANS_FEES, ACCOMODATION,
@@ -308,9 +311,11 @@ class QuarterVatSheet:
             self,
             inputs: Dict[str, QuarterBreakdown],
             outputs: Dict[str, QuarterBreakdown],
+            amount_owed: float
     ):
         self.inputs = checked_dict_type(inputs, str, QuarterBreakdown)
         self.outputs = checked_dict_type(outputs, str, QuarterBreakdown)
+        self.amount_owed = checked_type(amount_owed, float)
 
     @property
     def total_sales_ex_vat(self) -> float:
@@ -360,31 +365,34 @@ class QuarterVatSheet:
                             QuarterVatSheet.BAR_EXPENDITURE]
         ])
 
-    @property
-    def vat_owed_using_old_method(self):
-        partially_exempt_vat_paid = self.total_vat_paid - self.downstairs_works_vat_paid
-        return self.total_sales_vat - partially_exempt_vat_paid * self.vat_partial_exemption - self.downstairs_works_vat_paid
+    def vat_owed_using_old_method(self, month: AccountingMonth):
+        if month < AccountingMonth(AccountingYear(2023), 5):
+            partially_exempt_vat_paid = self.total_vat_paid - self.downstairs_works_vat_paid
+            return self.total_sales_vat - partially_exempt_vat_paid * self.vat_partial_exemption - self.downstairs_works_vat_paid
+        else:
+            return self.total_sales_vat - self.total_vat_paid * self.vat_partial_exemption
 
-    @property
-    def vat_owed_using_new_method(self):
-        partially_exempt_vat_paid = self.total_vat_paid - self.drinks_vat_paid - self.downstairs_works_vat_paid
-        return (self.total_sales_vat
-                - partially_exempt_vat_paid * self.vat_partial_exemption
-                - self.drinks_vat_paid
-                - self.downstairs_works_vat_paid)
+    def vat_owed_using_new_method(self, month: AccountingMonth):
+        if month < AccountingMonth(AccountingYear(2023), 5):
+            partially_exempt_vat_paid = self.total_vat_paid - self.drinks_vat_paid - self.downstairs_works_vat_paid
+            return (self.total_sales_vat
+                    - partially_exempt_vat_paid * self.vat_partial_exemption
+                    - self.drinks_vat_paid
+                    - self.downstairs_works_vat_paid)
+        else:
+            partially_exempt_vat_paid = self.total_vat_paid - self.drinks_vat_paid
+            return (self.total_sales_vat
+                    - partially_exempt_vat_paid * self.vat_partial_exemption
+                    - self.drinks_vat_paid
+                    )
 
     @staticmethod
     def from_spreadsheet(path: Path, month: AccountingMonth) -> 'QuarterVatSheet':
         xls = pd.ExcelFile(path)
         sheet = pd.read_excel(xls, 'VAT', header=None)
-        rows1 = list(sheet.iterrows())
-        rows2 = [
-            row[1]
-            for row in rows1
-        ]
-        rows3 = [
-            row.values
-            for row in rows2
+        rows = [
+            row[1].values
+            for row in list(sheet.iterrows())
         ]
 
         def trim_safe(term):
@@ -392,7 +400,7 @@ class QuarterVatSheet:
                 return term.strip()
             return term
 
-        headings = [trim_safe(row[0]) for row in rows3]
+        headings = [trim_safe(row[0]) for row in rows]
 
         months = [month - 2, month - 1, month]
 
@@ -404,7 +412,7 @@ class QuarterVatSheet:
 
             by_term = {}
             for i in range(breakdown_heading_row + 1, breakdown_total_row):
-                row = rows3[i]
+                row = rows[i]
                 term = trim_safe(row[0])
                 expected_term = expected_terms[i - breakdown_heading_row - 1]
                 if not isinstance(term, str) and np.isnan(term) and expected_term == QuarterVatSheet.RATES:
@@ -435,12 +443,16 @@ class QuarterVatSheet:
             expected_inputs = QuarterVatSheet.INPUTS_3
         else:
             expected_inputs = QuarterVatSheet.INPUTS_4
-        inputs = extract_breakdown(
-            "INPUTS",
-            expected_inputs,
-        )
+
+        inputs = extract_breakdown("INPUTS", expected_inputs)
         outputs = extract_breakdown("OUTPUTS", QuarterVatSheet.OUTPUTS)
-        return QuarterVatSheet(inputs, outputs)
+
+        amount_owed = None
+        for row in rows:
+            if len(row) >= 13 and row[9] == QuarterVatSheet.THIS_IS_THE_VAT_TO_PAY:
+                amount_owed = row[12]
+        assert amount_owed is not None, "Couldn't find amount owed"
+        return QuarterVatSheet(inputs, outputs, amount_owed)
 
 
 if __name__ == '__main__':
@@ -454,21 +466,28 @@ if __name__ == '__main__':
             path = path_for_accounting_month(month)
             gig_report = MonthlyGigReportSheet.from_spreadsheet(path, month)
             vat_report = QuarterVatSheet.from_spreadsheet(path, month)
-            old_vat = vat_report.vat_owed_using_old_method
-            new_vat = vat_report.vat_owed_using_new_method
+            vat_reported = vat_report.amount_owed
+            old_vat = vat_report.vat_owed_using_old_method(month)
+            new_vat = vat_report.vat_owed_using_new_method(month)
             diff = old_vat - new_vat
-            total_diff += diff
             row = [month,
-                   old_vat,
                    vat_report.vat_partial_exemption * 100.0,
-                   new_vat, diff, total_diff]
+                   vat_reported,
+                   old_vat,
+                   new_vat, diff,
+                   month < AccountingMonth(AccountingYear(2023), 5)]
             table.append(row)
     print(
         tabulate(
             table,
-            headers=["Month", "VAT owed (old)", "partial exemption",
-                     "VAT owed (new)", "Overpayment", "Running Total"],
+            headers=["Month", "Partial Exemption", "VAT owed (reported)", "VAT owed (old)",
+                     "VAT owed (new)", "Overpayment", "month comp"],
             floatfmt=".2f"
         )
     )
-    print(f"Total diff: {total_diff}")
+    headers = [
+        ["", "", "VAT", "", "", ""],
+        ["Month", "Partial Exemption", "Reported", "Old method", "New method", "Overpayment", "month comp"]
+    ]
+    totals = [["Total"] + [sum(row[i] for row in table) for i in range(1, 6)]]
+    write_csv_file(Path("/Users/alex/vat-analysis-1.csv"), headers + table + totals, quoting=csv.QUOTE_NONE)
