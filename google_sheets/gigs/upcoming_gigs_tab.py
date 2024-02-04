@@ -33,7 +33,6 @@ class UpcomingGigsTab(Tab):
             full_range[:, -1].right_align_text_request(),
             full_range[:, 2].left_align_text_request(),
             self.heading_range.background_colour_request(LIGHT_GREEN),
-            # full_range.border_request(["innerHorizontal"]),
             full_range.outline_border_request(),
         ]
         gigs.sort(key=lambda gig: gig.date)

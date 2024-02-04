@@ -9,6 +9,7 @@ from date_range.simple_date_range import SimpleDateRange
 from env import UPCOMING_GIGS_ID
 from google_sheets import Workbook
 from google_sheets.gigs.upcoming_gigs_tab import UpcomingGigsTab
+from utils.logging import log_message
 
 
 def update_sheet():
@@ -42,4 +43,5 @@ def update_sheet():
 
 
 if __name__ == '__main__':
+    log_message("Updating sheet")
     update_sheet()
