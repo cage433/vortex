@@ -72,8 +72,3 @@ if __name__ == '__main__':
     db = VortexDB()
     period = Month(2023, 1)
     contracts_and_events = db.contracts_and_events_for_period(period)
-    for contract_and_events in contracts_and_events.contracts_and_events:
-        print()
-        print(contract_and_events.contract.record_id)
-        for event in contract_and_events.events:
-            print(event.title)

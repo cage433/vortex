@@ -92,7 +92,7 @@ class AccountingReportTab(Tab):
 SHELF = Path(__file__).parent / "_ytd_report.shelf"
 
 
-def gig_info(period: DateRange, force: bool = False) -> GigsInfo:
+def gig_info(period: DateRange, force: bool) -> GigsInfo:
     key = f"gig_info_{period}"
     with shelve.open(str(SHELF)) as shelf:
         if key not in shelf or force:
@@ -101,7 +101,7 @@ def gig_info(period: DateRange, force: bool = False) -> GigsInfo:
         return shelf[key]
 
 
-def read_nominal_ledger(force: bool = False) -> NominalLedger:
+def read_nominal_ledger(force: bool) -> NominalLedger:
     key = "nominal_ledger"
     with shelve.open(str(SHELF)) as shelf:
         if key not in shelf or force:
@@ -110,11 +110,11 @@ def read_nominal_ledger(force: bool = False) -> NominalLedger:
         return shelf[key]
 
 
-def read_bank_activity(period: DateRange, force: bool = False) -> BankActivity:
+def read_bank_activity(period: DateRange, force: bool) -> BankActivity:
     key = f"bank_activity_{period}"
     with shelve.open(str(SHELF)) as shelf:
         if key not in shelf or force:
-            activity = BankActivity.build().restrict_to_period(period)
+            activity = BankActivity.build(force).restrict_to_period(period)
             shelf[key] = activity
         return shelf[key]
 

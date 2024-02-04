@@ -102,4 +102,3 @@ class OldAccountMappingTable:
 
 if __name__ == '__main__':
     table = OldAccountMappingTable.from_csvs()
-    print(len(table))

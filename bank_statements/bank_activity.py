@@ -99,13 +99,14 @@ class BankActivity:
 
     @staticmethod
     def build(
-            statements_dir: Optional[Path] = None,
+            force: bool,
+            override_statements_dir: Optional[Path] = None,
     ):
         from bank_statements import StatementsReader
-        statements = StatementsReader.read_statements(statements_dir)
+        statements = StatementsReader.read_statements(force, override_statements_dir)
         return BankActivity(statements)
 
 
 if __name__ == '__main__':
-    acc = BankActivity.build()
+    acc = BankActivity.build(force=True)
     acc.formatted_by_category()

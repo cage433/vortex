@@ -100,4 +100,3 @@ class MembersTable:
 
 if __name__ == '__main__':
     members = MembersTable().get_all_members()
-    print(len(members))

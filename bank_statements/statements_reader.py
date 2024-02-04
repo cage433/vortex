@@ -97,12 +97,12 @@ class StatementsReader:
 
     @staticmethod
     def read_statements(
-            statements_dir: Optional[Path] = None,
-            force: bool = False
+            force: bool,
+            override_statements_dir: Optional[Path] = None,
     ) -> list[Statement]:
-        statements_dir = statements_dir or STATEMENTS_DIR
-        balances_by_account = StatementsReader.read_published_balances(statements_dir, force)
-        transactions_by_account = StatementsReader.read_transactions(statements_dir, force)
+        override_statements_dir = override_statements_dir or STATEMENTS_DIR
+        balances_by_account = StatementsReader.read_published_balances(override_statements_dir, force)
+        transactions_by_account = StatementsReader.read_transactions(override_statements_dir, force)
         assert set(balances_by_account.keys()) == set(transactions_by_account.keys()), \
             "Expected balances and transactions to have the same accounts"
         return [

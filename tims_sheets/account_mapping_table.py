@@ -26,7 +26,7 @@ class AccountMappingTable:
         return AccountMappingTable([item.clean() for item in self.items])
 
     @staticmethod
-    def from_spreadsheet(spreadsheet: Path, force: bool = False, clean: bool = False) -> 'AccountMappingTable':
+    def from_spreadsheet(spreadsheet: Path, force: bool, clean: bool = False) -> 'AccountMappingTable':
         with shelve.open(str(SHELF)) as shelf:
             key = "Mapping Table"
             if key not in shelf or force:

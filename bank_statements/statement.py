@@ -45,13 +45,15 @@ class Statement:
                 sum(tr.amount for tr in self.transactions_by_date[d])
                 for d in payment_dates
             )
-            if abs(balance2 - balance1 - transaction_sum) >= 0.01:
+            error = balance2 - balance1 - transaction_sum
+            if abs(error) >= 0.01:
+                print("\n\n")
+                print(f"Errors in #{d1} -> #{d2}, error {error}")
                 for d in payment_dates:
                     for tr in self.transactions_by_date[d]:
                         print(tr)
-                print("here")
-            error = balance2 - balance1 - transaction_sum
-            assert abs(balance2 - balance1 - transaction_sum) < 0.01, f"Inconsistent balance {error} between {d1} and {d2}, sum trans {transaction_sum}, balance1 {balance1}, balance2 {balance2}"
+                print("\n\n")
+            assert abs(error) < 0.01, f"Inconsistent balance {error} between {d1} and {d2}, sum trans {transaction_sum}, balance1 {balance1}, balance2 {balance2}"
 
     def balance_at_eod(self, date: Day) -> float:
         if self.initial_balance_date > date:

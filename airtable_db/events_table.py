@@ -32,5 +32,3 @@ if __name__ == '__main__':
     contracts = c.records_for_date_range(period, [ContractsColumns.RECORD_ID, ContractsColumns.EVENTS_LINK])
     e = EventsTable()
     events = e.records_for_contracts(contracts, EventColumns.EVENT_ID, EventColumns.SHEETS_EVENT_TITLE)
-    for event in events:
-        print(event.title)

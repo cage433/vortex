@@ -27,8 +27,6 @@ def monthly_breakdown_example():
         filters=[PivotFilter.date_range_filter(DATE, Month(2020, 3))],
     )
     # report.as_table()
-    print(f"Breakdown for {Month(2020, 3)}")
-    print(tabulate.tabulate(report.as_table(), headers=report.headers()))
 
 
 def rates_example():
