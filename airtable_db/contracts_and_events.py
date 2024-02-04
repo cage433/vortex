@@ -1,3 +1,4 @@
+import datetime
 from typing import Optional
 
 from airtable_db.airtable_record import AirtableRecord
@@ -38,6 +39,13 @@ class ContractRecord(AirtableRecord):
     @property
     def is_hire(self):
         return self.contract_type == Something("Hire")
+
+    def event_title(self, allow_missing: bool = False) -> str:
+        return self._airtable_value(ContractsColumns.EVENT_TITLE, allow_missing=allow_missing)
+
+    @property
+    def door_time(self) -> Opt[str]:
+        return Opt.of(self._airtable_value(ContractsColumns.DOOR_TIME_1ST_SHOW, allow_missing=True))
 
 
 class EventRecord(AirtableRecord):

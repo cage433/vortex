@@ -107,6 +107,9 @@ class ContractsColumns:
     MUSICIANS_FEE = "Musicians fee"
     PRS_FEE_EX_VAT = "PRS Fee Ex VAT"
 
+    DOOR_TIME_1ST_SHOW = "Door time 1st show"
+    TYPE = "Type"
+
     @staticmethod
     def ticket_price_column(price_level: TicketPriceLevel):
         price_level_text = {

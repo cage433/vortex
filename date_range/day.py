@@ -63,3 +63,11 @@ class Day(ContiguousDateRange):
     def parse(text) -> 'Day':
         return Day.from_date(parse_date(text))
 
+    @staticmethod
+    def today() -> 'Day':
+        return Day.from_date(date.today())
+
+    @property
+    def month(self) -> 'Month':
+        from date_range.month import Month
+        return Month.containing(self)

@@ -263,6 +263,9 @@ class TabRange:
     def right_align_text_request(self):
         return self.horizontal_alignment_request("right")
 
+    def left_align_text_request(self):
+        return self.horizontal_alignment_request("left")
+
     def text_format_request(self, format):
         return self.user_entered_format_request({"text_format": format})
 
