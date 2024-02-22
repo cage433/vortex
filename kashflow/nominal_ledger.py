@@ -1,8 +1,10 @@
+import shelve
 from numbers import Number
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from date_range import Day, DateRange
+from date_range.accounting_year import AccountingYear
 from env import KASHFLOW_CSV_DIR
 from utils import checked_list_type, checked_type
 from utils.file_utils import read_csv_file
@@ -17,8 +19,11 @@ class NominalLedgerItemType:
     DOWNSTAIRS_BUILDING_WORKS = "Downstairs building works"
     EQUIPMENT_MAINTENANCE = "Equipment Maintenance"
     EQUIPMENT_PURCHASE = "Equipment Purchases"
+    FLOOD_CLEARANCE = "Flood Clearance"
     LICENSING_INDIRECT = "Licensing - Indirect"
+    LICENSING_DIRECT = "Licensing -Direct"
     MARKETING = "Marketing - Indirect"
+    MUSICIAN_COSTS = "Musician Costs"
     OPERATIONAL_COSTS = "Operational Costs"
     OUTPUT_VAT = "Output VAT"
     PIANO_TUNING = "Piano tuning"
@@ -64,33 +69,13 @@ class NominalLedger:
         return self.filter_on_item_type(item_type).total_amount()
 
     @property
-    def total_space_hire(self) -> float:
-        return self.total_for(NominalLedgerItemType.SPACE_HIRE)
+    def item_types(self) -> List[str]:
+        return list(set(item.item_type for item in self.ledger_items))
 
-    @property
-    def bar_stock(self) -> float:
-        return self.total_for(NominalLedgerItemType.BAR_STOCK)
-
-    @property
-    def sound_engineering(self) -> float:
-        return self.total_for(NominalLedgerItemType.SOUND_ENGINEERING)
-
-    @property
-    def security(self) -> float:
-        return self.total_for(NominalLedgerItemType.SECURITY)
-
-    @property
-    def marketing(self) -> float:
-        return self.total_for(NominalLedgerItemType.MARKETING)
-
-    @property
-    def piano_tuning(self) -> float:
-        return self.total_for(NominalLedgerItemType.PIANO_TUNING)
+    SHELF = Path(__file__).parent / "_nominal_ledger.shelf"
 
     @staticmethod
-    def from_csv_file(file: Path = None):
-        file = file or NominalLedger.latest_csv_file()
-
+    def _from_csv_file(file: Path) -> 'NominalLedger':
         def ignore_row(row: List[any]):
             if len(row) <= 6:
                 return True
@@ -144,6 +129,15 @@ class NominalLedger:
         return NominalLedger(ledger_items)
 
     @staticmethod
+    def from_latest_csv_file(force: bool) -> 'NominalLedger':
+        file = NominalLedger.latest_csv_file()
+        key = f"nominal_ledger {file}"
+        with shelve.open(str(NominalLedger.SHELF)) as shelf:
+            if key not in shelf or force:
+                shelf[key] = NominalLedger._from_csv_file(file)
+            return shelf[key]
+
+    @staticmethod
     def latest_csv_file() -> Path:
         files = list(KASHFLOW_CSV_DIR.glob('*.csv'))
         assert len(files) > 0, f"No kashflow files found in {KASHFLOW_CSV_DIR}"
@@ -153,3 +147,34 @@ class NominalLedger:
     @staticmethod
     def empty():
         return NominalLedger([])
+
+
+if __name__ == '__main__':
+    ledger = NominalLedger.from_latest_csv_file().restrict_to_period(AccountingYear(2024))
+    used_items = [item.upper() for item in [
+        NominalLedgerItemType.BAR_STOCK,
+        NominalLedgerItemType.BUILDING_MAINTENANCE,
+        NominalLedgerItemType.BUILDING_WORKS,
+        NominalLedgerItemType.CLEANING,
+        NominalLedgerItemType.DOWNSTAIRS_BUILDING_WORKS,
+        NominalLedgerItemType.EQUIPMENT_MAINTENANCE,
+        NominalLedgerItemType.EQUIPMENT_PURCHASE,
+        NominalLedgerItemType.FLOOD_CLEARANCE,
+        NominalLedgerItemType.LICENSING_INDIRECT,
+        NominalLedgerItemType.MARKETING,
+        NominalLedgerItemType.OPERATIONAL_COSTS,
+        NominalLedgerItemType.PIANO_TUNING,
+        NominalLedgerItemType.SECURITY,
+        NominalLedgerItemType.SOUND_ENGINEERING,
+        NominalLedgerItemType.SPACE_HIRE,
+        NominalLedgerItemType.STAFF_COSTS,
+        NominalLedgerItemType.TELEPHONE,
+    ]]
+    missing_items = [item for item in ledger.item_types if item.upper() not in used_items]
+    for item in missing_items:
+        print(f"{item}: {ledger.total_for(item)}")
+    print("\n\n")
+    for item_type in [NominalLedgerItemType.MUSICIAN_COSTS, NominalLedgerItemType.LICENSING_DIRECT]:
+        print(item_type)
+        for item in ledger.filter_on_item_type(item_type).ledger_items:
+            print(f"{item.date}: {item.amount},{item.reference}")

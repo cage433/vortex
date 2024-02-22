@@ -4,7 +4,7 @@ from numbers import Number
 from airtable_db.contracts_and_events import GigsInfo
 from date_range.month import Month
 from google_sheets.tab_range import TabRange, TabCell
-from kashflow.nominal_ledger import NominalLedger
+from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
 from utils import checked_type
 
 
@@ -99,7 +99,7 @@ class BarProfitRange(VortexSummaryRange):
         takings = restricted_gigs.bar_takings / (1 + self.VAT_RATE)
         evening_purchases = -restricted_gigs.evening_purchases / (1 + self.VAT_RATE)
         restricted_ledger = self.nominal_ledger.restrict_to_period(month)
-        delivered_purchases = restricted_ledger.bar_stock
+        delivered_purchases = restricted_ledger.total_for(NominalLedgerItemType.BAR_STOCK)
 
         return takings + evening_purchases + delivered_purchases
 
@@ -116,6 +116,6 @@ class RehearsalAndHireFeesRange(VortexSummaryRange):
         restricted_gigs = self.gigs_info.restrict_to_period(month)
         restricted_ledger = self.nominal_ledger.restrict_to_period(month)
         evening_hire = restricted_gigs.excluding_hires.hire_fees / (1 + self.VAT_RATE)
-        day_hire = restricted_ledger.total_space_hire
+        day_hire = restricted_ledger.total_for(NominalLedgerItemType.SPACE_HIRE)
 
         return evening_hire + day_hire

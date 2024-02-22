@@ -136,6 +136,7 @@ class MonthlyGigReportSheet:
             if int(w) <= month.year.num_weeks  # Blank extra week in Aug 21 report
         ]
         breakdowns = []
+        audience_breakdown = None
         for term in MonthlyGigReportSheet.TERMS:
             if term == MonthlyGigReportSheet.WEEK:
                 continue
@@ -146,7 +147,12 @@ class MonthlyGigReportSheet:
             if terms[vat_column] is not np.nan:
                 vat = Opt.of(terms[vat_column])
             breakdown = WeeklyBreakdown(term, weeks, week_values, mtd_value, vat)
-            breakdowns.append(breakdown)
+            if term == MonthlyGigReportSheet.AUDIENCE_NUMBER:
+                audience_breakdown = breakdown
+            else:
+                breakdowns.append(breakdown)
+
+        return MonthlyGigReportSheet(month, audience_breakdown, breakdowns)
 
 
 def path_for_accounting_month(month: AccountingMonth) -> Path:

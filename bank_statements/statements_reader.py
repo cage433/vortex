@@ -96,13 +96,9 @@ class StatementsReader:
         }
 
     @staticmethod
-    def read_statements(
-            force: bool,
-            override_statements_dir: Optional[Path] = None,
-    ) -> list[Statement]:
-        override_statements_dir = override_statements_dir or STATEMENTS_DIR
-        balances_by_account = StatementsReader.read_published_balances(override_statements_dir, force)
-        transactions_by_account = StatementsReader.read_transactions(override_statements_dir, force)
+    def read_statements(force: bool) -> list[Statement]:
+        balances_by_account = StatementsReader.read_published_balances(STATEMENTS_DIR, force)
+        transactions_by_account = StatementsReader.read_transactions(STATEMENTS_DIR, force)
         assert set(balances_by_account.keys()) == set(transactions_by_account.keys()), \
             "Expected balances and transactions to have the same accounts"
         return [
@@ -114,49 +110,4 @@ class StatementsReader:
             for account_id in balances_by_account.keys()
         ]
 
-
-if __name__ == '__main__':
-    force = False
-    month = AccountingMonth(AccountingYear(2023), 10)
-    statements = StatementsReader.read_statements(STATEMENTS_DIR, force)
-    # restricted_period = SimpleDateRange(Day(2021, 6, 1), Day(2030, 1, 1))
-    bank_activity = BankActivity(statements)
-    # print(f"First bank date {bank_activity.first_date}")
-    # bank_activity = bank_activity.restrict_to_period(Year(2023))
-
-    trans = [
-        tr for tr in bank_activity.sorted_transactions
-        if tr.category == Opt.of(PayeeCategory.INSURANCE)
-    ]
-
-    def write_transactions_to_csv():
-        table = []
-        for t in bank_activity.sorted_transactions:
-            table.append([t.account, t.payment_date, t.payee, t.amount, t.category.get_or_else("")])
-        write_csv_file(Path("/Users/alex/Downloads/transactions.csv"), table)
-    total = sum(t.amount for t in trans)
-    print(f"total = {total}, num trans = {len(trans)}")
-
-
-    def report_by_month():
-        tr_by_month = group_into_dict(trans, lambda t: AccountingMonth.containing(t.payment_date))
-        months = sorted(tr_by_month.keys())
-        for m in months:
-            print(f"{m} {len(tr_by_month[m])}, {sum(t.amount for t in tr_by_month[m])}")
-
-
-    def report_by_trans():
-        table = []
-        for tr in trans:
-            acc_month = AccountingMonth.containing(tr.payment_date)
-            table.append([
-                acc_month,
-                tr.payment_date,
-                tr.payee,
-                tr.amount,
-            ])
-        print(tabulate.tabulate(table))
-
-    write_transactions_to_csv()
-    # report_by_trans()
 

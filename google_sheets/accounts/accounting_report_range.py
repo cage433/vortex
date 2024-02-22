@@ -1,6 +1,7 @@
 from numbers import Number
 from typing import List
 
+from accounting.accounting_activity import AccountingActivity
 from airtable_db.contracts_and_events import GigsInfo
 from airtable_db.table_columns import TicketPriceLevel
 from bank_statements import BankActivity
@@ -31,6 +32,8 @@ class AccountingReportRange(TabRange):
         "Insurance Comp",
         # PRS Special
         "PRS Special",
+        # Flood Clearance
+        "Flood Clearance",
         "Bank Balance Change",
         # Bank accounts
         "", "", "", "",
@@ -66,6 +69,8 @@ class AccountingReportRange(TabRange):
         # Insurance Comp
         "",
         # PRS Special
+        "",
+        # Flood Clearance
         "",
         # Bank Balance change
         "",
@@ -116,6 +121,8 @@ class AccountingReportRange(TabRange):
         "",
         # PRS Special
         "",
+        # Flood Clearance
+        "",
         # Bank P&L
         "",
         "", "", "", "",
@@ -158,6 +165,7 @@ class AccountingReportRange(TabRange):
      GRANTS,
      INSURANCE_COMP,
      PRS_SPECIAL,
+     FLOOD_CLEARANCE,
      BANK_P_AND_L, CURRENT_ACC_P_AND_L, SAVINGS_ACC_P_AND_L, BBL_P_AND_L, CHARITABLE_ACC_P_AND_L,
      EXPECTED_BANK_P_AND_L,
      GIG_P_AND_L,
@@ -207,9 +215,7 @@ class AccountingReportRange(TabRange):
             title: str,
             periods: List[DateRange],
             period_titles: List[str],
-            gigs_info: GigsInfo,
-            nominal_ledger: NominalLedger,
-            bank_activity: BankActivity,
+            accounting_activity: AccountingActivity,
             vat_rate: float
     ):
         super().__init__(top_left_cell, len(self.ROW_HEADINGS), len(periods) + 4)
@@ -218,15 +224,15 @@ class AccountingReportRange(TabRange):
         self.period_titles: List[str] = checked_list_type(period_titles, str)
         self.num_periods: int = len(self.periods)
         self.gigs_by_sub_period: list[GigsInfo] = [
-            gigs_info.restrict_to_period(period)
+            accounting_activity.gigs_info.restrict_to_period(period)
             for period in self.periods
         ]
         self.ledger_by_sub_period: list[NominalLedger] = [
-            nominal_ledger.restrict_to_period(period)
+            accounting_activity.nominal_ledger.restrict_to_period(period)
             for period in self.periods
         ]
         self.bank_activity_by_sub_period: list[BankActivity] = [
-            bank_activity.restrict_to_period(period)
+            accounting_activity.bank_activity.restrict_to_period(period)
             for period in self.periods
         ]
         self.vat_rate: float = checked_type(vat_rate, Number)
@@ -254,7 +260,7 @@ class AccountingReportRange(TabRange):
             self.tab.group_rows_request(self.i_first_row + self.CURRENT_ACC_P_AND_L,
                                         self.i_first_row + self.CHARITABLE_ACC_P_AND_L),
 
-            self[self.PRS_SPECIAL].border_request(["bottom"]),
+            self[self.FLOOD_CLEARANCE].border_request(["bottom"]),
             self[self.EXPECTED_BANK_P_AND_L].border_request(["bottom"]),
 
             # Gig P&L
@@ -366,14 +372,14 @@ class AccountingReportRange(TabRange):
             values.append(
                 (self.period_range(i_row), [func(gig) for gig in self.gigs_by_sub_period])
             )
-        for (i_row, func) in [
-            (self.SOUND_ENGINEERING, lambda ledger: ledger.sound_engineering),
-            (self.SECURITY, lambda ledger: ledger.security),
-            (self.MARKETING, lambda ledger: ledger.marketing),
-            (self.PIANO_TUNING, lambda ledger: ledger.piano_tuning),
+        for (i_row, item_type) in [
+            (self.SOUND_ENGINEERING, NominalLedgerItemType.SOUND_ENGINEERING),
+            (self.SECURITY, NominalLedgerItemType.SECURITY),
+            (self.MARKETING, NominalLedgerItemType.MARKETING),
+            (self.PIANO_TUNING, NominalLedgerItemType.PIANO_TUNING)
         ]:
             values.append(
-                (self.period_range(i_row), [func(ledger) for ledger in self.ledger_by_sub_period])
+                (self.period_range(i_row), [ledger.total_for(item_type) for ledger in self.ledger_by_sub_period])
             )
         for (i_row, category) in [
             (self.WORK_PERMITS, PayeeCategory.WORK_PERMITS)
@@ -415,7 +421,7 @@ class AccountingReportRange(TabRange):
             ),
             (
                 self.period_range(self.DAY_HIRE_FEES),
-                [ledger.total_space_hire for ledger in self.ledger_by_sub_period]
+                [ledger.total_for(NominalLedgerItemType.SPACE_HIRE) for ledger in self.ledger_by_sub_period]
             )
         ]
         return values
@@ -466,7 +472,7 @@ class AccountingReportRange(TabRange):
             ),
             (
                 self.period_range(self.BAR_PURCHASES),
-                [ledger.bar_stock for ledger in self.ledger_by_sub_period]
+                [ledger.total_for(NominalLedgerItemType.BAR_STOCK) for ledger in self.ledger_by_sub_period]
             ),
             (
                 self.period_range(self.ZETTLE_FEES),
@@ -492,6 +498,16 @@ class AccountingReportRange(TabRange):
                     self[self.CAP_EX, i_col],
                     f"={self.sum_formula(self.BUILDING_WORKS, self.EQUIPMENT_PURCHASE, i_col)}"
                 )
+            )
+        return values
+
+    def _exceptional_values(self):
+        values = []
+        for (i_row, ledger_item) in [
+            (self.FLOOD_CLEARANCE, NominalLedgerItemType.FLOOD_CLEARANCE),
+        ]:
+            values.append(
+                (self.period_range(i_row), [ledger.total_for(ledger_item) for ledger in self.ledger_by_sub_period])
             )
         return values
 
@@ -624,6 +640,7 @@ class AccountingReportRange(TabRange):
                              self.P_AND_L,
                              self.CAP_EX,
                              self.GRANTS, self.INSURANCE_COMP, self.PRS_SPECIAL,
+                             self.FLOOD_CLEARANCE
                          ]]
                     )
                 ),
@@ -639,6 +656,7 @@ class AccountingReportRange(TabRange):
                  + self._bar_values() \
                  + self._costs_values() \
                  + self._cap_ex_values() \
+                 + self._exceptional_values() \
                  + self._p_and_l_values()
 
         return values

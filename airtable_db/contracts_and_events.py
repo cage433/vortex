@@ -1,4 +1,4 @@
-import datetime
+from pathlib import Path
 from typing import Optional
 
 from airtable_db.airtable_record import AirtableRecord
@@ -208,3 +208,6 @@ class GigsInfo:
     @property
     def excluding_hires(self):
         return GigsInfo([ce for ce in self.contracts_and_events if not ce.contract.is_hire])
+
+    SHELF = Path(__file__).parent / "gigs_info.shelf"
+
