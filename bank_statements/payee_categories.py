@@ -15,6 +15,7 @@ class PayeeCategory:
     KASHFLOW = "Kashflow"
     RATES = "Rates"
     WORK_PERMITS = "Work Permits"
+    MARKETING_INDIRECT = "Marketing - Indirect"
 
 
 def _maybe_work_permit(transaction: Transaction) -> Optional[str]:

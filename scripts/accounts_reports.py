@@ -1,29 +1,27 @@
 from typing import List
 
-from airtable_db.contracts_and_events import GigsInfo
+from accounting.accounting_activity import AccountingActivity
+from bank_statements import BankActivity
 from date_range import DateRange, Day
 from date_range.accounting_month import AccountingMonth
 from date_range.accounting_year import AccountingYear
 from date_range.simple_date_range import SimpleDateRange
 from env import YTD_ACCOUNTS_SPREADSHEET_ID, BBL_ACCOUNT_ID
 from google_sheets import Workbook
-from google_sheets.accounts.accounting_report_tab import read_nominal_ledger, gig_info, read_bank_activity, \
-    AccountingReportTab
+from google_sheets.accounts.accounting_report_tab import AccountingReportTab
 
 
 def create_accounting_tab(periods: List[DateRange], period_names: List[str], title: str, show_transactions: bool, force: bool):
     workbook = Workbook(YTD_ACCOUNTS_SPREADSHEET_ID)
-    bounding_period = SimpleDateRange(periods[0].first_day, periods[-1].last_day)
+    # bounding_period = SimpleDateRange(periods[0].first_day, periods[-1].last_day)
 
-    gigs_info_list = []
-    for period in periods:
-        period_info = gig_info(period, force)
-        gigs_info_list += period_info.contracts_and_events
-    gigs_info = GigsInfo(gigs_info_list)
-    nominal_ledger = read_nominal_ledger(force).restrict_to_period(bounding_period)
-    bank_activity = read_bank_activity(bounding_period, force=force)
+    # gigs_info_list = []
+    # for period in periods:
+    #     period_info = gig_info(period, force)
+    #     gigs_info_list += period_info.contracts_and_events
+    accounting_activity = AccountingActivity.activity_for_months(periods, force)
     tab = AccountingReportTab(workbook, title,
-                              periods, period_names, gigs_info, nominal_ledger, bank_activity, show_transactions)
+                              periods, period_names, accounting_activity, show_transactions)
     tab.update()
 
 
@@ -47,7 +45,7 @@ def report_on_bank_pnl():
     m = AccountingMonth(AccountingYear(2018), 1)
     last_month = AccountingMonth(AccountingYear(2024), 11)
     full_period = SimpleDateRange(m.first_day, last_month.last_day)
-    bank_activity = read_bank_activity(full_period, force=False).restrict_to_account(BBL_ACCOUNT_ID)
+    bank_activity = BankActivity.build(False).restrict_to_period(full_period).restrict_to_account(BBL_ACCOUNT_ID)
     while m <= last_month:
         pnl_change = bank_activity.balance_at_eod(m.last_day) - bank_activity.balance_at_sod(m.first_day)
         print(f"{m.month_name}: {pnl_change:1.2f}, end balance {bank_activity.balance_at_eod(m.last_day):1.2f}")
@@ -56,15 +54,15 @@ def report_on_bank_pnl():
 
 def find_transactions_for_payee(payee: str):
     full_period = SimpleDateRange(Day(2015, 1, 1), Day(2024, 12, 31))
-    bank_activity = read_bank_activity(full_period, force=False)
+    bank_activity = BankActivity.build(False).restrict_to_period(full_period)
     for tr in bank_activity.sorted_transactions:
         if payee.upper() in tr.payee.upper():
             print(tr)
 
 
 if __name__ == '__main__':
-    for y in range(2022, 2025):
-        create_ytd_tab(AccountingYear(y), show_transactions=True, force=False)
+    for y in range(2024, 2025):
+        create_ytd_tab(AccountingYear(y), show_transactions=True, force=True)
     # for m in list(range(9, 13)) + list(range(1, 9)):
     #     create_month_tab(AccountingMonth(AccountingYear(2022), m))
     # create_month_tab(AccountingMonth(AccountingYear(2024), 11))

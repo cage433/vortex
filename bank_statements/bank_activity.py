@@ -65,6 +65,10 @@ class BankActivity:
         return sum([t.amount for t in self.sorted_transactions if t.category.get_or_else("") == category])
 
     @property
+    def transaction_by_category(self):
+        return group_into_dict(self.sorted_transactions, lambda t: t.category)
+
+    @property
     def current_account_statement(self):
         return self.statements[CURRENT_ACCOUNT_ID]
 

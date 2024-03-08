@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from functools import total_ordering
 
 from date_range import parse_date
@@ -54,6 +54,10 @@ class Day(ContiguousDateRange):
 
     @staticmethod
     def from_date(d: date) -> 'Day':
+        return Day(d.year, d.month, d.day)
+
+    @staticmethod
+    def from_datetime(d: datetime) -> 'Day':
         return Day(d.year, d.month, d.day)
 
     def days_since(self, rhs: 'Day') -> int:

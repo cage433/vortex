@@ -381,13 +381,19 @@ class AccountingReportRange(TabRange):
             values.append(
                 (self.period_range(i_row), [ledger.total_for(item_type) for ledger in self.ledger_by_sub_period])
             )
-        for (i_row, category) in [
-            (self.WORK_PERMITS, PayeeCategory.WORK_PERMITS)
-        ]:
-            values.append(
-                (self.period_range(i_row),
-                 [activity.net_amount_for_category(category) for activity in self.bank_activity_by_sub_period])
-            )
+
+        values.append(
+            (self.period_range(self.WORK_PERMITS),
+             [activity.net_amount_for_category(PayeeCategory.WORK_PERMITS) for activity in
+              self.bank_activity_by_sub_period])
+        )
+        values.append(
+            (self.period_range(self.MARKETING),
+             [activity.net_amount_for_category(PayeeCategory.MARKETING_INDIRECT) +
+              ledger.total_for(NominalLedgerItemType.MARKETING)
+              for activity, ledger in
+              zip(self.bank_activity_by_sub_period, self.ledger_by_sub_period)])
+        )
 
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
             values += [(
@@ -625,9 +631,9 @@ class AccountingReportRange(TabRange):
                           self.RATES,
                           self.SALARIES, self.RENT, self.OPERATIONAL_COSTS, self.BUILDING_MAINTENANCE,
                           self.VAT_PAYMENTS, self.COSTS_TOTAL]
-                    ]
-                )
-            ),
+                         ]
+                    )
+                ),
             )
             values.append(
                 (

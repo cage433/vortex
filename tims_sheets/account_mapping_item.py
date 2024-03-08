@@ -1,5 +1,3 @@
-from typing import Optional
-
 from myopt.nothing import Nothing
 from myopt.opt import Opt
 from myopt.something import Something

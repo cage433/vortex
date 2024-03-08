@@ -1,6 +1,7 @@
 from functools import total_ordering
 
-from date_range import ContiguousDateRange, Day
+from date_range import ContiguousDateRange
+from date_range import Day
 from date_range.accounting_year import AccountingYear
 from date_range.month import Month
 from utils import checked_type
@@ -36,6 +37,9 @@ class AccountingMonth(ContiguousDateRange):
     def __str__(self):
         return self.month_name
 
+    def months_since(self, other: 'AccountingMonth') -> int:
+        return (self.year.y - other.year.y) * 12 + self.m - other.m
+
     @property
     def month_name(self):
         return self.corresponding_calendar_month.month_name
@@ -59,9 +63,15 @@ class AccountingMonth(ContiguousDateRange):
         return self.corresponding_calendar_month.first_day.date.strftime("%b %y")
 
     @property
-    def corresponding_calendar_month(self):
+    def corresponding_calendar_month(self) -> 'Month':
         m1 = Month(self.year.y - 1, 9)
         return m1 + self.m - 1
+
+    @staticmethod
+    def from_calendar_month(month: Month):
+        if month.m >= 9:
+            return AccountingMonth(AccountingYear(month.y + 1), month.m - 8)
+        return AccountingMonth(AccountingYear(month.y), month.m + 4)
 
     @property
     def weeks(self) -> list['Week']:

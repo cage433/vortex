@@ -1,27 +1,19 @@
 import codecs
 import shelve
 from pathlib import Path
-from typing import Optional
 
-import tabulate
 from ofxparse import OfxParser
 
-from bank_statements import Statement, Transaction, BankActivity
-from bank_statements.payee_categories import category_for_transaction, PayeeCategory
-from date_range import Day, DateRange
-from date_range.accounting_month import AccountingMonth
-from date_range.accounting_year import AccountingYear
-from date_range.simple_date_range import SimpleDateRange
-from date_range.year import Year
+from bank_statements import Statement, Transaction
+from bank_statements.payee_categories import category_for_transaction
+from date_range import Day
 from env import STATEMENTS_DIR
 
 __all__ = ["StatementsReader"]
 
 from myopt.nothing import Nothing
-from myopt.opt import Opt
-from utils.collection_utils import group_into_dict
 
-from utils.file_utils import read_csv_file, write_csv_file
+from utils.file_utils import read_csv_file
 
 
 class StatementsReader:

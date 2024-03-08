@@ -3,6 +3,7 @@ from typing import List
 from airtable_db import VortexDB
 from airtable_db.contracts_and_events import GigsInfo
 from bank_statements import BankActivity
+from date_range import DateRange
 from date_range.accounting_month import AccountingMonth
 from date_range.simple_date_range import SimpleDateRange
 from kashflow.nominal_ledger import NominalLedger
@@ -16,7 +17,7 @@ class AccountingActivity:
         self.bank_activity: BankActivity = checked_type(bank_activity, BankActivity)
 
     @staticmethod
-    def activity_for_months(acc_months: List[AccountingMonth], force: bool) -> 'AccountingActivity':
+    def activity_for_months(acc_months: List[DateRange], force: bool) -> 'AccountingActivity':
         gigs_info_list = []
 
         for month in acc_months:

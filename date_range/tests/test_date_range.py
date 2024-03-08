@@ -81,7 +81,7 @@ class AccountingYearTests(TestCase):
 
 
 class AccountingMonthTests(TestCase):
-    @RandomisedTest(number_of_runs=10, seed=71102509)
+    @RandomisedTest(number_of_runs=10)
     def test_addition(self, rng):
         am = random_accounting_month(rng)
         n = rng.randint(-20, 20)
@@ -121,3 +121,10 @@ class AccountingMonthTests(TestCase):
         print(m.corresponding_calendar_month)
         print(m.first_day)
         print(m.last_day)
+
+    @RandomisedTest(number_of_runs=100)
+    def test_corresponding_calendar_month(self, rng):
+        am = random_accounting_month(rng)
+        m = am.corresponding_calendar_month
+        am2 = AccountingMonth.from_calendar_month(m)
+        self.assertEqual(am, am2)

@@ -3,6 +3,7 @@ __all__ = [
     "checked_list_type",
     "checked_optional_type",
     "checked_dict_type",
+    "checked_opt_type",
 ]
 
 from myopt.opt import Opt
