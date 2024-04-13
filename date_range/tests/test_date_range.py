@@ -95,7 +95,7 @@ class AccountingMonthTests(TestCase):
             self.assertEqual(am.last_day + 1, (am + 1).first_day)
             am += 1
 
-    @RandomisedTest(seed=12987897)
+    @RandomisedTest(number_of_runs=10)
     def test_containing(self, rng):
         month = random_accounting_month(rng)
         for day in month.days:

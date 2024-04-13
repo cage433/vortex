@@ -84,9 +84,11 @@ class AccountingReportTab(Tab):
 if __name__ == '__main__':
     workbook = Workbook(YTD_ACCOUNTS_SPREADSHEET_ID)
     acc_year = AccountingYear(2023)
+    accounting_activity = AccountingActivity.activity_for_period(acc_year, force=False)
+
     acc_months = acc_year.accounting_months
-    accounting_activity = AccountingActivity.activity_for_months(acc_months, force=False)
     period_titles = [m.month_name for m in acc_months]
     tab = AccountingReportTab(workbook, "YTD 2023",
                               acc_months, period_titles, accounting_activity, show_transactions=True)
+
     tab.update()

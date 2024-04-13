@@ -7,6 +7,8 @@ class SimpleDateRange(DateRange):
         self._first_day: Day = checked_type(first_day, Day)
         self._last_day: Day = checked_type(last_day, Day)
 
+    def __str__(self):
+        return f"{self._first_day} -> {self._last_day}"
     @property
     def first_day(self) -> Day:
         return self._first_day

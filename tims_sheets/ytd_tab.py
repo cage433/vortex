@@ -111,6 +111,7 @@ if __name__ == '__main__':
     month = AccountingMonth(AccountingYear(2023), 12)
     path = tims_gig_report_sheet_path(month)
     gig_report_sheet = YTD_Tab.from_spreadsheet(path, month)
+    print(gig_report_sheet.month)
     # accounting_activity = AccountingActivity.activity_for_months([month], force=False)
     #
     # compare_sheets_for_month(gig_report_sheet, accounting_activity)

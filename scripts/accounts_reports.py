@@ -13,13 +13,9 @@ from google_sheets.accounts.accounting_report_tab import AccountingReportTab
 
 def create_accounting_tab(periods: List[DateRange], period_names: List[str], title: str, show_transactions: bool, force: bool):
     workbook = Workbook(YTD_ACCOUNTS_SPREADSHEET_ID)
-    # bounding_period = SimpleDateRange(periods[0].first_day, periods[-1].last_day)
+    bounding_period = SimpleDateRange(periods[0].first_day, periods[-1].last_day)
 
-    # gigs_info_list = []
-    # for period in periods:
-    #     period_info = gig_info(period, force)
-    #     gigs_info_list += period_info.contracts_and_events
-    accounting_activity = AccountingActivity.activity_for_months(periods, force)
+    accounting_activity = AccountingActivity.activity_for_period(bounding_period, force)
     tab = AccountingReportTab(workbook, title,
                               periods, period_names, accounting_activity, show_transactions)
     tab.update()
@@ -62,7 +58,7 @@ def find_transactions_for_payee(payee: str):
 
 if __name__ == '__main__':
     for y in range(2024, 2025):
-        create_ytd_tab(AccountingYear(y), show_transactions=True, force=True)
+        create_ytd_tab(AccountingYear(y), show_transactions=True, force=False)
     # for m in list(range(9, 13)) + list(range(1, 9)):
     #     create_month_tab(AccountingMonth(AccountingYear(2022), m))
     # create_month_tab(AccountingMonth(AccountingYear(2024), 11))

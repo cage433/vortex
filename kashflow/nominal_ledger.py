@@ -51,6 +51,9 @@ class NominalLedgerItem:
         self.narrative: str = checked_type(narrative, str)
         self.amount: float = checked_type(amount, float)
 
+    def __str__(self):
+        return f"{self.date}: {self.amount}, {self.reference}, {self.item_type}"
+
 
 class NominalLedger:
     def __init__(self, ledger_items: List[NominalLedgerItem]):
