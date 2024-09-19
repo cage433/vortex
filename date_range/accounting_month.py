@@ -9,6 +9,7 @@ from utils import checked_type
 
 @total_ordering
 class AccountingMonth(ContiguousDateRange):
+    # First month of the accounting year is September
     def __init__(self, year: AccountingYear, m: int):
         self.year: AccountingYear = checked_type(year, AccountingYear)
         self.m: int = checked_type(m, int)

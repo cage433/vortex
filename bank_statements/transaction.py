@@ -8,7 +8,7 @@ from utils import checked_type
 
 __all__ = ["Transaction"]
 
-from utils.type_checks import checked_optional_type, checked_opt_type
+from utils.type_checks import checked_opt_type
 
 
 class Transaction:

@@ -21,6 +21,7 @@ TIMS_FIRST_MONDAYS_OF_ACCOUNTING_YEAR = {
 
 @total_ordering
 class AccountingYear(ContiguousDateRange):
+    # From Sep / y - 1 to Aug / y
     def __init__(self, y: int):
         self.y = checked_type(y, int)
 

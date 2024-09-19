@@ -41,4 +41,4 @@ class Nothing(Opt, Generic[T]):
         return 'Optional.empty()'
 
     def __hash__(self):
-        return self._hash
+        return 0

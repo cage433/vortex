@@ -153,7 +153,7 @@ class NominalLedger:
 
 
 if __name__ == '__main__':
-    ledger = NominalLedger.from_latest_csv_file().restrict_to_period(AccountingYear(2024))
+    ledger = NominalLedger.from_latest_csv_file(force=False).restrict_to_period(AccountingYear(2024))
     used_items = [item.upper() for item in [
         NominalLedgerItemType.BAR_STOCK,
         NominalLedgerItemType.BUILDING_MAINTENANCE,
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     for item in missing_items:
         print(f"{item}: {ledger.total_for(item)}")
     print("\n\n")
-    for item_type in [NominalLedgerItemType.MUSICIAN_COSTS, NominalLedgerItemType.LICENSING_DIRECT]:
+    for item_type in used_items:
         print(item_type)
         for item in ledger.filter_on_item_type(item_type).ledger_items:
             print(f"{item.date}: {item.amount},{item.reference}")
