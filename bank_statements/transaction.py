@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from date_range import Day
@@ -18,7 +19,7 @@ class Transaction:
             ftid: str,
             payment_date: Day,
             payee: str,
-            amount: float,
+            amount: Decimal,
             transaction_type: str,
             category: Opt[str],
     ):
@@ -26,7 +27,7 @@ class Transaction:
         self.ftid = checked_type(ftid, str)
         self.payment_date: Day = checked_type(payment_date, Day)
         self.payee: str = checked_type(payee, str)
-        self.amount: float = checked_type(amount, float)
+        self.amount: Decimal = checked_type(amount, Decimal)
         self.transaction_type: str = checked_type(transaction_type, str)
         self.category: Opt[str] = checked_opt_type(category, str)
 

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from numbers import Number
 from typing import Optional
 
@@ -15,14 +16,14 @@ class Statement:
             self,
             account: int,
             transactions: list[Transaction],
-            published_balances: dict[Day, float],
+            published_balances: dict[Day, Decimal],
     ):
         self.account: int = checked_type(account, int)
         self.transactions: list[Transaction] = sorted(
             checked_list_type(transactions, Transaction),
             key=lambda t: (t.payment_date, t.payee),
         )
-        self.published_balances: dict[Day, float] = checked_dict_type(published_balances, Day, Number)
+        self.published_balances: dict[Day, Decimal] = checked_dict_type(published_balances, Day, Decimal)
         for tr in transactions:
             assert tr.account == account, \
                 f"Transaction {tr} has account {tr.account} but statement has account {account}"

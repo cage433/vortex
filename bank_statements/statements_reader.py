@@ -1,5 +1,6 @@
 import codecs
 import shelve
+from decimal import Decimal
 from pathlib import Path
 
 from ofxparse import OfxParser
@@ -39,7 +40,7 @@ class StatementsReader:
                             maybe_balance = row[5]
                             if maybe_balance == "":
                                 continue
-                            account_balances[day] = float(maybe_balance)
+                            account_balances[day] = Decimal(maybe_balance)
                     balances[account_id] = account_balances
                 shelf[key] = balances
             return shelf[key]
@@ -66,7 +67,7 @@ class StatementsReader:
                                 tr.id,
                                 Day.from_date(tr.date),
                                 tr.payee,
-                                float(tr.amount),
+                                Decimal(tr.amount),
                                 tr.type,
                                 Nothing()
                             )
