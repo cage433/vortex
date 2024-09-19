@@ -67,6 +67,18 @@ class Tab:
             }
         }
 
+    def group_columns_request(self, i_first_col, i_last_col):
+        return {
+            "add_dimension_group": {
+                "range": {
+                    "sheet_id": self.tab_id,
+                    "dimension": "COLUMNS",
+                    "start_index": i_first_col,
+                    "end_index": i_last_col + 1
+                },
+            }
+        }
+
     def collapse_all_group_rows_requests(self):
         foo = [
             {

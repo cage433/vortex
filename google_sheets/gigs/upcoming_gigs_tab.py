@@ -2,7 +2,7 @@ from typing import List
 
 from data_objects.upcoming_gig import UpcomingGig
 from google_sheets import Tab, Workbook
-from google_sheets.colors import LIGHT_YELLOW, LIGHT_GREEN
+from google_sheets.colors import LIGHT_GREEN
 from google_sheets.tab_range import TabRange, TabCell
 
 
