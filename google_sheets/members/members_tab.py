@@ -4,14 +4,9 @@ from data_objects.member import Member
 from date_range import Day
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_YELLOW, LIGHT_GREEN
-from google_sheets.tab_range import TabRange, TabCell
+from google_sheets.tab_range import TabRange
 from myopt.nothing import Nothing
 from myopt.opt import Opt
-
-
-class MembersRange(TabRange):
-    def __init__(self, top_left_cell: TabCell, num_rows: int):
-        super().__init__(top_left_cell, num_rows=num_rows, num_cols=2)
 
 
 class MembersTab(Tab):

@@ -345,6 +345,10 @@ class TabRange:
         return self.top_left_cell.i_row
 
     @property
+    def i_first_col(self):
+        return self.top_left_cell.i_col
+
+    @property
     def i_last_row(self):
         return self.i_first_row + self.num_rows - 1
 

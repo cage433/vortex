@@ -48,7 +48,7 @@ class AccountingReportTab(Tab):
             self.workbook.add_tab(self.tab_name)
 
     def _workbook_format_requests(self):
-        return self.delete_all_row_groups_requests() + [
+        return self.delete_all_groups_requests() + [
             # Workbook
             self.set_columns_width_request(i_first_col=1, i_last_col=2, width=75),
             self.set_columns_width_request(i_first_col=3, i_last_col=3, width=110),
@@ -61,7 +61,7 @@ class AccountingReportTab(Tab):
             self._workbook_format_requests()
         )
         self.workbook.batch_update(
-            self.collapse_all_group_rows_requests()
+            self.collapse_all_groups_requests()
         )
 
         self.workbook.batch_update_values(

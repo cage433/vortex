@@ -30,20 +30,27 @@ class Workbook:
             for sheet in sheets
         }
 
-    def row_groups_for_tab_id(self, tab_id: int):
+    def _row_or_column_groups_for_tab_id(self, tab_id: int, is_rows:bool):
         metadata = self._resource.get(spreadsheetId=self.sheet_id).execute()
+        groupsName = "rowGroups" if is_rows else "columnGroups"
 
         sheets = metadata.get('sheets')
         for sheet in sheets:
             if sheet["properties"]["sheetId"] == tab_id:
                 groups = []
-                for row_group in sheet.get("rowGroups", []):
+                for row_group in sheet.get(groupsName, []):
                     start_index = row_group["range"]["startIndex"]
                     end_index = row_group["range"]["endIndex"]
                     depth = row_group["depth"]
                     groups.append((start_index, end_index, depth))
                 return groups
-        raise ValueError("No sheet with id #{self.tab_id} found")
+        raise ValueError("No sheet with id # found")
+
+    def row_groups_for_tab_id(self, tab_id: int):
+        return self._row_or_column_groups_for_tab_id(tab_id, is_rows=True)
+
+    def column_groups_for_tab_id(self, tab_id: int):
+        return self._row_or_column_groups_for_tab_id(tab_id, is_rows=False)
 
     def delete_tab(self, name: str):
         sheet_id = self.tab_ids_by_name()[name]

@@ -36,6 +36,10 @@ class BankActivity:
     def num_transactions(self):
         return len(self.sorted_transactions)
 
+    @property
+    def non_empty(self):
+        return self.num_transactions > 0
+
     def net_flow(self, first_day: Optional[Day] = None, last_day: Optional[Day] = None):
         return sum(s.net_flow(first_day, last_day) for s in self.statements.values())
 
@@ -46,8 +50,18 @@ class BankActivity:
         )
 
     @property
+    def last_date(self):
+        return max(
+            [s.last_date for s in self.statements.values() if s.last_date is not None]
+        )
+
+    @property
     def initial_balance(self) -> float:
         return sum([statement.earliest_balance for statement in self.statements.values()])
+
+    @property
+    def terminal_balance(self) -> float:
+        return sum([statement.latest_balance for statement in self.statements.values()])
 
     def restrict_to_period(self, period: DateRange) -> 'BankActivity':
         return BankActivity([stmt.filter_on_period(period) for stmt in self.statements.values()])

@@ -56,7 +56,7 @@ class Statement:
                 print("\n\n")
             assert abs(error) < 0.01, f"Inconsistent balance {error} between {d1} and {d2}, sum trans {transaction_sum}, balance1 {balance1}, balance2 {balance2}"
 
-    def balance_at_eod(self, date: Day) -> float:
+    def balance_at_eod(self, date: Day) -> Decimal:
         if self.initial_balance_date > date:
             return 0
         assert self.initial_balance_date <= date, f"Date {date} is before initial balance date {self.initial_balance_date}"
@@ -69,7 +69,7 @@ class Statement:
         )
         return nearest_balance + subsequent_transaction_amounts
 
-    def balance_at_sod(self, date: Day) -> float:
+    def balance_at_sod(self, date: Day) -> Decimal:
         eod_balance = self.balance_at_eod(date)
         day_payments = sum(
             tr.amount for tr in self.transactions_by_date.get(date, [])
@@ -104,16 +104,22 @@ class Statement:
             return None
         return max(t.payment_date for t in self.transactions)
 
-    def net_flow(self, first_day: Optional[Day], last_day: Optional[Day]) -> float:
+    def net_flow(self, first_day: Optional[Day], last_day: Optional[Day]) -> Decimal:
         first_day = first_day or self.first_date
         last_day = last_day or self.last_date
         return sum(t.amount for t in self.transactions if first_day <= t.payment_date <= last_day)
 
     @property
-    def earliest_balance(self) -> Optional[float]:
+    def earliest_balance(self) -> Optional[Decimal]:
         if len(self.published_balances) == 0:
             return None
         return self.published_balances[min(self.published_balances.keys())]
+
+    @property
+    def latest_balance(self) -> Optional[Decimal]:
+        if len(self.published_balances) == 0:
+            return None
+        return self.earliest_balance + self.net_flow(first_day=None, last_day=None)
 
     @property
     def payees(self) -> list[str]:

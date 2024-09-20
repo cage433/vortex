@@ -64,12 +64,12 @@ class StatementsReader:
                         for tr in ofx.account.statement.transactions:
                             trans = Transaction(
                                 account_id,
-                                tr.id,
+                                tr.id.strip(),
                                 Day.from_date(tr.date),
                                 tr.payee,
                                 Decimal(tr.amount),
                                 tr.type,
-                                Nothing()
+                                category=Nothing()
                             )
                             transactions_for_account.append(trans)
                     transactions_by_account[account_id] = transactions_for_account
