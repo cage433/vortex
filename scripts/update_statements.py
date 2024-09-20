@@ -43,12 +43,12 @@ def statements_consistent(tab: StatementsTab, activity: BankActivity, fail_on_in
 
 def ensure_tab_consistent_with_account(account: BankAccount, month: AccountingMonth, force: bool):
     tab = statements_tab_for_month(account, month)
-    bank_activity = BankActivity.build(force=False).restrict_to_account(account.id).restrict_to_period(month)
+    bank_activity = BankActivity.build(force=force).restrict_to_account(account.id).restrict_to_period(month)
     if not statements_consistent(tab, bank_activity, fail_on_inconsistency=False) or force:
         tab.update(bank_activity)
     statements_consistent(tab, bank_activity, fail_on_inconsistency=True)
 
 
 if __name__ == '__main__':
-    month = AccountingMonth.from_calendar_month(Month(2024, 3))
+    month = AccountingMonth.from_calendar_month(Month(2024, 1))
     ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, force=False)

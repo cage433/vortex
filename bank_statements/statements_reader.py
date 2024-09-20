@@ -69,7 +69,7 @@ class StatementsReader:
                                 tr.payee,
                                 Decimal(tr.amount),
                                 tr.type,
-                                category=Nothing()
+                                category=None
                             )
                             transactions_for_account.append(trans)
                     transactions_by_account[account_id] = transactions_for_account

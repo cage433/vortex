@@ -2,14 +2,9 @@ from decimal import Decimal
 from typing import Optional
 
 from date_range import Day
-from env import CURRENT_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, BBL_ACCOUNT_ID, CHARITABLE_ACCOUNT_ID
-from myopt.nothing import Nothing
-from myopt.opt import Opt
-from utils import checked_type
+from utils import checked_type, checked_optional_type
 
 __all__ = ["Transaction"]
-
-from utils.type_checks import checked_opt_type
 
 
 class Transaction:
@@ -21,7 +16,7 @@ class Transaction:
             payee: str,
             amount: Decimal,
             transaction_type: str,
-            category: Opt[str],
+            category: Optional[str],
     ):
         self.account: int = checked_type(account, int)
         self.ftid = checked_type(ftid, str)
@@ -29,7 +24,7 @@ class Transaction:
         self.payee: str = checked_type(payee, str)
         self.amount: Decimal = checked_type(amount, Decimal)
         self.transaction_type: str = checked_type(transaction_type, str)
-        self.category: Opt[str] = checked_opt_type(category, str)
+        self.category: Optional[str] = checked_optional_type(category, str)
 
     # Used when comparing spreadsheet to bank statement categories
     # The former may be assigned by a human, the latter only uses heuristics
@@ -41,7 +36,7 @@ class Transaction:
             payee=self.payee,
             amount=self.amount,
             transaction_type=self.transaction_type,
-            category=Nothing(),
+            category=None,
         )
 
     def __eq__(self, other):
@@ -58,7 +53,7 @@ class Transaction:
             payee: Optional[str] = None,
             amount: Optional[float] = None,
             transaction_type: Optional[str] = None,
-            category: Opt[str] = Nothing,
+            category: Optional[str] = None,
     ):
         return Transaction(
             account=account or self.account,
@@ -67,5 +62,5 @@ class Transaction:
             payee=payee or self.payee,
             amount=amount or self.amount,
             transaction_type=transaction_type or self.transaction_type,
-            category=category.or_else(self.category),
+            category=category or self.category,
         )

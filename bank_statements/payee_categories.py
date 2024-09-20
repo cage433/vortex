@@ -5,6 +5,7 @@ from bank_statements import Transaction
 from date_range import Day
 from myopt.opt import Opt
 
+
 def _musicians():
     file = Path(__file__).parent.parent / "resources" / "musicians.txt"
     musicians = []
@@ -13,7 +14,9 @@ def _musicians():
             musicians.append(line.strip())
     return musicians
 
+
 MUSICIANS = _musicians()
+
 
 class PayeeCategory:
     AIRTABLE = "Airtable"
@@ -43,6 +46,7 @@ class PayeeCategory:
     SLACK = "Slack"
     SOUND_ENGINEER = "Sound Engineer"
     TICKETWEB_CREDITS = "Ticketweb Credits"
+    TISSUES = "Toilet Tissues"
     VAT = "VAT"
     WEB_HOST = "Web Host"
     WORK_PERMITS = "Work Permits"
@@ -118,6 +122,7 @@ def _maybe_petty_cash(transaction: Transaction) -> Optional[str]:
     payee = transaction.payee.lower()
     if "cash halifax" in payee:
         return PayeeCategory.PETTY_CASH
+
 
 def _maybe_bank_fees(transaction: Transaction) -> Optional[str]:
     if any(
@@ -216,6 +221,7 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
     if tr.amount < 0 and any(payee.startswith(name) for name in known_engineers):
         return PayeeCategory.SOUND_ENGINEER
 
+
 def _maybe_prs(tr: Transaction) -> Optional[str]:
     if tr.payee.startswith("PRS "):
         return PayeeCategory.PRS
@@ -225,28 +231,34 @@ def _maybe_mailchimp(tr: Transaction) -> Optional[str]:
     if " mailchimp " in tr.payee.lower():
         return PayeeCategory.MAILCHIMP
 
+
 def _maybe_host(tr: Transaction) -> Optional[str]:
     if tr.payee.lower().startswith("oblong"):
         return PayeeCategory.WEB_HOST
 
+
 def _maybe_bt(tr: Transaction) -> Optional[str]:
     if tr.payee.lower().startswith("bt group"):
         return PayeeCategory.BT
+
 
 def _maybe_slack(tr: Transaction) -> Optional[str]:
     payee = tr.payee.lower()
     if payee.startswith("int") and "slack" in payee:
         return PayeeCategory.SLACK
 
+
 def _maybe_bar_snacks(tr: Transaction) -> Optional[str]:
     payee = tr.payee.lower()
     if payee.startswith("uk bar snacks"):
         return PayeeCategory.BAR_SNACKS
 
+
 def _maybe_airtable(tr: Transaction) -> Optional[str]:
     payee = tr.payee.lower()
     if payee.startswith("int") and "airtable" in payee:
         return PayeeCategory.AIRTABLE
+
 
 def _maybe_musician_payments(tr: Transaction) -> Optional[str]:
     payee = tr.payee.lower()
@@ -254,42 +266,49 @@ def _maybe_musician_payments(tr: Transaction) -> Optional[str]:
         if payee.startswith(m) and tr.amount < 0:
             return PayeeCategory.MUSICIAN_PAYMENTS
 
+
 def _maybe_mvt(tr: Transaction) -> Optional[str]:
     payee = tr.payee.lower()
     if payee.startswith("music venue trust"):
         return PayeeCategory.MUSIC_VENUE_TRUST
 
-def category_for_transaction(transaction: Transaction) -> Opt[str]:
-    return Opt.of(
-        _maybe_mvt(transaction) or
-        _maybe_musician_payments(transaction) or
-        _maybe_airtable(transaction) or
-        _maybe_petty_cash(transaction) or
-        _maybe_bar_snacks(transaction) or
-        _maybe_slack(transaction) or
-        _maybe_bt(transaction) or
-        _maybe_host(transaction) or
-        _maybe_mailchimp(transaction) or
-        _maybe_prs(transaction) or
-        _maybe_sound_engineer(transaction) or
-        _maybe_piano_tuner(transaction) or
-        _maybe_cleaning(transaction) or
-        _maybe_vat(transaction) or
-        _maybe_fire_alarm(transaction) or
-        _maybe_bar_purchases(transaction) or
-        _maybe_security(transaction) or
-        _maybe_ticketweb_credits(transaction) or
-        _maybe_zettle_credits(transaction) or
-        _maybe_salaries(transaction) or
-        _maybe_memberships(transaction) or
-        _maybe_work_permit(transaction) or
-        _maybe_rates(transaction) or
-        _maybe_electricity(transaction) or
-        _maybe_insurance(transaction) or
-        _maybe_kashflow(transaction) or
-        _maybe_cc_fees(transaction) or
-        _maybe_bb_loan(transaction) or
-        _maybe_bank_fees(transaction) or
-        _maybe_bank_interest(transaction) or
-        None
-    )
+
+def _maybe_tissues(tr: Transaction) -> Optional[str]:
+    payee = tr.payee.lower()
+    if payee.startswith("nisbets"):
+        return PayeeCategory.TISSUES
+
+
+def category_for_transaction(transaction: Transaction) -> Optional[str]:
+    return (_maybe_airtable(transaction) or
+            _maybe_bank_fees(transaction) or
+            _maybe_bank_interest(transaction) or
+            _maybe_bar_purchases(transaction) or
+            _maybe_bar_snacks(transaction) or
+            _maybe_bb_loan(transaction) or
+            _maybe_bt(transaction) or
+            _maybe_cc_fees(transaction) or
+            _maybe_cleaning(transaction) or
+            _maybe_electricity(transaction) or
+            _maybe_fire_alarm(transaction) or
+            _maybe_host(transaction) or
+            _maybe_insurance(transaction) or
+            _maybe_kashflow(transaction) or
+            _maybe_mailchimp(transaction) or
+            _maybe_memberships(transaction) or
+            _maybe_musician_payments(transaction) or
+            _maybe_mvt(transaction) or
+            _maybe_petty_cash(transaction) or
+            _maybe_piano_tuner(transaction) or
+            _maybe_prs(transaction) or
+            _maybe_rates(transaction) or
+            _maybe_salaries(transaction) or
+            _maybe_security(transaction) or
+            _maybe_slack(transaction) or
+            _maybe_sound_engineer(transaction) or
+            _maybe_ticketweb_credits(transaction) or
+            _maybe_tissues(transaction) or
+            _maybe_vat(transaction) or
+            _maybe_work_permit(transaction) or
+            _maybe_zettle_credits(transaction)
+            )

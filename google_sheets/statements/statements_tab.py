@@ -7,8 +7,6 @@ from date_range import Day, DateRange
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
 from google_sheets.tab_range import TabRange
-from myopt.nothing import Nothing
-from myopt.opt import Opt
 from utils import checked_type
 
 
@@ -45,6 +43,8 @@ class StatementsTab(Tab):
             self.workbook.add_tab(self.tab_name)
 
     def update(self, bank_activity: BankActivity):
+        current_info = self.transaction_infos_from_tab()
+
         if bank_activity.non_empty:
             if bank_activity.first_date < self.period.first_day or bank_activity.last_date > self.period.last_day:
                 raise ValueError(f"Bank activity is not within the period {self.period}")
@@ -118,15 +118,22 @@ class StatementsTab(Tab):
         ]
 
         status_values = [
-            ["Uncategorized", f"=SUMIFS({full_range[:, self.AMOUNT].in_a1_notation}, {full_range[:, self.CATEGORY].in_a1_notation}, \"<>\")"],
-            ["Unconfirmed", f"=SUMIF({full_range[:, self.CONFIRMED].in_a1_notation}, FALSE, {full_range[:, self.AMOUNT].in_a1_notation})"],
+            ["Uncategorized",
+             f"=SUMIFS({full_range[:, self.AMOUNT].in_a1_notation}, {full_range[:, self.CATEGORY].in_a1_notation}, \"<>\")"],
+            ["Unconfirmed",
+             f"=SUMIF({full_range[:, self.CONFIRMED].in_a1_notation}, FALSE, {full_range[:, self.AMOUNT].in_a1_notation})"],
         ]
 
-        transaction_values = [
-            self.HEADINGS
-        ]
+        transaction_values = [self.HEADINGS]
+
+        def category_to_use(i_transaction, bank_account_category):
+            if len(current_info) == len(transactions) and bank_account_category is None:
+                current_category = current_info[i_transaction].transaction.category
+                return current_category
+            return bank_account_category
+
         balance = bank_activity.initial_balance
-        for t in transactions:
+        for i_trans, t in enumerate(transactions):
             balance += t.amount
             transaction_values.append(
                 [
@@ -134,7 +141,7 @@ class StatementsTab(Tab):
                     t.payee,
                     float(t.amount),
                     float(balance),
-                    t.category.get_or_else(""),
+                    category_to_use(i_trans, t.category) or "",
                     False,
                     t.transaction_type,
                     t.ftid,
@@ -150,10 +157,10 @@ class StatementsTab(Tab):
         ])
 
     def transaction_infos_from_tab(self) -> List[TransactionInfo]:
-        def to_opt(cell_value):
+        def to_optional_value(cell_value):
             if cell_value == "":
-                return Nothing()
-            return Opt.of(cell_value)
+                return None
+            return cell_value
 
         def to_decimal(cell_value):
             if cell_value == "":
@@ -170,9 +177,13 @@ class StatementsTab(Tab):
             amount = to_decimal(row[self.AMOUNT])
             transaction_type = row[self.TYPE]
             ftid = row[self.ID]
-            category = to_opt(row[self.CATEGORY])
+            category = to_optional_value(row[self.CATEGORY])
             balance = to_decimal(row[self.BALANCE])
-            confirmed = to_opt(row[self.CONFIRMED]).map(bool).get_or_else(False)
+            confirmed = to_optional_value(row[self.CONFIRMED])
+            if confirmed is None:
+                confirmed = False
+            else:
+                confirmed = bool(confirmed)
             transaction = Transaction(
                 account=self.bank_account.id,
                 ftid=ftid,
