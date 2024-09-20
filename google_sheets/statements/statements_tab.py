@@ -1,24 +1,25 @@
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 from bank_statements import BankActivity, Transaction
 from bank_statements.bank_account import BankAccount
+from bank_statements.payee_categories import category_for_transaction
 from date_range import Day, DateRange
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
 from google_sheets.tab_range import TabRange
-from utils import checked_type
+from utils import checked_type, checked_optional_type
 
 
 class TransactionInfo:
     def __init__(
             self,
             transaction: Transaction,
-            balance: Decimal,
+            category: Optional[str],
             confirmed: bool
     ):
         self.transaction: Transaction = checked_type(transaction, Transaction)
-        self.balance: Decimal = checked_type(balance, Decimal)
+        self.category: Optional[str] = checked_optional_type(category, str)
         self.confirmed: bool = checked_type(confirmed, bool)
 
 
@@ -43,7 +44,7 @@ class StatementsTab(Tab):
             self.workbook.add_tab(self.tab_name)
 
     def update(self, bank_activity: BankActivity):
-        current_info = self.transaction_infos_from_tab()
+        sheet_transaction_infos = self.transaction_infos_from_tab()
 
         if bank_activity.non_empty:
             if bank_activity.first_date < self.period.first_day or bank_activity.last_date > self.period.last_day:
@@ -126,11 +127,14 @@ class StatementsTab(Tab):
 
         transaction_values = [self.HEADINGS]
 
-        def category_to_use(i_transaction, bank_account_category):
-            if len(current_info) == len(transactions) and bank_account_category is None:
-                current_category = current_info[i_transaction].transaction.category
-                return current_category
-            return bank_account_category
+        def category_to_use(i_transaction, bank_transaction):
+            if len(sheet_transaction_infos) == len(transactions):
+                sheet_info = sheet_transaction_infos[i_transaction]
+                if sheet_info.transaction == bank_transaction:
+                    sheet_category = sheet_info.category
+                    if sheet_info.confirmed or sheet_category is not None:
+                        return sheet_category
+            return category_for_transaction(bank_transaction)
 
         balance = bank_activity.initial_balance
         for i_trans, t in enumerate(transactions):
@@ -141,7 +145,7 @@ class StatementsTab(Tab):
                     t.payee,
                     float(t.amount),
                     float(balance),
-                    category_to_use(i_trans, t.category) or "",
+                    category_to_use(i_trans, t) or "",
                     False,
                     t.transaction_type,
                     t.ftid,
@@ -169,6 +173,11 @@ class StatementsTab(Tab):
                 return Decimal(cell_value.replace(",", ""))
             return Decimal(cell_value)
 
+        def to_confirmed_value(cell_value):
+            if cell_value == "":
+                return False
+            return bool(cell_value)
+
         infos = []
         values = self.read_values_for_columns(self.heading_range.columns_in_a1_notation)
         for row in values[self.heading_range.i_first_row + 1:]:
@@ -178,12 +187,7 @@ class StatementsTab(Tab):
             transaction_type = row[self.TYPE]
             ftid = row[self.ID]
             category = to_optional_value(row[self.CATEGORY])
-            balance = to_decimal(row[self.BALANCE])
-            confirmed = to_optional_value(row[self.CONFIRMED])
-            if confirmed is None:
-                confirmed = False
-            else:
-                confirmed = bool(confirmed)
+            confirmed = to_confirmed_value(row[self.CONFIRMED])
             transaction = Transaction(
                 account=self.bank_account.id,
                 ftid=ftid,
@@ -191,7 +195,6 @@ class StatementsTab(Tab):
                 payee=payee,
                 amount=amount,
                 transaction_type=transaction_type,
-                category=category,
             )
-            infos.append(TransactionInfo(transaction, balance, confirmed))
+            infos.append(TransactionInfo(transaction, category, confirmed))
         return infos

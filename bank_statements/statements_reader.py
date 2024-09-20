@@ -46,7 +46,7 @@ class StatementsReader:
             return shelf[key]
 
     @staticmethod
-    def read_uncategorised_transactions(statements_dir: Path, force: bool) -> dict[int, list[Transaction]]:
+    def read_transactions(statements_dir: Path, force: bool) -> dict[int, list[Transaction]]:
         key = f"uncategorised_transactions"
         with shelve.open(str(StatementsReader.SHELF)) as shelf:
             if key not in shelf or force:
@@ -69,7 +69,6 @@ class StatementsReader:
                                 tr.payee,
                                 Decimal(tr.amount),
                                 tr.type,
-                                category=None
                             )
                             transactions_for_account.append(trans)
                     transactions_by_account[account_id] = transactions_for_account
@@ -77,16 +76,16 @@ class StatementsReader:
             return shelf[key]
         pass
 
-    @staticmethod
-    def read_transactions(statements_dir: Path, force: bool) -> dict[int, list[Transaction]]:
-        uncategorised_transactions = StatementsReader.read_uncategorised_transactions(statements_dir, force)
-        return {
-            id: [
-                tr.clone(category=category_for_transaction(tr))
-                for tr in account_transactions
-            ]
-            for id, account_transactions in uncategorised_transactions.items()
-        }
+    # @staticmethod
+    # def read_transactions(statements_dir: Path, force: bool) -> dict[int, list[Transaction]]:
+    #     uncategorised_transactions = StatementsReader.read_uncategorised_transactions(statements_dir, force)
+    #     return {
+    #         id: [
+    #             tr.clone(category=category_for_transaction(tr))
+    #             for tr in account_transactions
+    #         ]
+    #         for id, account_transactions in uncategorised_transactions.items()
+    #     }
 
     @staticmethod
     def read_statements(force: bool) -> list[Statement]:

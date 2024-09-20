@@ -31,24 +31,20 @@ def statements_consistent(tab: StatementsTab, activity: BankActivity, fail_on_in
             raise ValueError("Error: number of transactions mismatch")
         return False
     for l, r in zip(tab_transactions, activity_transactions):
-        if r.category == Nothing():
-            if l.category != Opt.of(None):
-                log_message(f"Blanking category for {l}")
-            l = l.sans_category()
         if l != r:
             if fail_on_inconsistency:
                 raise ValueError(f"Error: transactions mismatch: {l} != {r}")
             return False
     return True
 
-def ensure_tab_consistent_with_account(account: BankAccount, month: AccountingMonth, force: bool):
+def ensure_tab_consistent_with_account(account: BankAccount, month: AccountingMonth, refresh_bank_activity: bool, refresh_sheet: bool):
     tab = statements_tab_for_month(account, month)
-    bank_activity = BankActivity.build(force=force).restrict_to_account(account.id).restrict_to_period(month)
-    if not statements_consistent(tab, bank_activity, fail_on_inconsistency=False) or force:
+    bank_activity = BankActivity.build(force=refresh_bank_activity).restrict_to_account(account.id).restrict_to_period(month)
+    if not statements_consistent(tab, bank_activity, fail_on_inconsistency=False) or refresh_sheet:
         tab.update(bank_activity)
     statements_consistent(tab, bank_activity, fail_on_inconsistency=True)
 
 
 if __name__ == '__main__':
     month = AccountingMonth.from_calendar_month(Month(2024, 1))
-    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, force=False)
+    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, refresh_bank_activity=False, refresh_sheet=True)
