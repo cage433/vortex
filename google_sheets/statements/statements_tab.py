@@ -38,6 +38,7 @@ class StatementsTab(Tab):
         super().__init__(workbook, tab_name=title)
         self.bank_account: BankAccount = checked_type(account, BankAccount)
         self.info_range = TabRange(self.cell("B2"), num_rows=4, num_cols=3)
+        self.status_range = TabRange(self.cell("F2"), num_rows=2, num_cols=2)
         self.heading_range = TabRange(self.cell("B7"), num_rows=1, num_cols=len(self.HEADINGS))
         self.period: DateRange = period
         if not self.workbook.has_tab(self.tab_name):
@@ -81,7 +82,12 @@ class StatementsTab(Tab):
             self.info_range[0:2, :].set_bold_text_request(),
             self.info_range[:, 0].set_bold_text_request(),
             self.info_range.outline_border_request(),
-            self.info_range[3, 1:].set_decimal_format_request("#,##0.00"),
+            self.info_range[3, 1:].set_currency_format_request(),
+
+            self.status_range.outline_border_request(),
+            self.status_range[:, 0].set_bold_text_request(),
+            self.status_range[:, 0].left_align_text_request(),
+            self.status_range[:, 1].set_currency_format_request(),
 
             self.heading_range.set_bold_text_request(),
             self.heading_range.left_align_text_request(),
@@ -93,8 +99,7 @@ class StatementsTab(Tab):
             full_range.outline_border_request(),
             full_range[:, :self.TYPE].border_request(["right"], style="SOLID_MEDIUM"),
             full_range[:, self.ID].left_align_text_request(),
-            full_range[:, self.AMOUNT:self.BALANCE + 1].set_decimal_format_request("#,##0.00"),
-            self.collapse_all_groups_requests()
+            full_range[:, self.AMOUNT:self.BALANCE + 1].set_currency_format_request(),
         ]
 
         format_requests += [
@@ -103,11 +108,18 @@ class StatementsTab(Tab):
         ]
         self.workbook.batch_update(format_requests)
 
+        self.workbook.batch_update([self.collapse_all_groups_requests()])
+
         info_values = [
             [f"{self.bank_account.name} account transactions for {self.period}"],
             ["", "Start", "End"],
             ["Date", self.period.first_day, self.period.last_day],
             ["Balance", float(bank_activity.initial_balance), float(bank_activity.terminal_balance)]
+        ]
+
+        status_values = [
+            ["Uncategorized", f"=SUMIFS({full_range[:, self.AMOUNT].in_a1_notation}, {full_range[:, self.CATEGORY].in_a1_notation}, \"<>\")"],
+            ["Unconfirmed", f"=SUMIF({full_range[:, self.CONFIRMED].in_a1_notation}, FALSE, {full_range[:, self.AMOUNT].in_a1_notation})"],
         ]
 
         transaction_values = [
@@ -133,6 +145,7 @@ class StatementsTab(Tab):
                                      num_cols=len(self.HEADINGS))
         self.workbook.batch_update_values([
             (self.info_range, info_values),
+            (self.status_range, status_values),
             (transaction_range, transaction_values),
         ])
 

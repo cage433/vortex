@@ -31,17 +31,18 @@ class Transaction:
         self.transaction_type: str = checked_type(transaction_type, str)
         self.category: Opt[str] = checked_opt_type(category, str)
 
-    @property
-    def account_name(self):
-        if self.account == CURRENT_ACCOUNT_ID:
-            return "Current"
-        if self.account == SAVINGS_ACCOUNT_ID:
-            return "Savings"
-        if self.account == BBL_ACCOUNT_ID:
-            return "BBL"
-        if self.account == CHARITABLE_ACCOUNT_ID:
-            return "Charitable"
-        return f"Unregistered account {self.account}"
+    # Used when comparing spreadsheet to bank statement categories
+    # The former may be assigned by a human, the latter only uses heuristics
+    def sans_category(self):
+        return Transaction(
+            account=self.account,
+            ftid=self.ftid,
+            payment_date=self.payment_date,
+            payee=self.payee,
+            amount=self.amount,
+            transaction_type=self.transaction_type,
+            category=Nothing(),
+        )
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
