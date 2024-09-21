@@ -10,6 +10,7 @@ from date_range.simple_date_range import SimpleDateRange
 from env import CURRENT_ACCOUNT_ID, CURRENT_ACCOUNT_STATEMENTS_ID
 from google_sheets import Workbook
 from google_sheets.statements.statements_tab import StatementsTab
+from kashflow.nominal_ledger import NominalLedgerItemType
 from myopt.nothing import Nothing
 from myopt.opt import Opt
 from utils.logging import log_message
@@ -50,7 +51,7 @@ def ensure_tab_consistent_with_account(account: BankAccount, month: AccountingMo
     tab = statements_tab_for_month(account, month)
     bank_activity = BankActivity.build(force=refresh_bank_activity).restrict_to_account(account).restrict_to_period(
         month)
-    if not statements_consistent(tab, bank_activity, fail_on_inconsistency=False) or refresh_sheet:
+    if (not statements_consistent(tab, bank_activity, fail_on_inconsistency=False)) or refresh_sheet:
         tab.update(bank_activity)
     statements_consistent(tab, bank_activity, fail_on_inconsistency=True)
 
@@ -65,10 +66,14 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
 
     for t in uncategorized:
         print()
-        print(f"Trying to find invoice for {t.transaction}")
+        print(f"Candidate invoice for {t.transaction}")
         amount = t.transaction.amount
         ex_vat_amount = t.transaction.amount / Decimal(1.2)
-        near_ledger_items = [l for l in ledger_items if abs(l.date.days_since(t.transaction.payment_date)) < 60]
+        near_ledger_items = [
+            l for l in ledger_items
+            if abs(l.date.days_since(t.transaction.payment_date)) < 60
+               and l.item_type not in [NominalLedgerItemType.INPUT_VAT, NominalLedgerItemType.OUTPUT_VAT]
+        ]
         sorted_items_1 = sorted(near_ledger_items, key=lambda i: abs(i.amount - amount))
         sorted_items_2 = sorted(near_ledger_items, key=lambda i: abs(i.amount - ex_vat_amount))
         print("Sorted items inc VAT")
@@ -85,7 +90,8 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
             print(f"Diff = {err}, {i}")
 
 
+
 if __name__ == '__main__':
-    month = AccountingMonth.from_calendar_month(Month(2024, 2))
-    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, refresh_bank_activity=True, refresh_sheet=True)
+    month = AccountingMonth.from_calendar_month(Month(2024, 3))
+    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, refresh_bank_activity=False, refresh_sheet=True)
     compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, month)

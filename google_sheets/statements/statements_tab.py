@@ -134,6 +134,7 @@ class StatementsTab(Tab):
         balance = bank_activity.initial_balance
         for i_trans, t in enumerate(transactions):
             balance += t.amount
+            cat = category_to_use(i_trans, t)
             transaction_values.append(
                 [
                     t.payment_date,
@@ -157,20 +158,20 @@ class StatementsTab(Tab):
 
     def transaction_infos_from_tab(self) -> List[CategorizedTransaction]:
         def to_optional_value(cell_value):
-            if cell_value == "":
-                return None
+            if isinstance(cell_value, str) and cell_value.strip() == "":
+                    return None
             return cell_value
 
         def to_decimal(cell_value):
-            if cell_value == "":
-                return Decimal("0")
             if isinstance(cell_value, str):
+                if cell_value.strip() == "":
+                    return Decimal("0")
                 return Decimal(cell_value.replace(",", ""))
             return Decimal(cell_value)
 
         def to_confirmed_value(cell_value):
             if isinstance(cell_value, str):
-                if cell_value == "":
+                if cell_value.strip() == "":
                     return False
                 if cell_value.upper().strip() == "TRUE":
                     return True

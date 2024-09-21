@@ -44,6 +44,7 @@ class PayeeCategory:
     PIANO_TUNER = "Piano Tuner"
     PRS = "PRS"
     RATES = "Rates"
+    RENT = "Rent"
     SALARIES = "Salaries"
     SECURITY = "Security"
     SLACK = "Slack"
@@ -96,15 +97,14 @@ def _maybe_electricity(transaction: Transaction) -> Optional[str]:
 
 
 def _maybe_insurance(transaction: Transaction) -> Optional[str]:
-    if any(
-            text in transaction.payee
-            for text in [
-                "CLOSE-JELF",
-                "CLOSE - MARSHCOMM",
-            ]
-    ):
-        return PayeeCategory.INSURANCE
-
+    payee = transaction.payee.lower()
+    for p in [
+        "close-jelf",
+        "close - marshcomm",
+        "axa insurance"
+    ]:
+        if p in payee:
+            return PayeeCategory.INSURANCE
 
 def _maybe_kashflow(transaction: Transaction) -> Optional[str]:
     if "WWW.KASHFLOW.COM" in transaction.payee:
@@ -148,7 +148,10 @@ def _maybe_bank_interest(transaction: Transaction) -> Optional[str]:
 def _maybe_salaries(transaction: Transaction) -> Optional[str]:
     staff = [
         "pauline le divenac",
-        "daniel garel"
+        "daniel garel",
+        "kim macari",
+        "tea earle",
+        "ted mitchell",
     ]
     payee = transaction.payee.lower()
     if any(payee.startswith(name) for name in staff):
@@ -220,12 +223,13 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
     payee = tr.payee.lower()
 
     known_engineers = [
-        "adrian kunstler"
+        "adrian kunstler",
         "bella cooper",
         "chris penty",
-        "egglectic solutions",
+        "egglectic",
         "giulo matheson",
         "joe mashiter",
+        "kinga ilyes",
         "mike omalley",
         "mike o'malley",
         "milo mcguire",
@@ -241,7 +245,7 @@ def _maybe_prs(tr: Transaction) -> Optional[str]:
 
 
 def _maybe_mailchimp(tr: Transaction) -> Optional[str]:
-    if " mailchimp " in tr.payee.lower():
+    if "mailchi" in tr.payee.lower():
         return PayeeCategory.MAILCHIMP
 
 
@@ -327,6 +331,10 @@ def _maybe_operational_costs(tr: Transaction) -> Optional[str]:
         if payee.startswith(p):
             return PayeeCategory.OPERATIONAL_COSTS
 
+def _maybe_rent(tr: Transaction) -> Optional[str]:
+    payee = tr.payee.lower()
+    if payee.startswith("hcd vortex rent"):
+        return PayeeCategory.RENT
 
 def category_for_transaction(transaction: Transaction) -> Optional[str]:
     return (_maybe_airtable(transaction) or
@@ -354,6 +362,7 @@ def category_for_transaction(transaction: Transaction) -> Optional[str]:
             _maybe_piano_tuner(transaction) or
             _maybe_prs(transaction) or
             _maybe_rates(transaction) or
+            _maybe_rent(transaction) or
             _maybe_salaries(transaction) or
             _maybe_security(transaction) or
             _maybe_slack(transaction) or
