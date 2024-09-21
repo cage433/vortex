@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from bank_statements import Transaction
 from date_range import Day
 from myopt.opt import Opt
+from utils import checked_list_type, checked_type
 
 
 def _musicians():
@@ -58,25 +59,41 @@ class PayeeCategory:
     ZETTLE_CREDITS = "Zettle Credits"
 
 
-def _maybe_work_permit(transaction: Transaction) -> Optional[str]:
-    payee = transaction.payee
-    if any(
-            payee.endswith(suffix)
-            for suffix in ["UKVI UK", "UKVI Crewe", ]
-    ):
-        return PayeeCategory.WORK_PERMITS
-    if any(
-            text in payee
-            for text in [
-                "HINGWAN K C COS",
-                "Mr J Hill VJC COS",
-                "Frusion Media Acco COS",
-                "Klarna*COS",
-                "Klarna*www"
-            ]
-    ):
-        return PayeeCategory.WORK_PERMITS
+def matches_start(transaction, matches: any) -> bool:
+    if isinstance(matches, str):
+        matches = [matches]
+    payee = transaction.payee.lower()
+    for match in matches:
+        if payee.startswith(match):
+            return True
+    return False
 
+
+def matches_anywhere(transaction, matches: any) -> bool:
+    if isinstance(matches, str):
+        matches = [matches]
+    payee = transaction.payee.lower()
+    for match in matches:
+        if match in payee:
+            return True
+    return False
+
+
+def _maybe_work_permit(transaction: Transaction) -> Optional[str]:
+    if matches_anywhere(
+            transaction,
+            [
+                "ukvi uk",
+                "ukvi crewe",
+                "hingwan k c cos",
+                "mr j hill vjc cos",
+                "frusion media acco cos",
+                "klarna*cos",
+                "klarna*www"
+            ],
+    ):
+        return PayeeCategory.WORK_PERMITS
+    payee = transaction.payee
     if transaction.payment_date == Day(2022, 5, 20) and "K HINGWAN VORTEX EXPENSESS" in payee:
         return PayeeCategory.WORK_PERMITS
     if transaction.payment_date == Day(2022, 11, 2) and "DUSTY KNUC" in payee:
@@ -84,87 +101,94 @@ def _maybe_work_permit(transaction: Transaction) -> Optional[str]:
 
 
 def _maybe_rates(transaction: Transaction) -> Optional[str]:
-    payee = transaction.payee.lower()
-    if "lb hackney rates" in payee or "lbh rates" in payee:
+    if matches_start(transaction, ["lb hackney rates", "lbh rates"]):
         return PayeeCategory.RATES
-    if transaction.payment_date == Day(2023, 7, 21) and "LB HACKNEY GENFUND VORTEX" in transaction.payee:
+    payee = transaction.payee.lower()
+    if transaction.payment_date == Day(2023, 7, 21) and "lb hackney genfund vortex" in payee:
         return PayeeCategory.RATES
 
 
 def _maybe_electricity(transaction: Transaction) -> Optional[str]:
-    if "EDF ENERGY" in transaction.payee:
+    if matches_anywhere(transaction, "edf energy"):
         return PayeeCategory.ELECTRICITY
 
 
 def _maybe_insurance(transaction: Transaction) -> Optional[str]:
-    payee = transaction.payee.lower()
-    for p in [
-        "close-jelf",
-        "close - marshcomm",
-        "axa insurance"
-    ]:
-        if p in payee:
-            return PayeeCategory.INSURANCE
+    if matches_start(
+            transaction,
+            [
+                "close-jelf",
+                "close - marshcomm",
+                "axa insurance"
+            ]):
+        return PayeeCategory.INSURANCE
+
 
 def _maybe_kashflow(transaction: Transaction) -> Optional[str]:
-    if "WWW.KASHFLOW.COM" in transaction.payee:
+    if matches_anywhere(transaction, "www.kashflow.com"):
         return PayeeCategory.KASHFLOW
 
 
 def _maybe_cc_fees(transaction: Transaction) -> Optional[str]:
-    if "PAS RE CPS" in transaction.payee:
+    if matches_anywhere(transaction, "pas re cps"):
         return PayeeCategory.CREDIT_CARD_FEES
 
 
 def _maybe_bb_loan(transaction: Transaction) -> Optional[str]:
-    payee = transaction.payee.lower()
-    if payee.startswith("loan ") or " loan" in payee:
+    if matches_start(transaction, "loan"):
+        return PayeeCategory.BB_LOAN
+    if matches_anywhere(transaction, " loan"):
         return PayeeCategory.BB_LOAN
 
 
 def _maybe_petty_cash(transaction: Transaction) -> Optional[str]:
-    payee = transaction.payee.lower()
-    if "cash halifax" in payee:
+    if matches_anywhere(transaction, "cash halifax"):
         return PayeeCategory.PETTY_CASH
 
 
 def _maybe_bank_fees(transaction: Transaction) -> Optional[str]:
-    if any(
-            text in transaction.payee
-            for text in [
-                "Non-Sterling Transaction Fee",
-                "CHARGE RENEWAL FEE",
-                "TOTAL CHARGES TO",
+    if matches_anywhere(
+            transaction,
+            [
+                "non-sterling transaction fee",
+                "charge renewal fee",
+                "total charges to",
             ]
+
     ):
         return PayeeCategory.BANK_FEES
 
 
 def _maybe_bank_interest(transaction: Transaction) -> Optional[str]:
-    if "INTEREST TO" in transaction.payee:
+    if matches_anywhere(transaction, "interest to"):
         return PayeeCategory.BANK_INTEREST
 
 
 def _maybe_salaries(transaction: Transaction) -> Optional[str]:
-    staff = [
-        "pauline le divenac",
-        "daniel garel",
-        "kim macari",
-        "tea earle",
-        "ted mitchell",
-    ]
-    payee = transaction.payee.lower()
-    if any(payee.startswith(name) for name in staff):
+    if matches_start(
+            transaction,
+            [
+                "pauline le divenac",
+                "daniel garel",
+                "kim macari",
+                "tea earle",
+                "ted mitchell",
+            ]
+
+    ):
         return PayeeCategory.SALARIES
 
 
 def _maybe_memberships(transaction: Transaction) -> Optional[str]:
-    if "Stripe Payments UK" in transaction.payee:
+    if matches_anywhere(
+            transaction,
+            "stripe payments uk"
+    ):
         return PayeeCategory.MEMBERSHIPS
 
 
 def _maybe_zettle_credits(transaction: Transaction) -> Optional[str]:
-    if "PAYPAL PPWDL" in transaction.payee:
+    if matches_anywhere(transaction, "paypal ppwdl"):
         return PayeeCategory.ZETTLE_CREDITS
 
 
@@ -175,52 +199,50 @@ def _maybe_ticketweb_credits(transaction: Transaction) -> Optional[str]:
 
 
 def _maybe_bar_purchases(transaction: Transaction) -> Optional[str]:
-    payee = transaction.payee.lower()
-    companies = [
-        "dalston local",
-        "east london brew",
-        "flint wines",
-        "humble grape",
-        "majestic wine",
-        "newcomer wines",
-        "sainsbury",
-    ]
-    if any(payee.startswith(c) for c in companies):
+    if matches_start(
+            transaction,
+            [
+                "dalston local",
+                "east london brew",
+                "flint wines",
+                "humble grape",
+                "majestic wine",
+                "newcomer wines",
+                "sainsbury",
+            ]
+
+    ):
         return PayeeCategory.BAR_PURCHASES
 
 
 def _maybe_security(transaction: Transaction) -> Optional[str]:
-    if transaction.payee.startswith("Denise Williams"):
+    if matches_start(transaction, "denise williams"):
         return PayeeCategory.SECURITY
 
 
 def _maybe_fire_alarm(transaction: Transaction) -> Optional[str]:
-    if transaction.payee.lower().startswith("agf fire prot"):
+    if matches_start(transaction, "agf fire prot"):
         return PayeeCategory.FIRE_ALARM
 
 
 def _maybe_vat(transaction: Transaction) -> Optional[str]:
-    if transaction.payee.lower().startswith("hmrc vat"):
+    if matches_start(transaction, "hmrc vat"):
         return PayeeCategory.VAT
 
 
 def _maybe_cleaning(transaction: Transaction) -> Optional[str]:
-    if transaction.payee.lower().startswith("poolfresh"):
+    if matches_start(transaction, "poolfresh"):
         return PayeeCategory.CLEANING
 
 
 def _maybe_piano_tuner(transaction: Transaction) -> Optional[str]:
-    payee = transaction.payee.lower()
-    for p in [
-        "b sharp pianos",
-        "dafydd james"
-    ]:
-        if payee.startswith(p):
-            return PayeeCategory.PIANO_TUNER
+    if matches_start(transaction, ["b sharp pianos", "dafydd james"]):
+        return PayeeCategory.PIANO_TUNER
 
 
 def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
-    payee = tr.payee.lower()
+    if tr.amount > 0:
+        return None
 
     known_engineers = [
         "adrian kunstler",
@@ -235,27 +257,27 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
         "milo mcguire",
         "thomas pew",
     ]
-    if tr.amount < 0 and any(payee.startswith(name) for name in known_engineers):
+    if matches_start(tr, known_engineers):
         return PayeeCategory.SOUND_ENGINEER
 
 
 def _maybe_prs(tr: Transaction) -> Optional[str]:
-    if tr.payee.startswith("PRS "):
+    if matches_start(tr, "prs "):
         return PayeeCategory.PRS
 
 
 def _maybe_mailchimp(tr: Transaction) -> Optional[str]:
-    if "mailchi" in tr.payee.lower():
+    if matches_anywhere(tr, "mailchi"):
         return PayeeCategory.MAILCHIMP
 
 
 def _maybe_host(tr: Transaction) -> Optional[str]:
-    if tr.payee.lower().startswith("oblong"):
+    if matches_start(tr, "oblong"):
         return PayeeCategory.WEB_HOST
 
 
 def _maybe_bt(tr: Transaction) -> Optional[str]:
-    if tr.payee.lower().startswith("bt group"):
+    if matches_start(tr, "bt group"):
         return PayeeCategory.BT
 
 
@@ -266,8 +288,7 @@ def _maybe_slack(tr: Transaction) -> Optional[str]:
 
 
 def _maybe_bar_snacks(tr: Transaction) -> Optional[str]:
-    payee = tr.payee.lower()
-    if payee.startswith("uk bar snacks"):
+    if matches_start(tr, "uk bar snacks"):
         return PayeeCategory.BAR_SNACKS
 
 
@@ -285,56 +306,39 @@ def _maybe_musician_payments(tr: Transaction) -> Optional[str]:
 
 
 def _maybe_mvt(tr: Transaction) -> Optional[str]:
-    payee = tr.payee.lower()
-    if payee.startswith("music venue trust"):
+    if matches_start(tr, "music venue trust"):
         return PayeeCategory.MUSIC_VENUE_TRUST
 
 
 def _maybe_tissues(tr: Transaction) -> Optional[str]:
-    payee = tr.payee.lower()
-    if payee.startswith("nisbets"):
+    if matches_start(tr, "nisbets"):
         return PayeeCategory.TISSUES
 
 
 def _maybe_telephone(tr: Transaction) -> Optional[str]:
-    payee = tr.payee.lower()
-    if payee.startswith("studio upstairs"):
+    if matches_start(tr, "studio upstairs"):
         return PayeeCategory.TELEPHONE
 
 
 def _maybe_building_maintenance(tr: Transaction) -> Optional[str]:
-    payee = tr.payee.lower()
-    for p in [
-        "rentokil",
-        "acme catering",
-    ]:
-        if payee.startswith(p):
-            return PayeeCategory.BUILDING_MAINTENANCE
+    if matches_start(tr, ["rentokil", "acme catering"]):
+        return PayeeCategory.BUILDING_MAINTENANCE
 
 
 def _maybe_musician_costs(tr: Transaction) -> Optional[str]:
-    payee = tr.payee.lower()
-    for p in [
-        "premier cars",
-        "kingslandlocke",
-    ]:
-        if p in payee:
-            return PayeeCategory.MUSICIAN_COSTS
+    if matches_start(tr, ["premier cars", "kingslandlocke"]):
+        return PayeeCategory.MUSICIAN_COSTS
 
 
 def _maybe_operational_costs(tr: Transaction) -> Optional[str]:
-    payee = tr.payee.lower()
-    for p in [
-        "post office",
-        "leyland",
-    ]:
-        if payee.startswith(p):
-            return PayeeCategory.OPERATIONAL_COSTS
+    if matches_start(tr, ["post office", "leyland"]):
+        return PayeeCategory.OPERATIONAL_COSTS
+
 
 def _maybe_rent(tr: Transaction) -> Optional[str]:
-    payee = tr.payee.lower()
-    if payee.startswith("hcd vortex rent"):
+    if matches_start(tr, "hcd vortex rent"):
         return PayeeCategory.RENT
+
 
 def category_for_transaction(transaction: Transaction) -> Optional[str]:
     return (_maybe_airtable(transaction) or
