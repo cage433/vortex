@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import Optional
 
+from bank_statements.bank_account import BankAccount
 from date_range import Day
 from utils import checked_type, checked_optional_type
 
@@ -10,14 +11,14 @@ __all__ = ["Transaction"]
 class Transaction:
     def __init__(
             self,
-            account: int,
+            account: BankAccount,
             ftid: str,
             payment_date: Day,
             payee: str,
             amount: Decimal,
             transaction_type: str,
     ):
-        self.account: int = checked_type(account, int)
+        self.account: BankAccount = checked_type(account, BankAccount)
         self.ftid = checked_type(ftid, str)
         self.payment_date: Day = checked_type(payment_date, Day)
         self.payee: str = checked_type(payee, str)
@@ -28,11 +29,11 @@ class Transaction:
         return self.__dict__ == other.__dict__
 
     def __str__(self):
-        return f"{self.account}: {self.payment_date}, {self.payee}, {self.amount}, {self.transaction_type}"
+        return f"{self.account.id}: {self.payment_date}, {self.payee}, {self.amount}, {self.transaction_type}"
 
     def clone(
             self,
-            account: Optional[int] = None,
+            account: Optional[BankAccount] = None,
             ftid: Optional[str] = None,
             payment_date: Optional[Day] = None,
             payee: Optional[str] = None,

@@ -3,6 +3,7 @@ from numbers import Number
 from typing import Optional
 
 from bank_statements import Transaction
+from bank_statements.bank_account import BankAccount
 from date_range import Day, DateRange
 from utils import checked_list_type, checked_type, checked_dict_type
 
@@ -14,11 +15,11 @@ from utils.collection_utils import group_into_dict
 class Statement:
     def __init__(
             self,
-            account: int,
+            account: BankAccount,
             transactions: list[Transaction],
             published_balances: dict[Day, Decimal],
     ):
-        self.account: int = checked_type(account, int)
+        self.account: BankAccount = checked_type(account, BankAccount)
         self.transactions: list[Transaction] = sorted(
             checked_list_type(transactions, Transaction),
             key=lambda t: (t.payment_date, t.payee),

@@ -22,7 +22,7 @@ class BankActivityRange(TabRange):
         return [
             (self[0], ["Date", "Account", "Payee", "Amount"]),
             (self[2:, self.DATE_COLUMN], [t.payment_date.date for t in transactions]),
-            (self[2:, self.ACCOUNT_COLUMN], [t.account_name for t in transactions]),
+            (self[2:, self.ACCOUNT_COLUMN], [t.account.name for t in transactions]),
             (self[2:, self.PAYEE_COLUMN], [t.payee for t in transactions]),
-            (self[2:, self.AMOUNT_COLUMN], [t.amount for t in transactions])
+            (self[2:, self.AMOUNT_COLUMN], [float(t.amount) for t in transactions])
         ]

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from numbers import Number
 from pathlib import Path
 from typing import Union
@@ -89,7 +90,11 @@ class Workbook:
 
         def transform_values(values):
             def to_excel(value):
-                return value if isinstance(value, Number) else str(value)
+                if isinstance(value, Decimal):
+                    return float(value)
+                if isinstance(value, Number):
+                    return value
+                return str(value)
 
             return [
                 [to_excel(value) for value in row]

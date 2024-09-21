@@ -104,10 +104,10 @@ class NominalLedger:
     def filter_on_item_type(self, item_type: NominalLedgerItemType) -> 'NominalLedger':
         return NominalLedger([item for item in self.ledger_items if item.item_type == item_type])
 
-    def total_amount(self) -> float:
+    def total_amount(self) -> Decimal:
         return sum(item.amount for item in self.ledger_items)
 
-    def total_for(self, item_type: NominalLedgerItemType) -> float:
+    def total_for(self, item_type: NominalLedgerItemType) -> Decimal:
         return self.filter_on_item_type(item_type).total_amount()
 
     @property

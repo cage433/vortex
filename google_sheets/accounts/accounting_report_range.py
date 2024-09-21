@@ -1,3 +1,4 @@
+from decimal import Decimal
 from numbers import Number
 from typing import List
 
@@ -5,6 +6,8 @@ from accounting.accounting_activity import AccountingActivity
 from airtable_db.contracts_and_events import GigsInfo
 from airtable_db.table_columns import TicketPriceLevel
 from bank_statements import BankActivity
+from bank_statements.bank_account import CHARITABLE_ACCOUNT, CURRENT_ACCOUNT, SAVINGS_ACCOUNT, BBL_ACCOUNT
+from bank_statements.categorized_transaction import CategorizedTransaction
 from bank_statements.payee_categories import PayeeCategory
 from date_range import DateRange
 from date_range.accounting_month import AccountingMonth
@@ -235,10 +238,22 @@ class AccountingReportRange(TabRange):
             accounting_activity.bank_activity.restrict_to_period(period)
             for period in self.periods
         ]
+        self.categorized_transactions_by_sub_period: list[list[CategorizedTransaction]] = [
+            [CategorizedTransaction.heuristic(t) for t in
+             accounting_activity.bank_activity.restrict_to_period(period).sorted_transactions]
+            for period in self.periods
+        ]
         self.vat_rate: float = checked_type(vat_rate, Number)
         self.LAST_PERIOD = self.PERIOD_1 + self.num_periods - 1
         self.TO_DATE = self.PERIOD_1 + self.num_periods
         self.NUM_ROWS = len(self.ROW_HEADINGS)
+
+    @staticmethod
+    def net_amount_for_category(categorized_transactions: list[CategorizedTransaction], category: str) -> Decimal:
+
+        return sum(
+            t.transaction.amount for t in categorized_transactions if t.category == category
+        )
 
     def format_requests(self):
         return [
@@ -384,15 +399,15 @@ class AccountingReportRange(TabRange):
 
         values.append(
             (self.period_range(self.WORK_PERMITS),
-             [activity.net_amount_for_category(PayeeCategory.WORK_PERMITS) for activity in
-              self.bank_activity_by_sub_period])
+             [self.net_amount_for_category(categorized_transactions, PayeeCategory.WORK_PERMITS)
+              for categorized_transactions in self.categorized_transactions_by_sub_period])
         )
         values.append(
             (self.period_range(self.MARKETING),
-             [activity.net_amount_for_category(PayeeCategory.MARKETING_INDIRECT) +
+             [self.net_amount_for_category(categorized_transactions, PayeeCategory.MARKETING_INDIRECT) +
               ledger.total_for(NominalLedgerItemType.MARKETING_INDIRECT)
-              for activity, ledger in
-              zip(self.bank_activity_by_sub_period, self.ledger_by_sub_period)])
+              for categorized_transactions, ledger in
+              zip(self.categorized_transactions_by_sub_period, self.ledger_by_sub_period)])
         )
 
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
@@ -482,8 +497,8 @@ class AccountingReportRange(TabRange):
             ),
             (
                 self.period_range(self.ZETTLE_FEES),
-                [activity.net_amount_for_category(PayeeCategory.CREDIT_CARD_FEES)
-                 for activity in self.bank_activity_by_sub_period]
+                [self.net_amount_for_category(categorized_transactions, PayeeCategory.CREDIT_CARD_FEES)
+                 for categorized_transactions in self.categorized_transactions_by_sub_period]
             )
         ]
         return values
@@ -568,11 +583,11 @@ class AccountingReportRange(TabRange):
             (self.BANK_FEES, PayeeCategory.BANK_FEES, False),
             (self.BANK_INTEREST, PayeeCategory.BANK_INTEREST, False),
         ]:
-            vat_adjustment = 1.2 if subtract_vat else 1.0
+            vat_adjustment = Decimal(1.2) if subtract_vat else Decimal(1.0)
             values.append(
                 (self.period_range(i_row),
-                 [activity.net_amount_for_category(category) / vat_adjustment
-                  for activity in self.bank_activity_by_sub_period])
+                 [self.net_amount_for_category(categorized_transactions, category) / vat_adjustment
+                  for categorized_transactions in self.categorized_transactions_by_sub_period])
             )
 
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
@@ -602,19 +617,16 @@ class AccountingReportRange(TabRange):
 
         ]
 
-        account_ids = [CURRENT_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, BBL_ACCOUNT_ID, CHARITABLE_ACCOUNT_ID]
-        account_names = ["Current", "Savings", "BBL", "Charitable"]
-        for (i_row, account_id, account_name) in zip(
+        for (i_row, account) in zip(
                 [self.CURRENT_ACC_P_AND_L, self.SAVINGS_ACC_P_AND_L, self.BBL_P_AND_L, self.CHARITABLE_ACC_P_AND_L],
-                account_ids,
-                account_names
+                [CURRENT_ACCOUNT, SAVINGS_ACCOUNT, BBL_ACCOUNT, CHARITABLE_ACCOUNT]
         ):
             values.append(
                 (self.period_range(i_row),
                  [
                      bacc.balance_at_eod(period.last_day) - bacc.balance_at_sod(period.first_day)
                      for ba, period in zip(self.bank_activity_by_sub_period, self.periods)
-                     for bacc in [ba.restrict_to_account(account_id)]
+                     for bacc in [ba.restrict_to_account(account)]
                  ]
                  )
             )

@@ -1,26 +1,27 @@
 import shelve
+from decimal import Decimal
 from pathlib import Path
 from typing import Optional, List
 
-import tabulate
 
 from bank_statements import Statement, Transaction
 
 __all__ = ["BankActivity"]
 
+from bank_statements.bank_account import BankAccount, CURRENT_ACCOUNT
+
 from date_range import Day, DateRange
 from date_range.accounting_year import AccountingYear
 from env import CURRENT_ACCOUNT_ID
-from myopt.opt import Opt
 
-from utils import checked_list_type
+from utils import checked_list_type, checked_type
 from utils.collection_utils import group_into_dict
 
 
 class BankActivity:
     def __init__(self, statements: List[Statement]):
         checked_list_type(statements, Statement)
-        self.statements: dict[int, Statement] = {
+        self.statements: dict[BankAccount, Statement] = {
             statement.account: statement for statement in statements
         }
         self.sorted_transactions: List[Transaction] = sorted(
@@ -56,27 +57,25 @@ class BankActivity:
         )
 
     @property
-    def initial_balance(self) -> float:
+    def initial_balance(self) -> Decimal:
         return sum([statement.earliest_balance for statement in self.statements.values()])
 
     @property
-    def terminal_balance(self) -> float:
+    def terminal_balance(self) -> Decimal:
         return sum([statement.latest_balance for statement in self.statements.values()])
 
     def restrict_to_period(self, period: DateRange) -> 'BankActivity':
         return BankActivity([stmt.filter_on_period(period) for stmt in self.statements.values()])
 
-    def balance_at_eod(self, date: Day) -> float:
+    def balance_at_eod(self, date: Day) -> Decimal:
         return sum([s.balance_at_eod(date) for s in self.statements.values()])
 
-    def balance_at_sod(self, date: Day) -> float:
+    def balance_at_sod(self, date: Day) -> Decimal:
         return sum([s.balance_at_sod(date) for s in self.statements.values()])
 
     def payees(self) -> list[str]:
         return sorted(list(set([t.payee for t in self.sorted_transactions])))
 
-    def net_amount_for_category(self, category: str):
-        return sum([t.amount for t in self.sorted_transactions if t.category.get_or_else("") == category])
 
     @property
     def transaction_by_category(self):
@@ -84,38 +83,16 @@ class BankActivity:
 
     @property
     def current_account_statement(self):
-        return self.statements[CURRENT_ACCOUNT_ID]
+        return self.statements[CURRENT_ACCOUNT]
 
-    def restrict_to_account(self, account_id: int) -> 'BankActivity':
-        return BankActivity([self.statements[account_id]])
+    def restrict_to_account(self, account: BankAccount) -> 'BankActivity':
+        checked_type(account, BankAccount)
+        return BankActivity([self.statements[account]])
 
     @property
     def total_vat_payments(self):
         # relying on the payee name sucks. Best we can do for now
         return sum([t.amount for t in self.sorted_transactions if "HMRC VAT" in t.payee.upper()])
-
-    def formatted_by_category(self, first_day: Optional[Day] = None, last_day: Optional[Day] = None):
-        first_day = first_day or Day(1970, 1, 1)
-        last_day = last_day or Day(2100, 1, 1)
-        transactions = [t for t in self.sorted_transactions if first_day <= t.payment_date <= last_day]
-        table = []
-
-        def pretty_category(category: Opt[str]) -> str:
-            if category.get_or_else("").strip() == "":
-                return "Uncategorized"
-            return category.get().strip()
-
-        by_category = group_into_dict(transactions, lambda t: pretty_category(t.category))
-        for category in sorted(by_category.keys()):
-            cat_transactions = by_category[category]
-            table.append(
-                [
-                    category,
-                    sum([t.amount for t in cat_transactions]),
-                    len(cat_transactions),
-                ]
-            )
-        print(tabulate.tabulate(table, headers=["Category", "Amount", "Count"]))
 
     SHELF = Path(__file__).parent / "_bank_activity.shelf"
 

@@ -58,9 +58,9 @@ def find_transactions_for_payee(payee: str):
 
 
 if __name__ == '__main__':
-    # for y in range(2024, 2026):
-    #     create_ytd_tab(AccountingYear(y), show_transactions=True, force=False)
+    for y in range(2024, 2025):
+        create_ytd_tab(AccountingYear(y), show_transactions=True, force=False)
     # for m in list(range(9, 13)) + list(range(1, 9)):
     #     create_month_tab(AccountingMonth(AccountingYear(2022), m))
-    create_month_tab(AccountingMonth(AccountingYear(2024), 5), force=False)
+    # create_month_tab(AccountingMonth(AccountingYear(2024), 5), force=False)
     # find_transactions_for_payee("pauline")

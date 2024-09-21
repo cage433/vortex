@@ -3,24 +3,13 @@ from typing import List, Optional
 
 from bank_statements import BankActivity, Transaction
 from bank_statements.bank_account import BankAccount
+from bank_statements.categorized_transaction import CategorizedTransaction
 from bank_statements.payee_categories import category_for_transaction
 from date_range import Day, DateRange
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
 from google_sheets.tab_range import TabRange
 from utils import checked_type, checked_optional_type
-
-
-class TransactionInfo:
-    def __init__(
-            self,
-            transaction: Transaction,
-            category: Optional[str],
-            confirmed: bool
-    ):
-        self.transaction: Transaction = checked_type(transaction, Transaction)
-        self.category: Optional[str] = checked_optional_type(category, str)
-        self.confirmed: bool = checked_type(confirmed, bool)
 
 
 class StatementsTab(Tab):
@@ -166,7 +155,7 @@ class StatementsTab(Tab):
             (transaction_range, transaction_values),
         ])
 
-    def transaction_infos_from_tab(self) -> List[TransactionInfo]:
+    def transaction_infos_from_tab(self) -> List[CategorizedTransaction]:
         def to_optional_value(cell_value):
             if cell_value == "":
                 return None
@@ -200,12 +189,12 @@ class StatementsTab(Tab):
             category = to_optional_value(row[self.CATEGORY])
             confirmed = to_confirmed_value(row[self.CONFIRMED])
             transaction = Transaction(
-                account=self.bank_account.id,
+                account=self.bank_account,
                 ftid=ftid,
                 payment_date=payment_date,
                 payee=payee,
                 amount=amount,
                 transaction_type=transaction_type,
             )
-            infos.append(TransactionInfo(transaction, category, confirmed))
+            infos.append(CategorizedTransaction(transaction, category, confirmed))
         return infos

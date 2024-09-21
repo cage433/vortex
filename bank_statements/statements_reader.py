@@ -6,13 +6,11 @@ from pathlib import Path
 from ofxparse import OfxParser
 
 from bank_statements import Statement, Transaction
-from bank_statements.payee_categories import category_for_transaction
+from bank_statements.bank_account import BankAccount
 from date_range import Day
 from env import STATEMENTS_DIR
 
 __all__ = ["StatementsReader"]
-
-from myopt.nothing import Nothing
 
 from utils.file_utils import read_csv_file
 
@@ -21,7 +19,7 @@ class StatementsReader:
     SHELF = Path(__file__).parent / "_statements_reader.shelf"
 
     @staticmethod
-    def read_published_balances(statements_dir: Path, force: bool) -> dict[int, dict[Day, float]]:
+    def read_published_balances(statements_dir: Path, force: bool) -> dict[BankAccount, dict[Day, Decimal]]:
         key = f"uncategorised_balances"
         with shelve.open(str(StatementsReader.SHELF)) as shelf:
             if key not in shelf or force:
@@ -31,6 +29,7 @@ class StatementsReader:
                         continue
                     assert directory.is_dir(), f"Expected {directory} to be a directory"
                     account_id = int(directory.name)
+                    account = BankAccount.account_for_id(account_id)
                     csv_files = list(directory.glob("*.csv"))
                     account_balances = {}
                     for file in csv_files:
@@ -41,12 +40,12 @@ class StatementsReader:
                             if maybe_balance == "":
                                 continue
                             account_balances[day] = Decimal(maybe_balance)
-                    balances[account_id] = account_balances
+                    balances[account] = account_balances
                 shelf[key] = balances
             return shelf[key]
 
     @staticmethod
-    def read_transactions(statements_dir: Path, force: bool) -> dict[int, list[Transaction]]:
+    def read_transactions(statements_dir: Path, force: bool) -> dict[BankAccount, list[Transaction]]:
         key = f"uncategorised_transactions"
         with shelve.open(str(StatementsReader.SHELF)) as shelf:
             if key not in shelf or force:
@@ -56,6 +55,7 @@ class StatementsReader:
                         continue
                     assert directory.is_dir(), f"Expected {directory} to be a directory"
                     account_id = int(directory.name)
+                    account = BankAccount.account_for_id(account_id)
                     ofx_files = list(directory.glob("*.ofx"))
                     transactions_for_account = []
                     for file in ofx_files:
@@ -63,7 +63,7 @@ class StatementsReader:
                             ofx = OfxParser.parse(fileobj)
                         for tr in ofx.account.statement.transactions:
                             trans = Transaction(
-                                account_id,
+                                account,
                                 tr.id.strip(),
                                 Day.from_date(tr.date),
                                 tr.payee,
@@ -71,21 +71,10 @@ class StatementsReader:
                                 tr.type,
                             )
                             transactions_for_account.append(trans)
-                    transactions_by_account[account_id] = transactions_for_account
+                    transactions_by_account[account] = transactions_for_account
                 shelf[key] = transactions_by_account
             return shelf[key]
         pass
-
-    # @staticmethod
-    # def read_transactions(statements_dir: Path, force: bool) -> dict[int, list[Transaction]]:
-    #     uncategorised_transactions = StatementsReader.read_uncategorised_transactions(statements_dir, force)
-    #     return {
-    #         id: [
-    #             tr.clone(category=category_for_transaction(tr))
-    #             for tr in account_transactions
-    #         ]
-    #         for id, account_transactions in uncategorised_transactions.items()
-    #     }
 
     @staticmethod
     def read_statements(force: bool) -> list[Statement]:
@@ -95,11 +84,11 @@ class StatementsReader:
             "Expected balances and transactions to have the same accounts"
         return [
             Statement(
-                account_id,
-                transactions_by_account[account_id],
-                balances_by_account[account_id]
+                account,
+                transactions_by_account[account],
+                balances_by_account[account]
             )
-            for account_id in balances_by_account.keys()
+            for account in balances_by_account.keys()
         ]
 
 
