@@ -1,4 +1,5 @@
 import shelve
+from decimal import Decimal
 from numbers import Number
 from pathlib import Path
 from typing import List, Optional
@@ -42,14 +43,14 @@ class NominalLedgerItem:
             date: Day,
             reference: str,
             narrative: str,
-            amount: float,
+            amount: Decimal,
     ):
         self.code: int = checked_type(code, int)
         self.item_type: str = checked_type(item_type, str).strip()
         self.date: Day = checked_type(date, Day)
         self.reference: str = checked_type(reference, str)
         self.narrative: str = checked_type(narrative, str)
-        self.amount: float = checked_type(amount, float)
+        self.amount: Decimal = checked_type(amount, Decimal)
 
     def __str__(self):
         return f"{self.date}: {self.amount}, {self.reference}, {self.item_type}"
@@ -91,8 +92,8 @@ class NominalLedger:
 
             return False
 
-        def to_float(text: str) -> Number:
-            return float(text.replace(",", ""))
+        def to_decimal(text: str) -> Decimal:
+            return Decimal(text.replace(",", ""))
 
         rows = read_csv_file(file)
         while rows[0][0] != "CODE":
@@ -113,11 +114,11 @@ class NominalLedger:
                 if row[5].strip() == "":
                     if row[6].strip() == "":
                         log_message(f"No amount in row {i}, {row}")
-                        amount = 0.0
+                        amount = Decimal(0.0)
                     else:
-                        amount = to_float(row[6])
+                        amount = to_decimal(row[6])
                 else:
-                    amount = -to_float(row[5])
+                    amount = -to_decimal(row[5])
                 ledger_items.append(NominalLedgerItem(
                     code=code,
                     item_type=item_type,

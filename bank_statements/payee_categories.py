@@ -26,6 +26,7 @@ class PayeeCategory:
     BAR_SNACKS = "Bar Snacks"
     BB_LOAN = "BB Loan"
     BT = "BT"
+    BUILDING_MAINTENANCE = "Building Maintenance"
     CLEANING = "Cleaning"
     CREDIT_CARD_FEES = "Credit Card Fees"
     ELECTRICITY = "Electricity"
@@ -35,8 +36,10 @@ class PayeeCategory:
     MAILCHIMP = "Mailchimp"
     MARKETING_INDIRECT = "Marketing - Indirect"
     MEMBERSHIPS = "Memberships"
+    MUSICIAN_COSTS = "Musician Costs"
     MUSICIAN_PAYMENTS = "Musician Payments"
     MUSIC_VENUE_TRUST = "Music Venue Trust"
+    OPERATIONAL_COSTS = "Operational Costs"
     PETTY_CASH = "Petty cash"
     PIANO_TUNER = "Piano Tuner"
     PRS = "PRS"
@@ -45,6 +48,7 @@ class PayeeCategory:
     SECURITY = "Security"
     SLACK = "Slack"
     SOUND_ENGINEER = "Sound Engineer"
+    TELEPHONE = "Telephone"
     TICKETWEB_CREDITS = "Ticketweb Credits"
     TISSUES = "Toilet Tissues"
     VAT = "VAT"
@@ -162,7 +166,7 @@ def _maybe_zettle_credits(transaction: Transaction) -> Optional[str]:
 
 
 def _maybe_ticketweb_credits(transaction: Transaction) -> Optional[str]:
-    if transaction.payee.startswith("TICKETWEB UK LTD") and transaction.amount > 0:
+    if "ticketweb" in transaction.payee.lower() and transaction.amount > 0:
         return PayeeCategory.TICKETWEB_CREDITS
     return None
 
@@ -170,11 +174,13 @@ def _maybe_ticketweb_credits(transaction: Transaction) -> Optional[str]:
 def _maybe_bar_purchases(transaction: Transaction) -> Optional[str]:
     payee = transaction.payee.lower()
     companies = [
-        "majestic wine",
         "dalston local",
-        "flint wines",
         "east london brew",
-        "sainsbury"
+        "flint wines",
+        "humble grape",
+        "majestic wine",
+        "newcomer wines",
+        "sainsbury",
     ]
     if any(payee.startswith(c) for c in companies):
         return PayeeCategory.BAR_PURCHASES
@@ -201,22 +207,29 @@ def _maybe_cleaning(transaction: Transaction) -> Optional[str]:
 
 
 def _maybe_piano_tuner(transaction: Transaction) -> Optional[str]:
-    if transaction.payee.lower().startswith("b sharp pianos"):
-        return PayeeCategory.PIANO_TUNER
+    payee = transaction.payee.lower()
+    for p in [
+        "b sharp pianos",
+        "dafydd james"
+    ]:
+        if payee.startswith(p):
+            return PayeeCategory.PIANO_TUNER
 
 
 def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
     payee = tr.payee.lower()
 
-    def is_multiple_of_ten(amt) -> bool:
-        return abs(amt % 10) < 0.01
-
     known_engineers = [
-        "milo mcguire",
-        "mike omalley",
+        "adrian kunstler"
         "bella cooper",
+        "chris penty",
+        "egglectic solutions",
+        "giulo matheson",
+        "joe mashiter",
+        "mike omalley",
+        "mike o'malley",
+        "milo mcguire",
         "thomas pew",
-        "joe mashiter"
     ]
     if tr.amount < 0 and any(payee.startswith(name) for name in known_engineers):
         return PayeeCategory.SOUND_ENGINEER
@@ -279,6 +292,42 @@ def _maybe_tissues(tr: Transaction) -> Optional[str]:
         return PayeeCategory.TISSUES
 
 
+def _maybe_telephone(tr: Transaction) -> Optional[str]:
+    payee = tr.payee.lower()
+    if payee.startswith("studio upstairs"):
+        return PayeeCategory.TELEPHONE
+
+
+def _maybe_building_maintenance(tr: Transaction) -> Optional[str]:
+    payee = tr.payee.lower()
+    for p in [
+        "rentokil",
+        "acme catering",
+    ]:
+        if payee.startswith(p):
+            return PayeeCategory.BUILDING_MAINTENANCE
+
+
+def _maybe_musician_costs(tr: Transaction) -> Optional[str]:
+    payee = tr.payee.lower()
+    for p in [
+        "premier cars",
+        "kingslandlocke",
+    ]:
+        if p in payee:
+            return PayeeCategory.MUSICIAN_COSTS
+
+
+def _maybe_operational_costs(tr: Transaction) -> Optional[str]:
+    payee = tr.payee.lower()
+    for p in [
+        "post office",
+        "leyland",
+    ]:
+        if payee.startswith(p):
+            return PayeeCategory.OPERATIONAL_COSTS
+
+
 def category_for_transaction(transaction: Transaction) -> Optional[str]:
     return (_maybe_airtable(transaction) or
             _maybe_bank_fees(transaction) or
@@ -287,6 +336,7 @@ def category_for_transaction(transaction: Transaction) -> Optional[str]:
             _maybe_bar_snacks(transaction) or
             _maybe_bb_loan(transaction) or
             _maybe_bt(transaction) or
+            _maybe_building_maintenance(transaction) or
             _maybe_cc_fees(transaction) or
             _maybe_cleaning(transaction) or
             _maybe_electricity(transaction) or
@@ -296,8 +346,10 @@ def category_for_transaction(transaction: Transaction) -> Optional[str]:
             _maybe_kashflow(transaction) or
             _maybe_mailchimp(transaction) or
             _maybe_memberships(transaction) or
+            _maybe_musician_costs(transaction) or
             _maybe_musician_payments(transaction) or
             _maybe_mvt(transaction) or
+            _maybe_operational_costs(transaction) or
             _maybe_petty_cash(transaction) or
             _maybe_piano_tuner(transaction) or
             _maybe_prs(transaction) or
@@ -306,6 +358,7 @@ def category_for_transaction(transaction: Transaction) -> Optional[str]:
             _maybe_security(transaction) or
             _maybe_slack(transaction) or
             _maybe_sound_engineer(transaction) or
+            _maybe_telephone(transaction) or
             _maybe_ticketweb_credits(transaction) or
             _maybe_tissues(transaction) or
             _maybe_vat(transaction) or

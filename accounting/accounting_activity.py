@@ -15,7 +15,8 @@ class AccountingActivity:
         self.bank_activity: BankActivity = checked_type(bank_activity, BankActivity)
 
     @staticmethod
-    def activity_for_period(period: DateRange, force: bool, force_bank:bool = False) -> 'AccountingActivity':
+    def activity_for_period(period: DateRange, force: bool, force_bank: bool = False,
+                            force_nominal_ledger: bool = False) -> 'AccountingActivity':
         gigs_info_list = []
 
         for month in period.split_into(Month, SplitType.EXACT):
@@ -23,6 +24,6 @@ class AccountingActivity:
             gigs_info_list += month_info.contracts_and_events
 
         gigs_info = GigsInfo(gigs_info_list)
-        nominal_ledger = NominalLedger.from_latest_csv_file(force).restrict_to_period(period)
+        nominal_ledger = NominalLedger.from_latest_csv_file(force or force_nominal_ledger).restrict_to_period(period)
         bank_activity = BankActivity.build(force or force_bank).restrict_to_period(period)
         return AccountingActivity(gigs_info, nominal_ledger, bank_activity)

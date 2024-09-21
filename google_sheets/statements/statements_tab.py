@@ -120,7 +120,7 @@ class StatementsTab(Tab):
 
         status_values = [
             ["Uncategorized",
-             f"=SUMIFS({full_range[:, self.AMOUNT].in_a1_notation}, {full_range[:, self.CATEGORY].in_a1_notation}, \"<>\")"],
+             f"=SUMIFS({full_range[:, self.AMOUNT].in_a1_notation}, {full_range[:, self.CATEGORY].in_a1_notation}, \"=\")"],
             ["Unconfirmed",
              f"=SUMIF({full_range[:, self.CONFIRMED].in_a1_notation}, FALSE, {full_range[:, self.AMOUNT].in_a1_notation})"],
         ]
@@ -136,6 +136,12 @@ class StatementsTab(Tab):
                         return sheet_category
             return category_for_transaction(bank_transaction)
 
+        def is_confirmed(i_transaction: int):
+            if len(sheet_transaction_infos) == len(transactions):
+                sheet_info = sheet_transaction_infos[i_transaction]
+                return sheet_info.confirmed
+            return False
+
         balance = bank_activity.initial_balance
         for i_trans, t in enumerate(transactions):
             balance += t.amount
@@ -146,7 +152,7 @@ class StatementsTab(Tab):
                     float(t.amount),
                     float(balance),
                     category_to_use(i_trans, t) or "",
-                    False,
+                    is_confirmed(i_trans),
                     t.transaction_type,
                     t.ftid,
                 ]
@@ -174,9 +180,14 @@ class StatementsTab(Tab):
             return Decimal(cell_value)
 
         def to_confirmed_value(cell_value):
-            if cell_value == "":
-                return False
-            return bool(cell_value)
+            if isinstance(cell_value, str):
+                if cell_value == "":
+                    return False
+                if cell_value.upper().strip() == "TRUE":
+                    return True
+                if cell_value.upper().strip() == "FALSE":
+                    return False
+            raise ValueError(f"Unrecognized confirmed value {cell_value}")
 
         infos = []
         values = self.read_values_for_columns(self.heading_range.columns_in_a1_notation)
