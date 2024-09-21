@@ -1,5 +1,6 @@
 import shelve
 from decimal import Decimal
+from enum import Enum
 from numbers import Number
 from pathlib import Path
 from typing import List, Optional
@@ -7,46 +8,83 @@ from typing import List, Optional
 from date_range import Day, DateRange
 from date_range.accounting_year import AccountingYear
 from env import KASHFLOW_CSV_DIR
-from utils import checked_list_type, checked_type
+from utils import checked_list_type, checked_type, checked_optional_type
 from utils.file_utils import read_csv_file
 from utils.logging import log_message
 
 
-class NominalLedgerItemType:
+class NominalLedgerItemType(Enum):
+    ADMINISTRATION = "Administration"
     BAR_STOCK = "Bar Stock"
     BUILDING_MAINTENANCE = "Building Maintenance"
-    BUILDING_WORKS = "Building works"
+    BUILDING_SECURITY = "Building Security"
+    BUILDING_WORKS = "Building Works"
     CLEANING = "Cleaning"
-    DOWNSTAIRS_BUILDING_WORKS = "Downstairs building works"
+    DONATIONS = "Donations"
+    DOWNSTAIRS_BUILDING_WORKS = "Downstairs Building Works"
+    DRINKS = "Drinks"
+    ELECTRICITY = "Electricity"
+    EQUIPMENT_HIRE = "Equipment Hire"
     EQUIPMENT_MAINTENANCE = "Equipment Maintenance"
     EQUIPMENT_PURCHASE = "Equipment Purchases"
     FLOOD_CLEARANCE = "Flood Clearance"
+    Grants = "Grants"
+    INPUT_VAT = "Input VAT"
+    INSURANCE = "Insurance"
     LICENSING_INDIRECT = "Licensing - Indirect"
     LICENSING_DIRECT = "Licensing -Direct"
-    MARKETING = "Marketing - Indirect"
+    LOAN_REPAYMENT = "Loan Repayment"
+    MARKETING_INDIRECT = "Marketing - Indirect"
+    MARKETING_DIRECT = "Marketing - Direct"
     MUSICIAN_COSTS = "Musician Costs"
+    MUSICIANS_FEES = "Musicians Fees"
     OPERATIONAL_COSTS = "Operational Costs"
+    OTHER = "Other"
     OUTPUT_VAT = "Output VAT"
-    PIANO_TUNING = "Piano tuning"
+    PIANO_TUNING = "Piano Tuning"
+    PROJECTS = "Projects"
+    RATES = "Rates"
+    RENT = "Rent & Service Charge"
     SECURITY = "Door Security"
+    SERVICES = "Services"
     SOUND_ENGINEERING = "Sound engineering"
     SPACE_HIRE = "Space Hire"
     STAFF_COSTS = "Staff Costs"
+    SUBSCRIPTIONS = "Subscriptions"
     TELEPHONE = "Telephone"
+    TICKETS = "Tickets"
+    TRAVEL = "Travel"
+    UTILITIES = "Utilities"
+    VOLUNTEER_COSTS = "Volunteer Costs"
+    VORTEX_JAZZ_FESTIVAL = "Vortex Jazz Festival"
+    WORK_PERMITS = "Work Permits"
 
+    @staticmethod
+    def from_text(text: str):
+        if text == "Piano tuning":
+            text = "Piano Tuning"
+        if text.lower() == "downstairs building works":
+            text = "Downstairs Building Works"
+        if text.lower() == "building works":
+            text = "Building Works"
+        if text.lower() == "flood clearance":
+            text = "Flood Clearance"
+        if text.lower() == "projects & events":
+            text = "Projects"
+        return NominalLedgerItemType(text)
 
 class NominalLedgerItem:
     def __init__(
             self,
             code: int,
-            item_type: str,
+            item_type: NominalLedgerItemType,
             date: Day,
             reference: str,
             narrative: str,
             amount: Decimal,
     ):
         self.code: int = checked_type(code, int)
-        self.item_type: str = checked_type(item_type, str).strip()
+        self.item_type: str = checked_type(item_type, NominalLedgerItemType)
         self.date: Day = checked_type(date, Day)
         self.reference: str = checked_type(reference, str)
         self.narrative: str = checked_type(narrative, str)
@@ -63,17 +101,17 @@ class NominalLedger:
     def restrict_to_period(self, period: DateRange) -> 'NominalLedger':
         return NominalLedger([item for item in self.ledger_items if period.contains_day(item.date)])
 
-    def filter_on_item_type(self, item_type: str) -> 'NominalLedger':
-        return NominalLedger([item for item in self.ledger_items if item.item_type.upper() == item_type.upper()])
+    def filter_on_item_type(self, item_type: NominalLedgerItemType) -> 'NominalLedger':
+        return NominalLedger([item for item in self.ledger_items if item.item_type == item_type])
 
     def total_amount(self) -> float:
         return sum(item.amount for item in self.ledger_items)
 
-    def total_for(self, item_type: str) -> float:
+    def total_for(self, item_type: NominalLedgerItemType) -> float:
         return self.filter_on_item_type(item_type).total_amount()
 
     @property
-    def item_types(self) -> List[str]:
+    def item_types(self) -> List[NominalLedgerItemType]:
         return list(set(item.item_type for item in self.ledger_items))
 
     SHELF = Path(__file__).parent / "_nominal_ledger.shelf"
@@ -121,7 +159,7 @@ class NominalLedger:
                     amount = -to_decimal(row[5])
                 ledger_items.append(NominalLedgerItem(
                     code=code,
-                    item_type=item_type,
+                    item_type=NominalLedgerItemType.from_text(item_type),
                     date=date,
                     reference=reference,
                     narrative=narrative,
@@ -152,33 +190,15 @@ class NominalLedger:
     def empty():
         return NominalLedger([])
 
+class NominalLedgerWithVATItem:
+    def __init__(self, item: NominalLedgerItem, vat: Optional[NominalLedgerItem]):
+        self.item: NominalLedgerItem = checked_type(item, NominalLedgerItem)
+        self.vat: Optional[NominalLedgerItem] = checked_optional_type(vat, NominalLedgerItem)
+
+
 
 if __name__ == '__main__':
     ledger = NominalLedger.from_latest_csv_file(force=False).restrict_to_period(AccountingYear(2024))
-    used_items = [item.upper() for item in [
-        NominalLedgerItemType.BAR_STOCK,
-        NominalLedgerItemType.BUILDING_MAINTENANCE,
-        NominalLedgerItemType.BUILDING_WORKS,
-        NominalLedgerItemType.CLEANING,
-        NominalLedgerItemType.DOWNSTAIRS_BUILDING_WORKS,
-        NominalLedgerItemType.EQUIPMENT_MAINTENANCE,
-        NominalLedgerItemType.EQUIPMENT_PURCHASE,
-        NominalLedgerItemType.FLOOD_CLEARANCE,
-        NominalLedgerItemType.LICENSING_INDIRECT,
-        NominalLedgerItemType.MARKETING,
-        NominalLedgerItemType.OPERATIONAL_COSTS,
-        NominalLedgerItemType.PIANO_TUNING,
-        NominalLedgerItemType.SECURITY,
-        NominalLedgerItemType.SOUND_ENGINEERING,
-        NominalLedgerItemType.SPACE_HIRE,
-        NominalLedgerItemType.STAFF_COSTS,
-        NominalLedgerItemType.TELEPHONE,
-    ]]
-    missing_items = [item for item in ledger.item_types if item.upper() not in used_items]
-    for item in missing_items:
+    for item in ledger.item_types:
         print(f"{item}: {ledger.total_for(item)}")
     print("\n\n")
-    for item_type in used_items:
-        print(item_type)
-        for item in ledger.filter_on_item_type(item_type).ledger_items:
-            print(f"{item.date}: {item.amount},{item.reference}")

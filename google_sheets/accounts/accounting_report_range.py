@@ -375,7 +375,7 @@ class AccountingReportRange(TabRange):
         for (i_row, item_type) in [
             (self.SOUND_ENGINEERING, NominalLedgerItemType.SOUND_ENGINEERING),
             (self.SECURITY, NominalLedgerItemType.SECURITY),
-            (self.MARKETING, NominalLedgerItemType.MARKETING),
+            (self.MARKETING, NominalLedgerItemType.MARKETING_INDIRECT),
             (self.PIANO_TUNING, NominalLedgerItemType.PIANO_TUNING)
         ]:
             values.append(
@@ -390,7 +390,7 @@ class AccountingReportRange(TabRange):
         values.append(
             (self.period_range(self.MARKETING),
              [activity.net_amount_for_category(PayeeCategory.MARKETING_INDIRECT) +
-              ledger.total_for(NominalLedgerItemType.MARKETING)
+              ledger.total_for(NominalLedgerItemType.MARKETING_INDIRECT)
               for activity, ledger in
               zip(self.bank_activity_by_sub_period, self.ledger_by_sub_period)])
         )
