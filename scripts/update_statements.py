@@ -66,7 +66,7 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
 
     for t in uncategorized:
         print()
-        print(f"Candidate invoice for {t.transaction}")
+        print(f"Uncategorised transaction {t.transaction}")
         amount = t.transaction.amount
         ex_vat_amount = t.transaction.amount / Decimal(1.2)
         near_ledger_items = [
@@ -75,23 +75,36 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
                and l.item_type not in [NominalLedgerItemType.INPUT_VAT, NominalLedgerItemType.OUTPUT_VAT]
         ]
         sorted_items_1 = sorted(near_ledger_items, key=lambda i: abs(i.amount - amount))
+        possibles1 = sorted_items_1[:20]
+        possibles1 = [p for p in possibles1 if abs(p.amount - t.transaction.amount) < 1]
+        if len(possibles1) > 0:
+            print("Candidate ledger items inc VAT")
+            for i in possibles1:
+                err = (i.amount - amount).quantize(Decimal('0.01'))
+                if i.item_type == NominalLedgerItemType.SPACE_HIRE:
+                    short_narrative = ""
+                else:
+                    short_narrative = i.narrative
+                print(f"Diff = {err}, {i.date}, {i.amount}, {i.item_type}, {i.reference}, {short_narrative}")
+
         sorted_items_2 = sorted(near_ledger_items, key=lambda i: abs(i.amount - ex_vat_amount))
-        print("Sorted items inc VAT")
-        possibles = sorted_items_1[:20]
-        possibles = [p for p in possibles if abs(p.amount - t.transaction.amount) < 1]
-        for i in possibles:
-            err = (i.amount - amount).quantize(Decimal('0.01'))
-            print(f"Diff = {err}, {i}")
-        print("Sorted items exc VAT")
-        possibles = sorted_items_2[:20]
-        possibles = [p for p in possibles if abs(p.amount - ex_vat_amount) < 1]
-        for i in possibles:
-            err = (i.amount - ex_vat_amount).quantize(Decimal('0.01'))
-            print(f"Diff = {err}, {i}")
+        possibles2 = sorted_items_2[:20]
+        possibles2 = [p for p in possibles2 if abs(p.amount - ex_vat_amount) < 1]
+        if len(possibles2) > 0:
+            print("Candidate ledger items exc VAT")
+            for i in possibles2:
+                err = (i.amount - ex_vat_amount).quantize(Decimal('0.01'))
+                if i.item_type == NominalLedgerItemType.SPACE_HIRE:
+                    short_narrative = ""
+                else:
+                    short_narrative = i.narrative
+                print(f"Diff = {err}, {i.date}, {i.amount}, {i.item_type}, {i.reference}, {short_narrative}")
+        if len(possibles1) == 0 and len(possibles2) == 0:
+            print("No candidates found")
 
 
 
 if __name__ == '__main__':
-    month = AccountingMonth.from_calendar_month(Month(2024, 3))
+    month = AccountingMonth.from_calendar_month(Month(2024, 4))
     ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, refresh_bank_activity=False, refresh_sheet=True)
     compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, month)

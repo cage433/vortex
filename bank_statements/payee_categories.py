@@ -35,6 +35,7 @@ class PayeeCategory:
     INSURANCE = "Insurance"
     KASHFLOW = "Kashflow"
     MAILCHIMP = "Mailchimp"
+    LICENSING_DIRECT = "Licensing - Indirect"
     MARKETING_INDIRECT = "Marketing - Indirect"
     MEMBERSHIPS = "Memberships"
     MUSICIAN_COSTS = "Musician Costs"
@@ -51,6 +52,7 @@ class PayeeCategory:
     SLACK = "Slack"
     SOUND_ENGINEER = "Sound Engineer"
     TELEPHONE = "Telephone"
+    TICKETS = "Tickets"
     TICKETWEB_CREDITS = "Ticketweb Credits"
     TISSUES = "Toilet Tissues"
     VAT = "VAT"
@@ -101,10 +103,7 @@ def _maybe_work_permit(transaction: Transaction) -> Optional[str]:
 
 
 def _maybe_rates(transaction: Transaction) -> Optional[str]:
-    if matches_start(transaction, ["lb hackney rates", "lbh rates"]):
-        return PayeeCategory.RATES
-    payee = transaction.payee.lower()
-    if transaction.payment_date == Day(2023, 7, 21) and "lb hackney genfund vortex" in payee:
+    if matches_anywhere(transaction, ["lb hackney rates", "lbh rates", "lb hackney genfund vortex"]):
         return PayeeCategory.RATES
 
 
@@ -182,7 +181,7 @@ def _maybe_salaries(transaction: Transaction) -> Optional[str]:
 def _maybe_memberships(transaction: Transaction) -> Optional[str]:
     if matches_anywhere(
             transaction,
-            "stripe payments uk"
+            "stripe"
     ):
         return PayeeCategory.MEMBERSHIPS
 
@@ -246,15 +245,19 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
 
     known_engineers = [
         "adrian kunstler",
+        "andrew marriott",
         "bella cooper",
         "chris penty",
         "egglectic",
+        "felix threadgill",
         "giulo matheson",
         "joe mashiter",
+        "jorge martinez",
         "kinga ilyes",
         "mike omalley",
         "mike o'malley",
         "milo mcguire",
+        "ochuko okiemute",
         "thomas pew",
     ]
     if matches_start(tr, known_engineers):
@@ -331,7 +334,7 @@ def _maybe_musician_costs(tr: Transaction) -> Optional[str]:
 
 
 def _maybe_operational_costs(tr: Transaction) -> Optional[str]:
-    if matches_start(tr, ["post office", "leyland"]):
+    if matches_start(tr, ["post office", "leyland", "dalston stationers"]):
         return PayeeCategory.OPERATIONAL_COSTS
 
 
@@ -339,6 +342,13 @@ def _maybe_rent(tr: Transaction) -> Optional[str]:
     if matches_start(tr, "hcd vortex rent"):
         return PayeeCategory.RENT
 
+def _maybe_chinny_tickets(tr: Transaction) -> Optional[str]:
+    if matches_start(tr, "chinekwu"):
+        return PayeeCategory.TICKETS
+
+def _maybe_license_renewal(tr: Transaction) -> Optional[str]:
+    if matches_start(tr, "hackney.gov.uk"):
+        return PayeeCategory.LICENSING_DIRECT
 
 def category_for_transaction(transaction: Transaction) -> Optional[str]:
     return (_maybe_airtable(transaction) or
@@ -350,12 +360,14 @@ def category_for_transaction(transaction: Transaction) -> Optional[str]:
             _maybe_bt(transaction) or
             _maybe_building_maintenance(transaction) or
             _maybe_cc_fees(transaction) or
+            _maybe_chinny_tickets(transaction) or
             _maybe_cleaning(transaction) or
             _maybe_electricity(transaction) or
             _maybe_fire_alarm(transaction) or
             _maybe_host(transaction) or
             _maybe_insurance(transaction) or
             _maybe_kashflow(transaction) or
+            _maybe_license_renewal(transaction) or
             _maybe_mailchimp(transaction) or
             _maybe_memberships(transaction) or
             _maybe_musician_costs(transaction) or
