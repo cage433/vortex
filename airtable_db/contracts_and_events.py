@@ -9,6 +9,8 @@ from myopt.something import Something
 from utils import checked_type, checked_list_type
 
 
+SHELF = Path(__file__).parent / "gigs_info.shelf"
+
 class ContractRecord(AirtableRecord):
     def __init__(self, airtable_rec: dict):
         super().__init__(airtable_rec)
@@ -209,5 +211,4 @@ class GigsInfo:
     def excluding_hires(self):
         return GigsInfo([ce for ce in self.contracts_and_events if not ce.contract.is_hire])
 
-    SHELF = Path(__file__).parent / "gigs_info.shelf"
 

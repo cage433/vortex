@@ -80,4 +80,9 @@ class VortexDB:
 if __name__ == '__main__':
     db = VortexDB()
     period = Month(2023, 1)
-    contracts_and_events = db.gigs_info_for_period(period)
+    contracts_and_events = db.gigs_info_for_period(period, force=True).contracts_and_events
+    for c in contracts_and_events:
+        print(c.contract)
+        for e in c.events:
+            print(e)
+        print()

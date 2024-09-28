@@ -32,6 +32,9 @@ class PayeeCategory:
     CLEANING = "Cleaning"
     CREDIT_CARD_FEES = "Credit Card Fees"
     ELECTRICITY = "Electricity"
+    EQUIPMENT_HIRE = "Equipment Hire"
+    EQUIPMENT_MAINTENANCE = "Equipment Maintenance"
+    EQUIPMENT_PURCHASE = "Equipment Purchase"
     FIRE_ALARM = "Fire Alarm"
     INSURANCE = "Insurance"
     KASHFLOW = "Kashflow"
@@ -185,7 +188,6 @@ def _maybe_salaries(transaction: Transaction) -> Optional[str]:
 def _maybe_memberships(transaction: Transaction) -> Optional[str]:
     if matches_anywhere(transaction, "stripe") and not matches_anywhere(transaction, "mushroom"):
         return PayeeCategory.MEMBERSHIPS
-    print(transaction.payee.lower())
     if matches_anywhere(transaction, "chinekwu"):
         return PayeeCategory.MEMBERSHIPS
 
@@ -359,6 +361,9 @@ def _maybe_operational_costs(tr: Transaction) -> Optional[str]:
             ]):
         return PayeeCategory.OPERATIONAL_COSTS
 
+    if matches_anywhere(tr, ["shopify", "amazon"]) and -50.0 < tr.amount < 0.0:
+        return PayeeCategory.OPERATIONAL_COSTS
+
 
 def _maybe_rent(tr: Transaction) -> Optional[str]:
     if matches_start(tr, "hcd vortex rent"):
@@ -383,7 +388,6 @@ def _maybe_subscriptions(tr: Transaction) -> Optional[str]:
         return PayeeCategory.SUBSCRIPTIONS
 
 def category_for_transaction(transaction: Transaction) -> Optional[str]:
-    print(transaction.payee.lower())
     return (_maybe_airtable(transaction) or
             _maybe_bank_fees(transaction) or
             _maybe_bank_interest(transaction) or

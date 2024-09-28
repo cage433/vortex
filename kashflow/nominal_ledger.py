@@ -7,6 +7,7 @@ from typing import List, Optional
 
 from date_range import Day, DateRange
 from date_range.accounting_year import AccountingYear
+from date_range.simple_date_range import SimpleDateRange
 from env import KASHFLOW_CSV_DIR
 from utils import checked_list_type, checked_type, checked_optional_type
 from utils.collection_utils import group_into_dict
@@ -82,7 +83,8 @@ class VATMatcher:
 
     def matches(self) -> List['NominalLedgerWithVATItem']:
         def matches_vat(vat_item: 'NominalLedgerItem', non_vat_item: 'NominalLedgerItem') -> bool:
-            return  abs(vat_item.amount / non_vat_item.amount - Decimal('0.20')) < 0.01
+            return abs(vat_item.amount / non_vat_item.amount - Decimal('0.20')) < 0.01
+
         def recurse(
                 matched: List['NominalLedgerWithVATItem'],
                 vat_items_left: List['NominalLedgerItem'],
@@ -272,8 +274,9 @@ class NominalLedgerWithVATItem:
 
 
 if __name__ == '__main__':
-    ledger = NominalLedger.from_latest_csv_file(force=True).restrict_to_period(AccountingYear(2024))
-    with_vats = ledger.with_vat_types()
-    actually_with_vats = [wv for wv in with_vats if wv.vat is not None]
-    sans_vats = [wv for wv in with_vats if wv.vat is None]
-    print("here")
+    ledger = NominalLedger.from_latest_csv_file(force=True).restrict_to_period(
+        SimpleDateRange(Day(2024, 4, 15), Day(2024, 5, 10)))
+    items = sorted(ledger.ledger_items, key=lambda i: i.date)
+    for item in items:
+        if item.amount > 0 and item.item_type != NominalLedgerItemType.OUTPUT_VAT:
+            print(f"{item.date}: {item.amount}, {item.reference}, {item.item_type}")

@@ -7,3 +7,4 @@ ofxparse
 tabulate
 pandas
 openpyxl
+urllib3==1.26.6

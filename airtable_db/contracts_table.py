@@ -1,4 +1,4 @@
-from pyairtable import Table
+from pyairtable import Table, Api
 from pyairtable.formulas import AND, FIELD
 
 from airtable_db.contracts_and_events import ContractRecord
@@ -11,7 +11,9 @@ class ContractsTable:
     TABLE = "Contracts"
 
     def __init__(self):
-        self.table = Table(AIRTABLE_TOKEN, VORTEX_DATABASE_ID, ContractsTable.TABLE)
+        self.api = Api(AIRTABLE_TOKEN)
+        # self.table = Table(AIRTABLE_TOKEN, VORTEX_DATABASE_ID, ContractsTable.TABLE)
+        self.table = self.api.table(VORTEX_DATABASE_ID, ContractsTable.TABLE)
 
     def records_for_date_range(self, date_range: DateRange, fields):
         # Hack to avoid airtable time zone bug I can't quite figure
@@ -26,7 +28,8 @@ class ContractsTable:
             ContractRecord(rec)
             for rec in self.table.all(
                 formula=formula,
-                fields=fields
+                fields=fields,
+                max_records=100
             )
         ]
         return [r for r in recs if first_day <= r.performance_date <= last_day]
