@@ -5,25 +5,23 @@ from bank_statements.payee_categories import category_for_transaction
 from utils import checked_type, checked_optional_type
 
 
-# Adds a category to a Transaction.
+# Adds a category to a Transaction if possible.
 #
-# Although there are some heuristics, the categorization requires
-# human intervention to be accurate, hence the `confirmed` flag.
+# There are some heuristics where a category can be reasonably inferred
+# from the transaction details, however this isn't always possible. In any
+# case, all categories should be checked manually.
 class CategorizedTransaction:
     def __init__(
             self,
             transaction: Transaction,
             category: Optional[str],
-            confirmed: bool
     ):
         self.transaction: Transaction = checked_type(transaction, Transaction)
         self.category: Optional[str] = checked_optional_type(category, str)
-        self.confirmed: bool = checked_type(confirmed, bool)
 
     @staticmethod
     def heuristic(transaction: Transaction) -> 'CategorizedTransaction':
         return CategorizedTransaction(
             transaction,
             category_for_transaction(transaction),
-            confirmed=False
         )

@@ -3,17 +3,13 @@ from decimal import Decimal
 from accounting.accounting_activity import AccountingActivity
 from bank_statements import BankActivity
 from bank_statements.bank_account import CURRENT_ACCOUNT, BankAccount
-from date_range import DateRange
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange
-from env import CURRENT_ACCOUNT_ID, CURRENT_ACCOUNT_STATEMENTS_ID
+from env import CURRENT_ACCOUNT_STATEMENTS_ID
 from google_sheets import Workbook
 from google_sheets.statements.statements_tab import StatementsTab
 from kashflow.nominal_ledger import NominalLedgerItemType
-from myopt.nothing import Nothing
-from myopt.opt import Opt
-from utils.logging import log_message
 
 
 def _sheet_id_for_account(account: BankAccount):
@@ -105,6 +101,6 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
 
 
 if __name__ == '__main__':
-    month = AccountingMonth.from_calendar_month(Month(2024, 4))
+    month = AccountingMonth.from_calendar_month(Month(2024, 6))
     ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, refresh_bank_activity=False, refresh_sheet=True)
     compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, month)

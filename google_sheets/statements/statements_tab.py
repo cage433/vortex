@@ -13,8 +13,8 @@ from utils import checked_type, checked_optional_type
 
 
 class StatementsTab(Tab):
-    HEADINGS = ["Date", "Payee", "Amount", "Balance", "Category", "Confirmed", "Type", "ID"]
-    (DATE, PAYEE, AMOUNT, BALANCE, CATEGORY, CONFIRMED, TYPE, ID) = range(len(HEADINGS))
+    HEADINGS = ["Date", "Payee", "Amount", "Balance", "Category", "Type", "ID"]
+    (DATE, PAYEE, AMOUNT, BALANCE, CATEGORY, TYPE, ID) = range(len(HEADINGS))
 
     def __init__(
             self,
@@ -25,9 +25,8 @@ class StatementsTab(Tab):
     ):
         super().__init__(workbook, tab_name=title)
         self.bank_account: BankAccount = checked_type(account, BankAccount)
-        self.info_range = TabRange(self.cell("B2"), num_rows=4, num_cols=3)
-        self.status_range = TabRange(self.cell("F2"), num_rows=2, num_cols=2)
-        self.heading_range = TabRange(self.cell("B7"), num_rows=1, num_cols=len(self.HEADINGS))
+        self.info_range = TabRange(self.cell("B2"), num_rows=5, num_cols=3)
+        self.heading_range = TabRange(self.cell("B8"), num_rows=1, num_cols=len(self.HEADINGS))
         self.period: DateRange = period
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
@@ -47,11 +46,10 @@ class StatementsTab(Tab):
         ]
         for col, width in [
             (self.DATE, 100),
-            (self.PAYEE, 250),
+            (self.PAYEE, 400),
             (self.AMOUNT, 100),
             (self.BALANCE, 100),
             (self.CATEGORY, 150),
-            (self.CONFIRMED, 100),
             (self.TYPE, 100),
             (self.ID, 300),
         ]:
@@ -72,12 +70,7 @@ class StatementsTab(Tab):
             self.info_range[0:2, :].set_bold_text_request(),
             self.info_range[:, 0].set_bold_text_request(),
             self.info_range.outline_border_request(),
-            self.info_range[3, 1:].set_currency_format_request(),
-
-            self.status_range.outline_border_request(),
-            self.status_range[:, 0].set_bold_text_request(),
-            self.status_range[:, 0].left_align_text_request(),
-            self.status_range[:, 1].set_currency_format_request(),
+            self.info_range[3:, 1:].set_currency_format_request(),
 
             self.heading_range.set_bold_text_request(),
             self.heading_range.left_align_text_request(),
@@ -104,14 +97,10 @@ class StatementsTab(Tab):
             [f"{self.bank_account.name} account transactions for {self.period}"],
             ["", "Start", "End"],
             ["Date", self.period.first_day, self.period.last_day],
-            ["Balance", float(bank_activity.initial_balance), float(bank_activity.terminal_balance)]
-        ]
-
-        status_values = [
+            ["Balance", float(bank_activity.initial_balance), float(bank_activity.terminal_balance)],
             ["Uncategorized",
+             "",
              f"=SUMIFS({full_range[:, self.AMOUNT].in_a1_notation}, {full_range[:, self.CATEGORY].in_a1_notation}, \"=\")"],
-            ["Unconfirmed",
-             f"=SUMIF({full_range[:, self.CONFIRMED].in_a1_notation}, FALSE, {full_range[:, self.AMOUNT].in_a1_notation})"],
         ]
 
         transaction_values = [self.HEADINGS]
@@ -119,22 +108,17 @@ class StatementsTab(Tab):
         def category_to_use(i_transaction, bank_transaction):
             if len(sheet_transaction_infos) == len(transactions):
                 sheet_info = sheet_transaction_infos[i_transaction]
+                sheet_category = sheet_info.category
+                if sheet_category == "Bar Purchases":
+                    return "Bar Stock"
                 if sheet_info.transaction == bank_transaction:
-                    sheet_category = sheet_info.category
-                    if sheet_info.confirmed or sheet_category is not None:
+                    if sheet_category is not None:
                         return sheet_category
             return category_for_transaction(bank_transaction)
-
-        def is_confirmed(i_transaction: int):
-            if len(sheet_transaction_infos) == len(transactions):
-                sheet_info = sheet_transaction_infos[i_transaction]
-                return sheet_info.confirmed
-            return False
 
         balance = bank_activity.initial_balance
         for i_trans, t in enumerate(transactions):
             balance += t.amount
-            cat = category_to_use(i_trans, t)
             transaction_values.append(
                 [
                     t.payment_date,
@@ -142,7 +126,6 @@ class StatementsTab(Tab):
                     float(t.amount),
                     float(balance),
                     category_to_use(i_trans, t) or "",
-                    is_confirmed(i_trans),
                     t.transaction_type,
                     t.ftid,
                 ]
@@ -152,14 +135,13 @@ class StatementsTab(Tab):
                                      num_cols=len(self.HEADINGS))
         self.workbook.batch_update_values([
             (self.info_range, info_values),
-            (self.status_range, status_values),
             (transaction_range, transaction_values),
         ])
 
     def transaction_infos_from_tab(self) -> List[CategorizedTransaction]:
         def to_optional_value(cell_value):
             if isinstance(cell_value, str) and cell_value.strip() == "":
-                    return None
+                return None
             return cell_value
 
         def to_decimal(cell_value):
@@ -168,16 +150,6 @@ class StatementsTab(Tab):
                     return Decimal("0")
                 return Decimal(cell_value.replace(",", ""))
             return Decimal(cell_value)
-
-        def to_confirmed_value(cell_value):
-            if isinstance(cell_value, str):
-                if cell_value.strip() == "":
-                    return False
-                if cell_value.upper().strip() == "TRUE":
-                    return True
-                if cell_value.upper().strip() == "FALSE":
-                    return False
-            raise ValueError(f"Unrecognized confirmed value {cell_value}")
 
         infos = []
         values = self.read_values_for_columns(self.heading_range.columns_in_a1_notation)
@@ -188,7 +160,6 @@ class StatementsTab(Tab):
             transaction_type = row[self.TYPE]
             ftid = row[self.ID]
             category = to_optional_value(row[self.CATEGORY])
-            confirmed = to_confirmed_value(row[self.CONFIRMED])
             transaction = Transaction(
                 account=self.bank_account,
                 ftid=ftid,
@@ -197,5 +168,5 @@ class StatementsTab(Tab):
                 amount=amount,
                 transaction_type=transaction_type,
             )
-            infos.append(CategorizedTransaction(transaction, category, confirmed))
+            infos.append(CategorizedTransaction(transaction, category))
         return infos
