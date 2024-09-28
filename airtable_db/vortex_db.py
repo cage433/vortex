@@ -13,6 +13,8 @@ __all__ = [
     "VortexDB",
 ]
 
+from utils.logging import log_message
+
 
 class VortexDB:
     def __init__(self):
@@ -80,9 +82,11 @@ class VortexDB:
 if __name__ == '__main__':
     db = VortexDB()
     period = Month(2023, 1)
+    log_message(f"Getting gigs info for {period}")
     contracts_and_events = db.gigs_info_for_period(period, force=True).contracts_and_events
     for c in contracts_and_events:
         print(c.contract)
         for e in c.events:
             print(e)
         print()
+    log_message(f"Done")

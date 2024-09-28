@@ -343,7 +343,7 @@ def _maybe_building_maintenance(tr: Transaction) -> Optional[str]:
 
 
 def _maybe_musician_costs(tr: Transaction) -> Optional[str]:
-    if matches_anywhere(tr, ["premier cars", "kingslandlocke"]):
+    if matches_anywhere(tr, ["premier cars", "kingslandlocke", "eagle mini cabs"]):
         return PayeeCategory.MUSICIAN_COSTS
     if matches_start(tr, "eurostar"):
         return PayeeCategory.MUSICIAN_COSTS
@@ -380,7 +380,7 @@ def _maybe_building_security(tr: Transaction) -> Optional[str]:
 def _maybe_space_hire(tr: Transaction) -> Optional[str]:
     if matches_start(tr, "cheng xie"):
         return PayeeCategory.SPACE_HIRE
-    if matches_anywhere(tr, "uk mushroom"):
+    if matches_anywhere(tr, "mushroom") and matches_anywhere(tr, "stripe"):
         return PayeeCategory.SPACE_HIRE
 
 def _maybe_subscriptions(tr: Transaction) -> Optional[str]:

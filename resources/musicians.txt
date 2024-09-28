@@ -14,6 +14,8 @@ alice leggett
 alina bzhezhinska
 alison rayner
 ali watson
+ana silvera
+andrew bain
 andrew lisle
 andrew woodhead
 andy watts
@@ -24,12 +26,14 @@ art themen
 asha parkinson
 awen ensemble
 ayo vincent
+balladeste
 barry green
 basil hodge
 becca wilkins
 beyond the blue
 bill marrows
 binker golding
+brandon allen
 brigitte beraha
 bruno heinen
 byron wallen
@@ -64,6 +68,7 @@ eddie myer
 eddie parker
 elchin shirinov
 elliot galvin
+empirical
 ezekiel ajie
 donovan haffner
 emma rawicz
@@ -90,6 +95,7 @@ henry lowther
 henry spencer
 huw warren
 huw williams
+ivo neame
 jack yardley
 jakub klimiuk
 james allsopp
@@ -128,6 +134,7 @@ linley hamilton
 lise rossi
 loz keystone
 loz speyer
+luke bacchus
 luke bainbridge
 maddalena ghezzi
 maddy coombs
@@ -142,6 +149,7 @@ matt anderson
 matt hurley
 matt ridley
 matthew herd
+michael feinberg
 miguel gorodi
 mike chillingworth
 mike de souza
@@ -171,13 +179,15 @@ oren marshall
 orlando le fleming
 paula rea gibson
 paul edis
+paul jolly
 phil robson
 pietro cavassa
 paul clarvis
 penny waterhouse
 poppy daniels
-r stone-lonergon
 rachael cohen
+radhika de saram
+r stone-lonergon
 rebecka edlund
 reiss beckles
 richard fairhurst
@@ -198,13 +208,16 @@ shane forbes
 sheldon agwu
 shirley smart
 silvia leonzio
+simeon may
 steven saunders
+steve banks
 steve lehman
 sultan stevenson
 suna alen
 ted morcaldi
 tereza catarov
 thomas ridout
+thomas riviere
 tim whitehead
 tivon pennicott
 toby medland
@@ -219,6 +232,7 @@ tori freestone
 veryan weston
 vicente magalhaes
 viva voce
+v hawthorn-nelson
 will barry
 world music band
 zoe mullen

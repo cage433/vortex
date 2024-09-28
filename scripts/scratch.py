@@ -1,11 +1,20 @@
-from date_range import Day
-from kashflow.nominal_ledger import NominalLedger
+from env import AIRTABLE_TOKEN, VORTEX_DATABASE_ID
+import requests
+import logging
 
 if __name__ == '__main__':
-    ledger = NominalLedger.from_latest_csv_file(force=False)
-    text = "1972"
-    items = [item for item in ledger.ledger_items if
-             (text in item.reference.lower() or text in item.narrative.lower())
-             and item.date > Day(2024, 1, 1)]
-    for item in items:
-        print(item)
+    # requests.packages.urllib3.util.connection.HAS_IPV6 = False
+    import http.client
+    http.client.HTTPConnection.debuglevel = 1
+
+    # You must initialize logging, otherwise you'll not see debug output.
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
+    requests_log = logging.getLogger("requests.packages.urllib3")
+    requests_log.setLevel(logging.DEBUG)
+    requests_log.propagate = True
+    r = requests.get(
+        f"https://api.airtable.com/v0/{VORTEX_DATABASE_ID}/Contracts",
+        headers={"Authorization": f"Bearer {AIRTABLE_TOKEN}"},
+        stream=True,
+    )
