@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
 
 from bank_statements import BankActivity, Transaction
 from bank_statements.bank_account import BankAccount
@@ -9,7 +9,7 @@ from date_range import Day, DateRange
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
 from google_sheets.tab_range import TabRange
-from utils import checked_type, checked_optional_type
+from utils import checked_type
 
 
 class StatementsTab(Tab):

@@ -1,11 +1,12 @@
 import shelve
 from pathlib import Path
 
-from airtable_db.contracts_and_events import GigsInfo, ContractAndEvents
+from airtable_db.gigs_info import GigsInfo, ContractAndEvents
 from airtable_db.contracts_table import ContractsTable
 from airtable_db.events_table import EventsTable
 from airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
 from date_range import DateRange
+from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from utils.collection_utils import group_into_dict, flatten
 
@@ -81,12 +82,26 @@ class VortexDB:
 
 if __name__ == '__main__':
     db = VortexDB()
-    period = Month(2023, 1)
-    log_message(f"Getting gigs info for {period}")
-    contracts_and_events = db.gigs_info_for_period(period, force=True).contracts_and_events
+    month = Month(2023, 6)
+    m = AccountingMonth.from_calendar_month(month)
+    log_message(f"Getting gigs info for {m}")
+    gigs_info = db.gigs_info_for_period(m, force=False)
+    contracts_and_events = gigs_info.contracts_and_events
+    total = 0
+    total2 = 0
     for c in contracts_and_events:
-        print(c.contract)
         for e in c.events:
-            print(e)
-        print()
+            for ticket_category in TicketCategory:
+                for price_level in TicketPriceLevel:
+                    num_paid_tickets = e.num_paid_tickets(ticket_category, price_level)
+                    if num_paid_tickets > 0:
+                        price = c.contract.ticket_price(price_level)
+                        value = num_paid_tickets * price
+                        total += value
+                        print(f"{e.title} {ticket_category} {price_level}: {num_paid_tickets}, {value}")
+        total2 += c.total_ticket_sales
+    total3 = gigs_info.total_ticket_sales
+    print(total)
+    print(total2)
+    print(total3)
     log_message(f"Done")

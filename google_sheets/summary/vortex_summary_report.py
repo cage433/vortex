@@ -1,4 +1,4 @@
-from airtable_db.contracts_and_events import GigsInfo
+from airtable_db.gigs_info import GigsInfo
 from date_range import DateRange, Day
 from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange

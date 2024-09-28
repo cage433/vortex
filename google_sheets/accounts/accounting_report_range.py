@@ -3,7 +3,7 @@ from numbers import Number
 from typing import List
 
 from accounting.accounting_activity import AccountingActivity
-from airtable_db.contracts_and_events import GigsInfo
+from airtable_db.gigs_info import GigsInfo
 from airtable_db.table_columns import TicketPriceLevel
 from bank_statements import BankActivity
 from bank_statements.bank_account import CHARITABLE_ACCOUNT, CURRENT_ACCOUNT, SAVINGS_ACCOUNT, BBL_ACCOUNT

@@ -1,5 +1,5 @@
 from airtable_db import VortexDB
-from airtable_db.contracts_and_events import GigsInfo
+from airtable_db.gigs_info import GigsInfo
 from bank_statements import BankActivity
 from date_range import DateRange
 from date_range.date_range import SplitType

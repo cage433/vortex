@@ -4,6 +4,7 @@ from date_range import Day, DateRange
 from date_range.accounting_month import AccountingMonth
 from date_range.accounting_year import AccountingYear
 from date_range.month import Month
+from date_range.quarter import Quarter
 from date_range.week import Week
 from utils import RandomNumberGenerator
 
@@ -47,3 +48,6 @@ def random_accounting_month(rng: RandomNumberGenerator) -> AccountingMonth:
 
 def random_accounting_year(rng: RandomNumberGenerator) -> AccountingYear:
     return AccountingYear.containing(random_day(rng))
+
+def random_quarter(rng: RandomNumberGenerator) -> Quarter:
+    return Quarter.containing(random_day(rng))

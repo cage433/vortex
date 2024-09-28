@@ -2,6 +2,7 @@ from typing import Optional
 
 from bank_statements import Transaction
 from bank_statements.payee_categories import category_for_transaction
+from date_range import Day
 from utils import checked_type, checked_optional_type
 
 
@@ -18,6 +19,10 @@ class CategorizedTransaction:
     ):
         self.transaction: Transaction = checked_type(transaction, Transaction)
         self.category: Optional[str] = checked_optional_type(category, str)
+
+    @property
+    def payment_date(self) -> Day:
+        return self.transaction.payment_date
 
     @staticmethod
     def heuristic(transaction: Transaction) -> 'CategorizedTransaction':

@@ -1,6 +1,6 @@
 from typing import List
 
-from airtable_db.contracts_and_events import GigsInfo
+from airtable_db.gigs_info import GigsInfo
 from airtable_db.table_columns import TicketPriceLevel, TicketCategory
 from date_range import DateRange
 from google_sheets.tab_range import TabRange, TabCell

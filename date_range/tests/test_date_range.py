@@ -3,8 +3,9 @@ from unittest import TestCase
 from date_range.accounting_month import AccountingMonth
 from date_range.accounting_year import AccountingYear
 from date_range.month import Month
+from date_range.quarter import Quarter
 from date_range.tests.fixtures import random_day, random_month, random_week, random_accounting_year, \
-    random_accounting_month
+    random_accounting_month, random_quarter
 from date_range.week import Week
 from testing_utils import RandomisedTest
 
@@ -122,3 +123,26 @@ class AccountingMonthTests(TestCase):
         m = am.corresponding_calendar_month
         am2 = AccountingMonth.from_calendar_month(m)
         self.assertEqual(am, am2)
+
+class QuarterTests(TestCase):
+
+    @RandomisedTest(number_of_runs=100)
+    def test_addition(self, rng):
+        q = random_quarter(rng)
+        n = rng.randint(-20, 20)
+        q2 = q + n
+        q3 = q2 - n
+        self.assertEqual(q3, q)
+
+    @RandomisedTest(number_of_runs=100)
+    def test_contiguity(self, rng):
+        q = random_quarter(rng)
+        for n in range(1, 20):
+            self.assertEqual(q.last_day + 1, (q + 1).first_day)
+            q += 1
+
+    @RandomisedTest(number_of_runs=100)
+    def test_containing(self, rng):
+        q = random_quarter(rng)
+        self.assertEqual(Quarter.containing(q.first_day), q)
+        self.assertEqual(Quarter.containing(q.last_day), q)

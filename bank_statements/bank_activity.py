@@ -3,7 +3,6 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Optional, List
 
-
 from bank_statements import Statement, Transaction
 
 __all__ = ["BankActivity"]
@@ -12,7 +11,6 @@ from bank_statements.bank_account import BankAccount, CURRENT_ACCOUNT
 
 from date_range import Day, DateRange
 from date_range.accounting_year import AccountingYear
-from env import CURRENT_ACCOUNT_ID
 
 from utils import checked_list_type, checked_type
 from utils.collection_utils import group_into_dict

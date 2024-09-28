@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from numbers import Number
 
-from airtable_db.contracts_and_events import GigsInfo
+from airtable_db.gigs_info import GigsInfo
 from date_range.month import Month
 from google_sheets.tab_range import TabRange, TabCell
 from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
