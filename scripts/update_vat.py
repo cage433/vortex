@@ -23,15 +23,12 @@ def update_tab_for_month(month: Month, force: bool):
     period = SimpleDateRange(accounting_months[0].first_day, accounting_months[-1].last_day)
 
     tab = VATReturnsTab(Workbook(VAT_RETURNS_ID), months)
-    gigs_infos = [
-        VortexDB().gigs_info_for_period(m, force=force)
-        for m in accounting_months
-        ]
+    gigs_info = VortexDB().gigs_info_for_period(period, force=force)
     # for m in accounting_months:
     #     gi = VortexDB().gigs_info_for_period(m, force=force)
     #     print(f"Month: {m}, num gigs {len(gi.contracts_and_events)}, {gi.total_ticket_sales}")
     # print(f"Num contracts: {len(gigs_info.contracts_and_events)}")
-    tab.update(categorized_transactions, gigs_infos)
+    tab.update(categorized_transactions, gigs_info)
 
 if __name__ == '__main__':
     update_tab_for_month(Month(2023, 8), force=True)

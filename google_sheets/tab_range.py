@@ -280,6 +280,12 @@ class TabRange:
         return self.num_rows == 1 and self.num_cols == 1
 
     @property
+    def as_single_cell(self):
+        if not self.is_single_cell:
+            raise ValueError(f"{self} is not a single cell")
+        return self.top_left_cell
+
+    @property
     def is_row(self):
         return self.num_rows == 1
 

@@ -16,11 +16,11 @@ class AccountingActivity:
 
     @staticmethod
     def activity_for_period(period: DateRange, force: bool, force_bank: bool = False,
-                            force_nominal_ledger: bool = False) -> 'AccountingActivity':
+                            force_nominal_ledger: bool = False, force_airtable: bool = False) -> 'AccountingActivity':
         gigs_info_list = []
 
         for month in period.split_into(Month, SplitType.EXACT):
-            month_info = VortexDB().gigs_info_for_period(month, force)
+            month_info = VortexDB().gigs_info_for_period(month, force or force_airtable)
             gigs_info_list += month_info.contracts_and_events
 
         gigs_info = GigsInfo(gigs_info_list)

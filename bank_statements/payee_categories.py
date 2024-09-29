@@ -22,6 +22,7 @@ MUSICIANS = _musicians()
 
 @verify(UNIQUE)
 class PayeeCategory(StrEnum):
+    ADMINISTRATION = "Administration"
     AIRTABLE = "Airtable"
     BANK_FEES = "Bank Fees"
     BANK_INTEREST = "Bank Interest"
@@ -33,18 +34,20 @@ class PayeeCategory(StrEnum):
     BUILDING_SECURITY = "Building Security"
     CLEANING = "Cleaning"
     CREDIT_CARD_FEES = "Credit Card Fees"
+    DONATION = "Donation"
     ELECTRICITY = "Electricity"
     EQUIPMENT_HIRE = "Equipment Hire"
     EQUIPMENT_MAINTENANCE = "Equipment Maintenance"
     EQUIPMENT_PURCHASE = "Equipment Purchase"
     FIRE_ALARM = "Fire Alarm"
+    FLOOD = "Flood"
     INSURANCE = "Insurance"
     INTERNAL_TRANSFER = "Internal Transfer"
     KASHFLOW = "Kashflow"
     MAILCHIMP = "Mailchimp"
     LICENSING_DIRECT = "Licensing - Direct"
     LICENSING_INDIRECT = "Licensing - Indirect"
-    MARKETING_DIRECT = "Marketing Direct"
+    MARKETING_DIRECT = "Marketing - Direct"
     MARKETING_INDIRECT = "Marketing - Indirect"
     MEMBERSHIPS = "Memberships"
     MUSICIAN_COSTS = "Musician Costs"
@@ -64,12 +67,44 @@ class PayeeCategory(StrEnum):
     SPACE_HIRE = "Space Hire"
     SUBSCRIPTIONS = "Subscriptions"
     TELEPHONE = "Telephone"
+    THAMES_WATER = "Thames Water"
     TICKETWEB_CREDITS = "Ticketweb Credits"
-    TISSUES = "Toilet Tissues"
     VAT = "VAT"
     WEB_HOST = "Web Host"
     WORK_PERMITS = "Work Permits"
     ZETTLE_CREDITS = "Zettle Credits"
+
+    @staticmethod
+    def is_subject_to_vat(category: Optional['PayeeCategory']) -> bool:
+        if category in [
+            PayeeCategory.BB_LOAN, PayeeCategory.BANK_INTEREST, PayeeCategory.CREDIT_CARD_FEES,
+            PayeeCategory.DONATION, PayeeCategory.INTERNAL_TRANSFER,
+            PayeeCategory.MUSIC_VENUE_TRUST, PayeeCategory.MUSICIAN_PAYMENTS, PayeeCategory.PETTY_CASH,
+            PayeeCategory.RATES, PayeeCategory.SALARIES, PayeeCategory.SOUND_ENGINEER,
+            PayeeCategory.VAT, PayeeCategory.WORK_PERMITS, PayeeCategory.ZETTLE_CREDITS
+        ]:
+            return False
+
+        if category in [
+            PayeeCategory.ADMINISTRATION,
+            PayeeCategory.AIRTABLE, PayeeCategory.BANK_FEES, PayeeCategory.BAR_SNACKS,
+            PayeeCategory.BAR_STOCK, PayeeCategory.BT, PayeeCategory.BUILDING_MAINTENANCE, PayeeCategory.BUILDING_SECURITY,
+            PayeeCategory.CLEANING, PayeeCategory.ELECTRICITY,
+            PayeeCategory.EQUIPMENT_HIRE, PayeeCategory.EQUIPMENT_MAINTENANCE, PayeeCategory.EQUIPMENT_PURCHASE,
+            PayeeCategory.FIRE_ALARM, PayeeCategory.FLOOD,
+            PayeeCategory.INSURANCE, PayeeCategory.KASHFLOW,
+            PayeeCategory.LICENSING_DIRECT, PayeeCategory.LICENSING_INDIRECT,
+            PayeeCategory.MAILCHIMP, PayeeCategory.MARKETING_DIRECT, PayeeCategory.MARKETING_INDIRECT,
+            PayeeCategory.MEMBERSHIPS, PayeeCategory.MUSICIAN_COSTS, PayeeCategory.OPERATIONAL_COSTS,
+            PayeeCategory.PRS, PayeeCategory.PIANO_TUNER, PayeeCategory.RENT, PayeeCategory.SECURITY,
+            PayeeCategory.SERVICES, PayeeCategory.SLACK, PayeeCategory.SPACE_HIRE, PayeeCategory.SUBSCRIPTIONS,
+            PayeeCategory.TELEPHONE, PayeeCategory.THAMES_WATER,
+            PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.WEB_HOST,
+        ]:
+            return True
+
+        if category is None:
+            return False
 
 
 def matches_start(transaction, matches: any) -> bool:

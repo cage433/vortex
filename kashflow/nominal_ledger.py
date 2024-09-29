@@ -275,8 +275,9 @@ class NominalLedgerWithVATItem:
 
 if __name__ == '__main__':
     ledger = NominalLedger.from_latest_csv_file(force=False).restrict_to_period(
-        SimpleDateRange(Day(2023, 5, 1), Day(2023, 7, 2)))
+        SimpleDateRange(Day(2024, 7, 1), Day(2024, 9, 2)))
     items = sorted(ledger.ledger_items, key=lambda i: i.date)
     for item in items:
         if item.item_type not in [NominalLedgerItemType.OUTPUT_VAT, NominalLedgerItemType.INPUT_VAT]:
-            print(f"{item.date}: {item.amount}, {item.reference}, {item.item_type}, {item.narrative}")
+            if abs(item.amount) > 1000:
+                print(f"{item.date}: {item.amount}, {item.reference}, {item.item_type}, {item.narrative}")

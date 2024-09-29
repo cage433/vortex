@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 from bank_statements import BankActivity, Transaction
 from bank_statements.bank_account import BankAccount
@@ -109,8 +109,6 @@ class StatementsTab(Tab):
             if len(sheet_transaction_infos) == len(transactions):
                 sheet_info = sheet_transaction_infos[i_transaction]
                 sheet_category = sheet_info.category
-                if sheet_category == "Bar Purchases":
-                    return "Bar Stock"
                 if sheet_info.transaction == bank_transaction:
                     if sheet_category is not None:
                         return sheet_category
@@ -139,9 +137,25 @@ class StatementsTab(Tab):
         ])
 
     def transaction_infos_from_tab(self) -> List[CategorizedTransaction]:
-        def to_optional_value(cell_value):
+        def to_payee_category(cell_value) -> Optional[PayeeCategory]:
             if isinstance(cell_value, str) and cell_value.strip() == "":
                 return None
+            if cell_value == "Bar Purchases":
+                return PayeeCategory.BAR_STOCK
+            if cell_value == "Toilet Tissues":
+                return PayeeCategory.OPERATIONAL_COSTS
+            if cell_value == "Tickets":
+                return PayeeCategory.MEMBERSHIPS
+            if cell_value == "Marketing Indirect":
+                return PayeeCategory.MARKETING_INDIRECT
+            if cell_value == "Copyright Infringement":
+                return PayeeCategory.OPERATIONAL_COSTS
+            if cell_value == "Rehearsal":
+                return PayeeCategory.SPACE_HIRE
+            if cell_value == "Equipment Rental":
+                return PayeeCategory.EQUIPMENT_HIRE
+            if cell_value == "Staff Costs":
+                return PayeeCategory.SALARIES
             return PayeeCategory(cell_value)
 
         def to_decimal(cell_value):
@@ -159,7 +173,7 @@ class StatementsTab(Tab):
             amount = to_decimal(row[self.AMOUNT])
             transaction_type = row[self.TYPE]
             ftid = row[self.ID]
-            category = to_optional_value(row[self.CATEGORY])
+            category = to_payee_category(row[self.CATEGORY])
             transaction = Transaction(
                 account=self.bank_account,
                 ftid=ftid,

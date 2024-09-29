@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from bank_statements import Transaction
@@ -23,6 +24,14 @@ class CategorizedTransaction:
     @property
     def payment_date(self) -> Day:
         return self.transaction.payment_date
+
+    @property
+    def payee(self) -> str:
+        return self.transaction.payee
+
+    @property
+    def amount(self) -> Decimal:
+        return self.transaction.amount
 
     @staticmethod
     def heuristic(transaction: Transaction) -> 'CategorizedTransaction':

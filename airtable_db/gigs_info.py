@@ -6,6 +6,7 @@ from date_range import DateRange
 from myopt.something import Something
 from utils import checked_list_type
 
+
 class GigsInfo:
     def __init__(self, contracts_and_events: list[ContractAndEvents]):
         self.contracts_and_events = checked_list_type(contracts_and_events, ContractAndEvents)
@@ -31,6 +32,11 @@ class GigsInfo:
     def restrict_to_period(self, period: DateRange) -> 'GigsInfo':
         return GigsInfo(
             [c for c in self.contracts_and_events if period.contains_day(c.contract.performance_date)])
+
+    def restrict_to_gigs(self) -> 'GigsInfo':
+        return GigsInfo(
+            [c for c in self.contracts_and_events if
+             c.contract.contract_type in [Something("Performance"), Something("Hire")]])
 
     def num_paid_tickets(self, category: Optional[TicketCategory] = None,
                          price_level: Optional[TicketPriceLevel] = None) -> int:
