@@ -115,7 +115,7 @@ class CategorisedTransactionsRange(TabRange):
         return self[i + 2, i_col].in_a1_notation
 
 
-class TicketSalesRange(TabRange):
+class WalkInSalesRange(TabRange):
     def __init__(self, top_left_cell: TabCell, accounting_months: List[AccountingMonth], gigs_infos: List[GigsInfo]):
         super().__init__(top_left_cell, num_rows=4, num_cols=6)
         self.accounting_months: List[AccountingMonth] = checked_list_type(accounting_months, AccountingMonth)
@@ -135,10 +135,9 @@ class TicketSalesRange(TabRange):
     @property
     def values(self):
         return [
-            ["Zettle Breakdown"],
+            ["Walk In Ticket Sales"],
             [""] + [m.month_name for m in self.accounting_months] + ["Total", ""],
             ["Walk In Sales"] + [gi.total_walk_in_sales for gi in self.gigs_infos] + ["", ""],
-            ["Total Sales"] + [gi.total_ticket_sales for gi in self.gigs_infos] + ["", ""],
         ]
 
     def walk_in_sales_cell(self, i_col: int):
@@ -147,11 +146,11 @@ class TicketSalesRange(TabRange):
 
 class OutputsRange(TabRange):
     def __init__(self, top_left_cell: TabCell, categorised_transactions_range: CategorisedTransactionsRange,
-                 ticket_sales_range: TicketSalesRange):
+                 walk_in_sales_range: WalkInSalesRange):
         super().__init__(top_left_cell, num_rows=7, num_cols=6)
         self.categorised_transactions_range: CategorisedTransactionsRange = checked_type(categorised_transactions_range,
                                                                                          CategorisedTransactionsRange)
-        self.ticket_sales_range: TicketSalesRange = checked_type(ticket_sales_range, TicketSalesRange)
+        self.walk_in_sales_range: WalkInSalesRange = checked_type(walk_in_sales_range, WalkInSalesRange)
 
     @property
     def accounting_months(self):
@@ -171,12 +170,12 @@ class OutputsRange(TabRange):
     def values(self):
         def bar_takings_formula(i_month: int):
             zettle_cell = self.categorised_transactions_range.zettle_credits_cell(i_month + 1) or ""
-            walk_ins_cell = self.ticket_sales_range.walk_in_sales_cell(i_month + 1)
+            walk_ins_cell = self.walk_in_sales_range.walk_in_sales_cell(i_month + 1)
             return f"={zettle_cell} - {walk_ins_cell}"
 
         def ticket_sales_formula(i_month: int):
             ticket_web_cell = self.categorised_transactions_range.ticketweb_credits_cell(i_month + 1) or ""
-            walk_ins_cell = self.ticket_sales_range.walk_in_sales_cell(i_month + 1)
+            walk_ins_cell = self.walk_in_sales_range.walk_in_sales_cell(i_month + 1)
             return f"={ticket_web_cell} + {walk_ins_cell}"
 
         def hire_fees_formula(i_month: int):
@@ -230,7 +229,7 @@ class VATReturnsTab(Tab):
 
     def update(self, categorised_transactions: List[CategorizedTransaction], gigs_infos: List[GigsInfo]):
 
-        ticket_sales_range = TicketSalesRange(self.cell("B2"), self.accounting_months, gigs_infos)
+        ticket_sales_range = WalkInSalesRange(self.cell("B2"), self.accounting_months, gigs_infos)
 
         categories_range = CategorisedTransactionsRange(ticket_sales_range.bottom_left_cell.offset(2, 0),
                                                         self.accounting_months,
