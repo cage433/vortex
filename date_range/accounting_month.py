@@ -90,13 +90,13 @@ class AccountingMonth(ContiguousDateRange):
 
     @staticmethod
     def containing(day: Day) -> 'AccountingMonth':
-        year = AccountingYear.containing(day)
-        assert year.contains_day(day), f"Day {day} is not in an accounting year"
-        for m in range(1, 13):
-            if AccountingMonth(year, m).contains_day(day):
-                return AccountingMonth(year, m)
-
-        raise ValueError(f"Couldn't determine accounting month for Day {day}")
+        calendar_month = Month.containing(day)
+        accounting_month = AccountingMonth.from_calendar_month(calendar_month)
+        if accounting_month.last_day < day:
+            return accounting_month + 1
+        if accounting_month.first_day > day:
+            return accounting_month - 1
+        return accounting_month
 
 
 TIMS_FIRST_DAY_OF_ACCOUNTING_MONTH = {

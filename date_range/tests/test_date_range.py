@@ -102,6 +102,11 @@ class AccountingMonthTests(TestCase):
         for day in month.days:
             self.assertEqual(AccountingMonth.containing(day), month)
 
+    @RandomisedTest(number_of_runs=10)
+    def test_containing2(self, rng):
+        day = random_day(rng)
+        self.assertTrue(AccountingMonth.containing(day).contains_day(day))
+
     def test_explicit_increments(self):
         self.assertEqual(AccountingMonth(AccountingYear(2017), 12) + 1, AccountingMonth(AccountingYear(2018), 1))
         self.assertEqual(AccountingMonth(AccountingYear(2018), 1) - 1, AccountingMonth(AccountingYear(2017), 12))

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, Optional, Dict
 
 from airtable_db.gigs_info import GigsInfo
 from bank_statements.categorized_transaction import CategorizedTransaction
@@ -18,39 +18,68 @@ def _category_text(t: CategorizedTransaction) -> str:
     return t.category
 
 
-def _is_vatable(category: str) -> bool:
+def _is_vatable(category: Optional[PayeeCategory]) -> bool:
+    if category is None:
+        return False
+
     if category in [
         PayeeCategory.AIRTABLE, PayeeCategory.BANK_FEES, PayeeCategory.BAR_SNACKS,
-        PayeeCategory.BAR_STOCK, PayeeCategory.BUILDING_MAINTENANCE, PayeeCategory.BUILDING_SECURITY,
-        PayeeCategory.CLEANING, PayeeCategory.ELECTRICITY, PayeeCategory.INSURANCE, PayeeCategory.KASHFLOW,
+        PayeeCategory.BAR_STOCK, PayeeCategory.BT, PayeeCategory.BUILDING_MAINTENANCE, PayeeCategory.BUILDING_SECURITY,
+        PayeeCategory.CLEANING, PayeeCategory.ELECTRICITY,
+        PayeeCategory.EQUIPMENT_HIRE,
+        PayeeCategory.EQUIPMENT_MAINTENANCE,
+        PayeeCategory.EQUIPMENT_PURCHASE,
+        PayeeCategory.FIRE_ALARM,
+        PayeeCategory.INSURANCE, PayeeCategory.KASHFLOW,
+        PayeeCategory.LICENSING_DIRECT,
+        PayeeCategory.LICENSING_INDIRECT,
         PayeeCategory.MAILCHIMP, PayeeCategory.MARKETING_DIRECT, PayeeCategory.MARKETING_INDIRECT,
         PayeeCategory.MEMBERSHIPS, PayeeCategory.MUSICIAN_COSTS, PayeeCategory.OPERATIONAL_COSTS,
         PayeeCategory.PRS, PayeeCategory.PIANO_TUNER, PayeeCategory.RENT, PayeeCategory.SECURITY,
         PayeeCategory.SERVICES, PayeeCategory.SLACK, PayeeCategory.SPACE_HIRE, PayeeCategory.SUBSCRIPTIONS,
-        PayeeCategory.TELEPHONE, PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.WEB_HOST,
+        PayeeCategory.TELEPHONE,
+        PayeeCategory.TISSUES,
+        PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.WEB_HOST,
     ]:
         return True
+
     if category in [
-        PayeeCategory.BB_LOAN, PayeeCategory.CREDIT_CARD_FEES, PayeeCategory.INTERNAL_TRANSFER,
+        PayeeCategory.BB_LOAN, PayeeCategory.BANK_INTEREST, PayeeCategory.CREDIT_CARD_FEES, PayeeCategory.INTERNAL_TRANSFER,
         PayeeCategory.MUSIC_VENUE_TRUST, PayeeCategory.MUSICIAN_PAYMENTS, PayeeCategory.PETTY_CASH,
-        PayeeCategory.RATES, PayeeCategory.SALARIES, PayeeCategory.SOUND_ENGINEER, PayeeCategory.UNCATEGORIZED,
+        PayeeCategory.RATES, PayeeCategory.SALARIES, PayeeCategory.SOUND_ENGINEER,
         PayeeCategory.VAT, PayeeCategory.WORK_PERMITS, PayeeCategory.ZETTLE_CREDITS
     ]:
         return False
     raise ValueError(f"Unknown category {category}")
 
 
+class TransactionsByMonthAndCategory:
+    def __init__(self, transactions: List[CategorizedTransaction]):
+        self.transactions = checked_list_type(transactions, CategorizedTransaction)
+        self.by_month_and_category: Dict[
+            Tuple[AccountingMonth, Optional[PayeeCategory]], List[CategorizedTransaction]] = group_into_dict(
+            self.transactions,
+            lambda t: (AccountingMonth.containing(t.payment_date), t.category)
+        )
+
+    def total_for_month_and_category(self, month: AccountingMonth, category: Optional[PayeeCategory]) -> float:
+        return sum(t.transaction.amount for t in self.by_month_and_category.get((month, category), []))
+
+
 class CategorisedTransactionsRange(TabRange):
+
     def __init__(
             self,
             top_left_cell: TabCell,
             accounting_months: List[AccountingMonth],
             categorised_transactions: List[CategorizedTransaction]):
-        self.categories = sorted(set(_category_text(t) for t in categorised_transactions))
+        self.categories = [c for c in PayeeCategory] + [None]
         super().__init__(top_left_cell, num_rows=2 + len(self.categories), num_cols=6)
         self.accounting_months: List[AccountingMonth] = checked_list_type(accounting_months, AccountingMonth)
         self.categorised_transactions: List[CategorizedTransaction] = checked_list_type(categorised_transactions,
                                                                                         CategorizedTransaction)
+        self.transactions_by_month_and_category: TransactionsByMonthAndCategory = TransactionsByMonthAndCategory(
+            categorised_transactions)
 
     @property
     def format_requests(self):
@@ -71,14 +100,14 @@ class CategorisedTransactionsRange(TabRange):
 
     @property
     def values(self):
-        by_accounting_month = group_into_dict(self.categorised_transactions, lambda t: self.acc_month(t.payment_date))
-        by_category = {
-            m: group_into_dict(by_accounting_month[m], _category_text)
-            for m in self.accounting_months
-        }
-
-        def total_for_category(m: AccountingMonth, category: str) -> float:
-            return sum(t.transaction.amount for t in by_category[m].get(category, []))
+        # by_accounting_month = group_into_dict(self.categorised_transactions, lambda t: self.acc_month(t.payment_date))
+        # by_category = {
+        #     m: group_into_dict(by_accounting_month[m], _category_text)
+        #     for m in self.accounting_months
+        # }
+        #
+        # def total_for_category(m: AccountingMonth, category: str) -> float:
+        #     return sum(t.transaction.amount for t in by_category[m].get(category, []))
 
         categories_values = [
             ["Categorised Transactions"],
@@ -91,26 +120,20 @@ class CategorisedTransactionsRange(TabRange):
                 vat_formula = f"={self[i_cat + 2, 4].in_a1_notation} / 6.0"
             else:
                 vat_formula = ""
-            row = [c] + [total_for_category(m, c) for m in self.accounting_months] + [total_formula, vat_formula]
+            row = [c or "Uncategorized"] + [self.transactions_by_month_and_category.total_for_month_and_category(m, c) for m in self.accounting_months] + [total_formula, vat_formula]
 
             categories_values.append(row)
         return categories_values
 
     def zettle_credits_cell(self, i_col):
-        if PayeeCategory.ZETTLE_CREDITS not in self.categories:
-            return None
         i = self.categories.index(PayeeCategory.ZETTLE_CREDITS)
         return self[i + 2, i_col].in_a1_notation
 
     def ticketweb_credits_cell(self, i_col):
-        if PayeeCategory.TICKETWEB_CREDITS not in self.categories:
-            return None
         i = self.categories.index(PayeeCategory.TICKETWEB_CREDITS)
         return self[i + 2, i_col].in_a1_notation
 
     def space_hire_cell(self, i_col):
-        if PayeeCategory.SPACE_HIRE not in self.categories:
-            return None
         i = self.categories.index(PayeeCategory.SPACE_HIRE)
         return self[i + 2, i_col].in_a1_notation
 

@@ -4,7 +4,7 @@ from typing import List
 from bank_statements import BankActivity, Transaction
 from bank_statements.bank_account import BankAccount
 from bank_statements.categorized_transaction import CategorizedTransaction
-from bank_statements.payee_categories import category_for_transaction
+from bank_statements.payee_categories import category_for_transaction, PayeeCategory
 from date_range import Day, DateRange
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
@@ -142,7 +142,7 @@ class StatementsTab(Tab):
         def to_optional_value(cell_value):
             if isinstance(cell_value, str) and cell_value.strip() == "":
                 return None
-            return cell_value
+            return PayeeCategory(cell_value)
 
         def to_decimal(cell_value):
             if isinstance(cell_value, str):

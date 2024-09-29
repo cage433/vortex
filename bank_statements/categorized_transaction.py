@@ -1,7 +1,7 @@
 from typing import Optional
 
 from bank_statements import Transaction
-from bank_statements.payee_categories import category_for_transaction
+from bank_statements.payee_categories import category_for_transaction, PayeeCategory
 from date_range import Day
 from utils import checked_type, checked_optional_type
 
@@ -15,10 +15,10 @@ class CategorizedTransaction:
     def __init__(
             self,
             transaction: Transaction,
-            category: Optional[str],
+            category: Optional[PayeeCategory],
     ):
         self.transaction: Transaction = checked_type(transaction, Transaction)
-        self.category: Optional[str] = checked_optional_type(category, str)
+        self.category: Optional[PayeeCategory] = checked_optional_type(category, PayeeCategory)
 
     @property
     def payment_date(self) -> Day:

@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Optional, List
+from enum import Enum, StrEnum, verify, UNIQUE
 
 from bank_statements import Transaction
 from date_range import Day
@@ -19,7 +20,8 @@ def _musicians():
 MUSICIANS = _musicians()
 
 
-class PayeeCategory:
+@verify(UNIQUE)
+class PayeeCategory(StrEnum):
     AIRTABLE = "Airtable"
     BANK_FEES = "Bank Fees"
     BANK_INTEREST = "Bank Interest"
@@ -40,7 +42,8 @@ class PayeeCategory:
     INTERNAL_TRANSFER = "Internal Transfer"
     KASHFLOW = "Kashflow"
     MAILCHIMP = "Mailchimp"
-    LICENSING_DIRECT = "Licensing - Indirect"
+    LICENSING_DIRECT = "Licensing - Direct"
+    LICENSING_INDIRECT = "Licensing - Indirect"
     MARKETING_DIRECT = "Marketing Direct"
     MARKETING_INDIRECT = "Marketing - Indirect"
     MEMBERSHIPS = "Memberships"
@@ -61,10 +64,8 @@ class PayeeCategory:
     SPACE_HIRE = "Space Hire"
     SUBSCRIPTIONS = "Subscriptions"
     TELEPHONE = "Telephone"
-    TICKETS = "Tickets"
     TICKETWEB_CREDITS = "Ticketweb Credits"
     TISSUES = "Toilet Tissues"
-    UNCATEGORIZED = "Uncategorized"
     VAT = "VAT"
     WEB_HOST = "Web Host"
     WORK_PERMITS = "Work Permits"
@@ -391,7 +392,7 @@ def _maybe_subscriptions(tr: Transaction) -> Optional[str]:
     if matches_start(tr, ["music venues allia wimborne", "jazz in london vortex"]):
         return PayeeCategory.SUBSCRIPTIONS
 
-def category_for_transaction(transaction: Transaction) -> Optional[str]:
+def category_for_transaction(transaction: Transaction) -> Optional[PayeeCategory]:
     return (_maybe_airtable(transaction) or
             _maybe_bank_fees(transaction) or
             _maybe_bank_interest(transaction) or
