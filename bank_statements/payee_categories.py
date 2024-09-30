@@ -108,9 +108,7 @@ class PayeeCategory(StrEnum):
 
     @staticmethod
     def are_credits(category: Optional['PayeeCategory']) -> bool:
-        if category is None:
-            return False
-        return 'Credits' in category
+        return category in [PayeeCategory.ZETTLE_CREDITS, PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.SPACE_HIRE]
 
 
 def matches_start(transaction, matches: any) -> bool:

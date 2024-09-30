@@ -21,8 +21,6 @@ class PaymentsRange(TabRange):
             self.transactions,
             lambda t: AccountingMonth.containing(t.payment_date)
         )
-        self.categories = sorted(set(t.category for t in self.transactions if t.category is not None)) + ([None] if any(
-            t.category is None for t in self.transactions) else [])
         self.accounting_months = sorted(self.by_month.keys())
         super().__init__(top_left_cell, num_rows=1 + len(self.transactions) + len(self.accounting_months), num_cols=3)
 
@@ -69,65 +67,75 @@ class PaymentsRange(TabRange):
             i_row += 1 + len(trans_for_month)
         return values
 
-class PaymentsRangeWithVAT(TabRange):
-    COLUMNS = ["Payments", "Date", "Payee", "VAT", "Reclaimable"]
+
+class PaymentsRangeWithReclaimableVAT(TabRange):
 
     def __init__(self, top_left_cell: TabCell, transactions: List[CategorizedTransaction],
-                 category: Optional[PayeeCategory], vat_reclaim_fraction_cell: Optional[TabCell]):
+                 category: Optional[PayeeCategory],
+                 reclaimable_vat_fraction_cell: TabCell
+                 ):
         self.category: Optional[PayeeCategory] = checked_optional_type(category, PayeeCategory)
         self.transactions = [t for t in transactions if t.category == category]
         self.by_month = group_into_dict(
             self.transactions,
             lambda t: AccountingMonth.containing(t.payment_date)
         )
-        self.categories = sorted(set(t.category for t in self.transactions if t.category is not None)) + ([None] if any(
-            t.category is None for t in self.transactions) else [])
         self.accounting_months = sorted(self.by_month.keys())
-        super().__init__(top_left_cell, num_rows=1 + len(self.transactions) + len(self.accounting_months), num_cols=4)
+        super().__init__(top_left_cell, num_rows=1 + len(self.transactions) + len(self.accounting_months), num_cols=5)
 
-        self.month_total_rows = [self[1, 1]]
+        self.month_total_rows = [self[1, :]]
         for m in self.accounting_months[:-1]:
-            last_total_cell = self.month_total_rows[-1]
-            self.month_total_rows.append(last_total_cell.offset(rows=len(self.by_month[m]) + 1))
+            last_total_row = self.month_total_rows[-1]
+            self.month_total_rows.append(last_total_row.offset(rows=len(self.by_month[m]) + 1))
+        self.reclaimable_vat_fraction_cell = checked_type(reclaimable_vat_fraction_cell, TabCell)
 
     @property
     def format_requests(self):
         requests = [
             self[0, 0].set_bold_text_request(),
-            self[:, 1].set_currency_format_request(),
+            self[:, 1:].set_currency_format_request(),
             self.tab.group_rows_request(self.i_first_row + 1, self.i_first_row + self.num_rows - 1),
         ]
         for i_month, m in enumerate(self.accounting_months):
             month_total_row = self.month_total_rows[i_month]
+            num_in_month = len(self.by_month[m])
             requests.append(
                 self.tab.group_rows_request(
                     month_total_row.i_first_row + 1,
-                    month_total_row.i_first_row + len(self.by_month[m])
+                    month_total_row.i_first_row + num_in_month
                 )
+            )
+            rows_offset = month_total_row.i_first_row - self.i_first_row + 1
+            requests.append(
+                self[rows_offset:rows_offset + num_in_month, 0].date_format_request("d Mmm yy")
             )
         return requests
 
-    def _category_total_formula(self, i_col):
-        return "=" + "+".join(row[0, i_col].in_a1_notation for row in self.month_total_rows)
-
-    def _month_total_formula(self, i_row: int, i_col, n_rows: int):
-        return f"=SUM({self[i_row + 1:i_row + 1 + len(n_rows), i_col].in_a1_notation})"
-
     @property
     def values(self):
-        category_total_formula = "=" + "+".join(c.in_a1_notation for c in self.month_total_rows)
+        category_total_formulae = [
+            "=" + "+".join(month_total_row[0, i_col].in_a1_notation for month_total_row in self.month_total_rows)
+            for i_col in range(1, 4)
+        ]
         values = [
-            [self.category or "Uncategorized"] + [self._category_total_formula(i_col) for i_col in range(2, 5)] + ["", ""]
+            [self.category or "Uncategorized"] + category_total_formulae + [""]
         ]
         i_row = 1
         for m in self.accounting_months:
             trans_for_month = sorted(self.by_month[m], key=lambda t: (t.payment_date, t.payee))
-            month_total_formula = f"=SUM({self[i_row + 1:i_row + 1 + len(trans_for_month), 1].in_a1_notation})"
-            values.append([m.month_name] + [self._month_total_formula(i_row, i_col, len(trans_for_month)) for i_col in range(1, 4)] + ["", ""])
-            for t in self.by_month[m]:
-                values.append(["", t.amount, t.payment_date, t.transaction.payee])
+            month_total_formulae = [
+                f"=SUM({self[i_row + 1:i_row + 1 + len(trans_for_month), i_col].in_a1_notation})"
+                for i_col in range(1, 4)
+            ]
+            values.append([m.month_name] + month_total_formulae + [""])
+            for i_trans, t in enumerate(self.by_month[m]):
+                amount_cell = self[i_row + 1 + i_trans, 1]
+                vat_formula = f"={amount_cell.in_a1_notation} / 6.0"
+                reclaimable_vat_formula = f"={amount_cell.in_a1_notation} / 6.0 * {self.reclaimable_vat_fraction_cell.cell_coordinates.text}"
+                values.append([t.payment_date, t.amount, vat_formula, reclaimable_vat_formula, t.transaction.payee])
             i_row += 1 + len(trans_for_month)
         return values
+
 
 
 class WalkInSalesRange(TabRange):
@@ -303,19 +311,23 @@ class VATReturnsTab(Tab):
                                                              total_space_hires_range)
 
         trans_categories = set(t.category for t in categorised_transactions)
-        debit_vat_categories = sorted([c for c in PayeeCategory if c in trans_categories if
-                                       not PayeeCategory.are_credits(c) and PayeeCategory.is_subject_to_vat(c)])
+        debit_vat_categories: List[PayeeCategory] = sorted([c for c in PayeeCategory if c in trans_categories if
+                                                            not PayeeCategory.are_credits(
+                                                                c) and PayeeCategory.is_subject_to_vat(c)])
         if None in trans_categories:
             debit_vat_categories.append(None)
+        reclaimable_vat_cell = vat_reclaim_fraction_range.bottom_right_cell
         categories_ranges = [
-            PaymentsRange(vat_reclaim_fraction_range.bottom_left_cell.offset(num_rows=2), categorised_transactions,
-                          debit_vat_categories[0])
+            PaymentsRangeWithReclaimableVAT(vat_reclaim_fraction_range.bottom_left_cell.offset(num_rows=2),
+                                            categorised_transactions,
+                                            debit_vat_categories[0], reclaimable_vat_cell)
         ]
         for i in range(1, len(debit_vat_categories)):
             last_range = categories_ranges[-1]
             categories_ranges.append(
-                PaymentsRange(last_range.bottom_left_cell.offset(num_rows=1), categorised_transactions,
-                              debit_vat_categories[i])
+                PaymentsRangeWithReclaimableVAT(last_range.bottom_left_cell.offset(num_rows=1),
+                                                categorised_transactions,
+                                                debit_vat_categories[i], reclaimable_vat_cell)
             )
         self.workbook.batch_update(
             self._general_format_requests
