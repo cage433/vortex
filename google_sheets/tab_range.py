@@ -243,7 +243,7 @@ class TabRange:
         return self.number_format_request({"type": "DATE", "pattern": format})
 
     def percentage_format_request(self):
-        return self.number_format_request({"type": "PERCENT"})
+        return self.number_format_request({"type": "PERCENT", "pattern": "0.0%"})
 
     def user_entered_format_request(self, format):
         fields = ",".join([f"user_entered_format.{k}" for k in format.keys()])
