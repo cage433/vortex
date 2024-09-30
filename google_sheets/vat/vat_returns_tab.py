@@ -12,7 +12,6 @@ from utils.collection_utils import group_into_dict
 
 
 class PaymentsRange(TabRange):
-    COLUMNS = ["Payments", "Date", "Payee"]
 
     def __init__(self, top_left_cell: TabCell, transactions: List[CategorizedTransaction],
                  category: Optional[PayeeCategory]):
@@ -25,7 +24,7 @@ class PaymentsRange(TabRange):
         self.categories = sorted(set(t.category for t in self.transactions if t.category is not None)) + ([None] if any(
             t.category is None for t in self.transactions) else [])
         self.accounting_months = sorted(self.by_month.keys())
-        super().__init__(top_left_cell, num_rows=1 + len(self.transactions) + len(self.accounting_months), num_cols=4)
+        super().__init__(top_left_cell, num_rows=1 + len(self.transactions) + len(self.accounting_months), num_cols=3)
 
         self.month_total_cells = [self[1, 1]]
         for m in self.accounting_months[:-1]:
@@ -41,11 +40,16 @@ class PaymentsRange(TabRange):
         ]
         for i_month, m in enumerate(self.accounting_months):
             month_total_cell = self.month_total_cells[i_month]
+            num_in_month = len(self.by_month[m])
             requests.append(
                 self.tab.group_rows_request(
                     month_total_cell.i_first_row + 1,
-                    month_total_cell.i_first_row + len(self.by_month[m])
+                    month_total_cell.i_first_row + num_in_month
                 )
+            )
+            rows_offset = month_total_cell.i_first_row - self.i_first_row + 1
+            requests.append(
+                self[rows_offset:rows_offset + num_in_month, 0].date_format_request("d Mmm yy")
             )
         return requests
 
@@ -53,13 +57,73 @@ class PaymentsRange(TabRange):
     def values(self):
         category_total_formula = "=" + "+".join(c.in_a1_notation for c in self.month_total_cells)
         values = [
-            [self.category or "Uncategorized", category_total_formula, "", ""]
+            [self.category or "Uncategorized", category_total_formula, ""]
         ]
         i_row = 1
         for m in self.accounting_months:
             trans_for_month = sorted(self.by_month[m], key=lambda t: (t.payment_date, t.payee))
             month_total_formula = f"=SUM({self[i_row + 1:i_row + 1 + len(trans_for_month), 1].in_a1_notation})"
-            values.append(["", month_total_formula, m.month_name, ""])
+            values.append([m.month_name, month_total_formula, ""])
+            for t in self.by_month[m]:
+                values.append([t.payment_date, t.amount, t.transaction.payee])
+            i_row += 1 + len(trans_for_month)
+        return values
+
+class PaymentsRangeWithVAT(TabRange):
+    COLUMNS = ["Payments", "Date", "Payee", "VAT", "Reclaimable"]
+
+    def __init__(self, top_left_cell: TabCell, transactions: List[CategorizedTransaction],
+                 category: Optional[PayeeCategory], vat_reclaim_fraction_cell: Optional[TabCell]):
+        self.category: Optional[PayeeCategory] = checked_optional_type(category, PayeeCategory)
+        self.transactions = [t for t in transactions if t.category == category]
+        self.by_month = group_into_dict(
+            self.transactions,
+            lambda t: AccountingMonth.containing(t.payment_date)
+        )
+        self.categories = sorted(set(t.category for t in self.transactions if t.category is not None)) + ([None] if any(
+            t.category is None for t in self.transactions) else [])
+        self.accounting_months = sorted(self.by_month.keys())
+        super().__init__(top_left_cell, num_rows=1 + len(self.transactions) + len(self.accounting_months), num_cols=4)
+
+        self.month_total_rows = [self[1, 1]]
+        for m in self.accounting_months[:-1]:
+            last_total_cell = self.month_total_rows[-1]
+            self.month_total_rows.append(last_total_cell.offset(rows=len(self.by_month[m]) + 1))
+
+    @property
+    def format_requests(self):
+        requests = [
+            self[0, 0].set_bold_text_request(),
+            self[:, 1].set_currency_format_request(),
+            self.tab.group_rows_request(self.i_first_row + 1, self.i_first_row + self.num_rows - 1),
+        ]
+        for i_month, m in enumerate(self.accounting_months):
+            month_total_row = self.month_total_rows[i_month]
+            requests.append(
+                self.tab.group_rows_request(
+                    month_total_row.i_first_row + 1,
+                    month_total_row.i_first_row + len(self.by_month[m])
+                )
+            )
+        return requests
+
+    def _category_total_formula(self, i_col):
+        return "=" + "+".join(row[0, i_col].in_a1_notation for row in self.month_total_rows)
+
+    def _month_total_formula(self, i_row: int, i_col, n_rows: int):
+        return f"=SUM({self[i_row + 1:i_row + 1 + len(n_rows), i_col].in_a1_notation})"
+
+    @property
+    def values(self):
+        category_total_formula = "=" + "+".join(c.in_a1_notation for c in self.month_total_rows)
+        values = [
+            [self.category or "Uncategorized"] + [self._category_total_formula(i_col) for i_col in range(2, 5)] + ["", ""]
+        ]
+        i_row = 1
+        for m in self.accounting_months:
+            trans_for_month = sorted(self.by_month[m], key=lambda t: (t.payment_date, t.payee))
+            month_total_formula = f"=SUM({self[i_row + 1:i_row + 1 + len(trans_for_month), 1].in_a1_notation})"
+            values.append([m.month_name] + [self._month_total_formula(i_row, i_col, len(trans_for_month)) for i_col in range(1, 4)] + ["", ""])
             for t in self.by_month[m]:
                 values.append(["", t.amount, t.payment_date, t.transaction.payee])
             i_row += 1 + len(trans_for_month)
