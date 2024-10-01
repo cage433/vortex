@@ -315,7 +315,7 @@ class VatablePaymentsRange(TabRange):
     def values(self):
         def sum_cell(i_col):
             cells = [r[0, i_col].in_a1_notation for r in self.debit_categories_ranges]
-            return f"=SUM({' + '.join(cells)})"
+            return f"={' + '.join(cells)}"
 
         vs = [
             ["Payments including VAT"],
@@ -434,7 +434,7 @@ class VatableReceiptsRange(TabRange):
             self[1].right_align_text_request(),
             self[0:2].set_bold_text_request(),
             self[-1].offset(1).border_request(["top"], style="SOLID_MEDIUM"),
-            # self.tab.group_rows_request(self.i_first_row + 3, self.i_first_row + self.num_rows - 1),
+            self.tab.group_rows_request(self.i_first_row + 3, self.i_first_row + self.num_rows - 1),
         ]
         for r in [self.space_hire_range, self.zettle_credit_range2, self.walk_in_sales_range3,
                   self.total_bar_sales_range2]:
@@ -445,7 +445,7 @@ class VatableReceiptsRange(TabRange):
     def values(self):
         def sum_cell(i_col):
             cells = [r[0, i_col].in_a1_notation for r in [self.space_hire_range, self.total_bar_sales_range2]]
-            return f"=SUM({' + '.join(cells)})"
+            return f"={' + '.join(cells)}"
 
         vs = [
             ["Receipts including VAT"],
