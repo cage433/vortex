@@ -263,7 +263,7 @@ class VATReclaimFractionRange(TabRange):
         ]
         return [
             ["VAT Reclaim Fraction",
-             f"=({bar_sales} + {space_hire}) / ({bar_sales} + {space_hire} + {ticket_sales}) "]
+             f"=({bar_sales} + {space_hire}) / ({bar_sales} + {space_hire} + {ticket_sales} * 1.2) "]
         ]
 
 
@@ -297,9 +297,15 @@ class VatablePaymentsRange(TabRange):
         )
 
     @property
-    def request_formats(self):
+    def format_requestss(self):
         formats = [
-            self.outline_border_request()
+            self.outline_border_request(),
+            self[0].merge_columns_request(),
+            self[0].center_text_request(),
+            self[1].right_align_text_request(),
+            self[0:2].set_bold_text_request(),
+            self[-1].offset(1).border_request(["top"], style="SOLID_MEDIUM"),
+            self.tab.group_rows_request(self.i_first_row + 3, self.i_first_row + self.num_rows - 1),
         ]
         for r in self.debit_categories_ranges:
             formats += r.format_requests
@@ -312,7 +318,7 @@ class VatablePaymentsRange(TabRange):
             return f"=SUM({' + '.join(cells)})"
 
         vs = [
-            ["VATAble Payments"],
+            ["Payments including VAT"],
             ["Category", "Payments", "VAT", "Reclaimable VAT", "Payee"],
             ["", sum_cell(1), sum_cell(2), sum_cell(3), ""]
         ]
@@ -432,7 +438,7 @@ class VATReturnsTab(Tab):
                 total_bar_sales_range2.format_requests +
                 zettle_credit_range2.format_requests +
                 walk_in_sales_range3.format_requests +
-                vat_debits_range.request_formats
+                vat_debits_range.format_requestss
         )
         # for category_range in debit_categories_ranges:
         #     format_requests += category_range.format_requests
