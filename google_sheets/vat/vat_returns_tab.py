@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from airtable_db.gigs_info import GigsInfo
 from bank_statements.categorized_transaction import CategorizedTransaction
@@ -9,6 +9,19 @@ from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
 from utils import checked_list_type, checked_type, checked_optional_type
 from utils.collection_utils import group_into_dict
+
+
+class RangesAndValues:
+    def __init__(self, ranges_and_values: List[Tuple[TabRange, List[List[any]]]]):
+        self.ranges_and_values: List[Tuple[TabRange, List[List[any]]]] = ranges_and_values
+        for r, v in ranges_and_values:
+            assert isinstance(r, TabRange)
+            assert isinstance(v, list)
+            for row in v:
+                assert isinstance(row, list)
+
+    def __add__(self, rhs: 'RangesAndValues'):
+        return RangesAndValues(self.ranges_and_values + rhs.ranges_and_values)
 
 
 class PaymentsRange(TabRange):
@@ -52,7 +65,7 @@ class PaymentsRange(TabRange):
         return requests
 
     @property
-    def values(self):
+    def values(self) -> RangesAndValues:
         category_total_formula = "=" + "+".join(c.in_a1_notation for c in self.month_total_cells)
         values = [
             [self.category or "Uncategorized", category_total_formula, ""]
@@ -65,7 +78,7 @@ class PaymentsRange(TabRange):
             for t in self.by_month[m]:
                 values.append([t.payment_date, t.amount, t.transaction.payee])
             i_row += 1 + len(trans_for_month)
-        return values
+        return RangesAndValues([(self, values)])
 
 
 class PaymentsRangeWithVAT(TabRange):
@@ -114,7 +127,7 @@ class PaymentsRangeWithVAT(TabRange):
         return requests
 
     @property
-    def values(self):
+    def values(self) -> RangesAndValues:
         category_total_formulae = [
             "=" + "+".join(month_total_row[0, i_col].in_a1_notation for month_total_row in self.month_total_rows)
             for i_col in range(1, 1 + self.num_value_cols)
@@ -140,14 +153,17 @@ class PaymentsRangeWithVAT(TabRange):
                         f"={amount_cell.in_a1_notation} / 6.0 * {self.reclaimable_vat_fraction_cell.cell_coordinates.text}"]
                 values.append([t.payment_date, t.amount, vat_formula] + reclaimable_vat_formula + [t.transaction.payee])
             i_row += 1 + len(trans_for_month)
-        return values
+        return RangesAndValues([(self, values)])
 
 
 class PaymentsRangeForCategory(TabRange):
 
     def __init__(self, top_left_cell: TabCell, transactions: List[CategorizedTransaction],
                  category: Optional[PayeeCategory],
-                 reclaimable_vat_fraction_cell: TabCell,
+                 reclaimable_vat_fraction_cell: Optional[TabCell],
+                 show_vat_if_applicable: bool,
+                 show_reclaimable_vat_if_applicable: bool,
+                 show_payee: bool
                  ):
         self.category: Optional[PayeeCategory] = checked_optional_type(category, PayeeCategory)
         self.transactions = [t for t in transactions if t.category == category]
@@ -156,13 +172,23 @@ class PaymentsRangeForCategory(TabRange):
             lambda t: AccountingMonth.containing(t.payment_date)
         )
         self.accounting_months = sorted(self.by_month.keys())
-        self.reclaimable_vat_fraction_cell = checked_type(reclaimable_vat_fraction_cell, TabCell)
-        self.show_reclaimable_vat = self.reclaimable_vat_fraction_cell is not None
-        self.show_vat = self.category is not None and PayeeCategory.is_subject_to_vat(self.category)
-        self.show_reclaimable_vat = self.category is not None and self.show_vat and PayeeCategory.is_debit(
-            self.category)
+        self.reclaimable_vat_fraction_cell = checked_optional_type(reclaimable_vat_fraction_cell, TabCell)
+        self.show_vat = (
+                show_vat_if_applicable
+                and self.category is not None
+                and PayeeCategory.is_subject_to_vat(self.category)
+        )
+        self.show_reclaimable_vat = (show_reclaimable_vat_if_applicable
+                                     and self.category is not None
+                                     and self.show_vat
+                                     and PayeeCategory.is_debit(self.category))
+        self.show_payee = checked_type(show_payee, bool)
+        if (not self.show_vat and not self.show_reclaimable_vat and not self.show_payee):
+            num_cols = 2
+        else:
+            num_cols = 5
         super().__init__(top_left_cell, num_rows=1 + len(self.transactions) + len(self.accounting_months),
-                         num_cols=5)
+                         num_cols=num_cols)
 
         self.month_total_rows = [self[1, :]]
         for m in self.accounting_months[:-1]:
@@ -192,10 +218,16 @@ class PaymentsRangeForCategory(TabRange):
         return requests
 
     @property
-    def values(self):
+    def values(self) -> RangesAndValues:
+        if self.show_reclaimable_vat:
+            summing_cols = range(1, 4)
+        elif self.show_vat:
+            summing_cols = range(1, 3)
+        else:
+            summing_cols = [1]
         category_total_formulae = [
             "=" + "+".join(month_total_row[0, i_col].in_a1_notation for month_total_row in self.month_total_rows)
-            for i_col in range(1, 4)
+            for i_col in summing_cols
         ]
         values = [
             [self.category or "Uncategorized"] + category_total_formulae + [""]
@@ -205,25 +237,27 @@ class PaymentsRangeForCategory(TabRange):
             trans_for_month = sorted(self.by_month[m], key=lambda t: (t.payment_date, t.payee))
             month_total_formulae = [
                 f"=SUM({self[i_row + 1:i_row + 1 + len(trans_for_month), i_col].in_a1_notation})"
-                for i_col in range(1, 4)
+                for i_col in summing_cols
             ]
             values.append([m.month_name] + month_total_formulae + [""])
             for i_trans, t in enumerate(self.by_month[m]):
                 amount_cell = self[i_row + 1 + i_trans, 1]
+                row = [t.payment_date, t.amount]
                 if self.show_vat:
-                    vat_formula = f"={amount_cell.in_a1_notation} / 6.0"
-                else:
-                    vat_formula = ""
+                    row.append(f"={amount_cell.in_a1_notation} / 6.0")
                 if self.show_reclaimable_vat:
                     if self.category in [PayeeCategory.BAR_STOCK, PayeeCategory.BAR_SNACKS]:
                         reclaimable_vat_formula = f"={amount_cell.in_a1_notation} / 6.0"
                     else:
                         reclaimable_vat_formula = f"={amount_cell.in_a1_notation} / 6.0 * {self.reclaimable_vat_fraction_cell.cell_coordinates.text}"
-                else:
-                    reclaimable_vat_formula = ""
-                values.append([t.payment_date, t.amount, vat_formula, reclaimable_vat_formula, t.transaction.payee])
+                    row.append(reclaimable_vat_formula)
+                if self.show_payee:
+                    padding = [""] * (4 - len(row))
+                    row += padding
+                    row.append(t.transaction.payee)
+                values.append(row)
             i_row += 1 + len(trans_for_month)
-        return values
+        return RangesAndValues([(self, values)])
 
 
 class WalkInSalesRange(TabRange):
@@ -245,6 +279,7 @@ class WalkInSalesRange(TabRange):
     def format_requests(self):
         requests = [
             self[0, 0].set_bold_text_request(),
+            self[0, 0].right_align_text_request(),
             self[:, 1].set_currency_format_request(),
             self.tab.group_rows_request(self.i_first_row + 1, self.i_first_row + self.num_rows - 1),
         ]
@@ -259,7 +294,7 @@ class WalkInSalesRange(TabRange):
         return requests
 
     @property
-    def values(self):
+    def values(self) -> RangesAndValues:
         total_formula = "=" + "+".join(c.in_a1_notation for c in self.month_total_cells)
         values = [
             ["Walk in sales", total_formula, "", ""]
@@ -275,7 +310,7 @@ class WalkInSalesRange(TabRange):
             for t in contracts_and_events:
                 values.append([t.performance_date, t.total_walk_in_sales, "", t.event_titles])
             i_row += 1 + len(gigs_for_month)
-        return values
+        return RangesAndValues([(self, values)])
 
 
 class FunctionOfTwoRangesRange(TabRange):
@@ -300,16 +335,17 @@ class FunctionOfTwoRangesRange(TabRange):
         ]
 
     @property
-    def values(self):
+    def values(self) -> RangesAndValues:
         cell_1, cell_2 = [r.top_left_cell.offset(0, 1).cell_coordinates.text for r in [self.range1, self.range2]]
         operand_cell_text = f"={cell_1} {self.operand} {cell_2}"
         vat_cell = [
             f"={self.top_left_cell.offset(0, 1).cell_coordinates.text} / 6.0"
         ] if self.include_vat else []
 
-        return [
+        vs = [
             [self.total_title] + [operand_cell_text] + vat_cell
         ]
+        return RangesAndValues([(self, vs)])
 
 
 class TotalBarSalesRange(FunctionOfTwoRangesRange):
@@ -320,6 +356,45 @@ class TotalBarSalesRange(FunctionOfTwoRangesRange):
 class TotalTicketSalesRange(FunctionOfTwoRangesRange):
     def __init__(self, ticket_web_credits_range: TabRange, walk_in_sales_range: TabRange):
         super().__init__("Total Ticket Sales", ticket_web_credits_range, walk_in_sales_range, "+", include_vat=False)
+
+
+class TotalBarSalesRange2(TabRange):
+    def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
+                 gigs_info: GigsInfo, show_vat_if_applicable: bool, show_payee: bool):
+        self.zettle_credit_range = PaymentsRangeForCategory(top_left_cell.offset(1),
+                                                            categorised_transactions,
+                                                            PayeeCategory.ZETTLE_CREDITS,
+                                                            reclaimable_vat_fraction_cell=None,
+                                                            show_vat_if_applicable=show_vat_if_applicable,
+                                                            show_reclaimable_vat_if_applicable=False,
+                                                            show_payee=show_payee
+                                                            )
+        self.walk_in_sales_range = WalkInSalesRange(self.zettle_credit_range.bottom_left_cell.offset(num_rows=1),
+                                                    gigs_info)
+        super().__init__(top_left_cell,
+                         1 + self.zettle_credit_range.num_rows + self.walk_in_sales_range.num_rows,
+                         5)
+
+    @property
+    def format_requests(self):
+        requests = [
+            self.outline_border_request(style="SOLID"),
+            self[0].offset(self.num_rows).border_request(["top"], style="SOLID"),
+            self[0, 0].set_bold_text_request(),
+            self.tab.group_rows_request(self.i_first_row + 1, self.i_first_row + self.num_rows - 1),
+        ]
+        requests += self.zettle_credit_range.format_requests
+        requests += self.walk_in_sales_range.format_requests
+        return requests
+
+    @property
+    def values(self) -> RangesAndValues:
+        zettle_cell, walk_in_cell = [r.top_left_cell.offset(0, 1).cell_coordinates.text for r in
+                                     [self.zettle_credit_range, self.walk_in_sales_range]]
+        bar_sales_cell = self.top_left_cell.offset(0, 1).cell_coordinates.text
+        return RangesAndValues([
+            (self[0, :], [["Total Bar Sales", f"={zettle_cell} - {walk_in_cell}", f"={bar_sales_cell} / 6", ""]])
+        ]) + self.zettle_credit_range.values + self.walk_in_sales_range.values
 
 
 class VATReclaimFractionRange(TabRange):
@@ -340,15 +415,16 @@ class VATReclaimFractionRange(TabRange):
         ]
 
     @property
-    def values(self):
+    def values(self) -> RangesAndValues:
         bar_sales, ticket_sales, space_hire = [
             range.top_left_cell.offset(0, 1).cell_coordinates.text
             for range in [self.total_bar_sales_range, self.total_ticket_sales_range, self.space_hire_range]
         ]
-        return [
+        vs = [
             ["VAT Reclaim Fraction",
              f"=({bar_sales} + {space_hire}) / ({bar_sales} + {space_hire} + {ticket_sales} * 1.2) "]
         ]
+        return RangesAndValues([(self, vs)])
 
 
 class VatablePaymentsRange(TabRange):
@@ -363,15 +439,24 @@ class VatablePaymentsRange(TabRange):
             debit_vat_categories.append(None)
         self.debit_categories_ranges = [
             PaymentsRangeForCategory(top_left_cell.offset(num_rows=3),
-                                 categorised_transactions,
-                                 debit_vat_categories[0], reclaimable_vat_cell)
+                                     categorised_transactions,
+                                     debit_vat_categories[0], reclaimable_vat_cell,
+                                     show_vat_if_applicable=True,
+                                     show_reclaimable_vat_if_applicable=True,
+                                     show_payee=True
+                                     )
         ]
         for i in range(1, len(debit_vat_categories)):
             last_range = self.debit_categories_ranges[-1]
             self.debit_categories_ranges.append(
                 PaymentsRangeForCategory(last_range.bottom_left_cell.offset(num_rows=1),
-                                     categorised_transactions,
-                                     debit_vat_categories[i], reclaimable_vat_cell)
+                                         categorised_transactions,
+                                         debit_vat_categories[i],
+                                         reclaimable_vat_cell,
+                                         show_vat_if_applicable=True,
+                                         show_reclaimable_vat_if_applicable=True,
+                                         show_payee=True
+                                         )
             )
         super().__init__(
             top_left_cell,
@@ -395,16 +480,17 @@ class VatablePaymentsRange(TabRange):
         return formats
 
     @property
-    def values(self):
+    def values(self) -> RangesAndValues:
         def sum_cell(i_col):
             cells = [r[0, i_col].in_a1_notation for r in self.debit_categories_ranges]
             return f"={' + '.join(cells)}"
 
-        vs = [
+        headings = [
             ["Payments including VAT"],
             ["Category", "Payments", "VAT", "Reclaimable VAT", "Payee"],
             ["", sum_cell(1), sum_cell(2), sum_cell(3), ""]
         ]
+        vs = RangesAndValues([(self[0:3], headings)])
         for r in self.debit_categories_ranges:
             vs += r.values
         return vs
@@ -467,45 +553,60 @@ class VatReclaimFractionRange2(TabRange):
         return formats
 
     @property
-    def values(self):
-        return [
-            (self.zettle_credit_range, self.zettle_credit_range.values),
-            (self.walk_in_sales_range, self.walk_in_sales_range.values),
-            (self.total_bar_sales_range, self.total_bar_sales_range.values),
-            (self.ticket_web_credits_range, self.ticket_web_credits_range.values),
-            (self.walk_in_sales_range2, self.walk_in_sales_range2.values),
-            (self.total_ticket_sales_range, self.total_ticket_sales_range.values),
-            (self.total_space_hires_range, self.total_space_hires_range.values),
-            (self.vat_reclaim_fraction_range, self.vat_reclaim_fraction_range.values),
-        ]
+    def values(self) -> RangesAndValues:
+        vs = RangesAndValues([])
+        for r in [
+            self.zettle_credit_range,
+            self.walk_in_sales_range,
+            self.total_bar_sales_range,
+            self.ticket_web_credits_range,
+            self.walk_in_sales_range2,
+            self.total_ticket_sales_range,
+            self.total_space_hires_range,
+            self.vat_reclaim_fraction_range,
+        ]:
+            vs += r.values
+        return vs
 
 
 class VatableReceiptsRange(TabRange):
     def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
                  gigs_info: GigsInfo):
-        self.space_hire_range = PaymentsRangeWithVAT(
+        self.space_hire_range = PaymentsRangeForCategory(
             top_left_cell.offset(3),
             categorised_transactions,
             PayeeCategory.SPACE_HIRE,
-            reclaimable_vat_fraction_cell=None
+            reclaimable_vat_fraction_cell=None,
+            show_vat_if_applicable=True,
+            show_reclaimable_vat_if_applicable=False,
+            show_payee=True
         )
-        self.zettle_credit_range2 = PaymentsRange(self.space_hire_range.bottom_left_cell.offset(num_rows=2),
-                                                  categorised_transactions,
-                                                  PayeeCategory.ZETTLE_CREDITS)
-        self.walk_in_sales_range3 = WalkInSalesRange(self.zettle_credit_range2.bottom_left_cell.offset(num_rows=1),
-                                                     gigs_info)
-        self.total_bar_sales_range2 = TotalBarSalesRange(
-            self.zettle_credit_range2, self.walk_in_sales_range3, include_vat=True
+        # self.zettle_credit_range2 = PaymentsRangeForCategory(
+        #     self.space_hire_range.bottom_left_cell.offset(num_rows=2),
+        #     categorised_transactions,
+        #     PayeeCategory.ZETTLE_CREDITS,
+        #     reclaimable_vat_fraction_cell=None,
+        #     show_vat_if_applicable=True,
+        #     show_reclaimable_vat_if_applicable=False,
+        #     show_payee=True
+        # )
+        # self.walk_in_sales_range3 = WalkInSalesRange(self.zettle_credit_range2.bottom_left_cell.offset(num_rows=1),
+        #                                              gigs_info)
+        self.total_bar_sales_range2 = TotalBarSalesRange2(
+            self.space_hire_range.bottom_left_cell.offset(num_rows=1),
+            categorised_transactions, gigs_info,
+            show_vat_if_applicable=True,
+            show_payee=True
         )
         num_rows = 3 + (self.space_hire_range.num_rows +
-                        self.zettle_credit_range2.num_rows +
-                        self.walk_in_sales_range3.num_rows +
+                        # self.zettle_credit_range2.num_rows +
+                        # self.walk_in_sales_range3.num_rows +
                         self.total_bar_sales_range2.num_rows)
 
         super().__init__(
             top_left_cell,
             num_rows,
-            4
+            5
         )
 
     @property
@@ -519,27 +620,29 @@ class VatableReceiptsRange(TabRange):
             self[-1].offset(1).border_request(["top"], style="SOLID_MEDIUM"),
             self.tab.group_rows_request(self.i_first_row + 3, self.i_first_row + self.num_rows - 1),
         ]
-        for r in [self.space_hire_range, self.zettle_credit_range2, self.walk_in_sales_range3,
+        for r in [self.space_hire_range,
+                  # self.zettle_credit_range2, self.walk_in_sales_range3,
                   self.total_bar_sales_range2]:
             formats += r.format_requests
         return formats
 
     @property
-    def values(self):
+    def values(self) -> RangesAndValues:
         def sum_cell(i_col):
             cells = [r[0, i_col].in_a1_notation for r in [self.space_hire_range, self.total_bar_sales_range2]]
             return f"={' + '.join(cells)}"
 
-        vs = [
-            ["Receipts including VAT"],
-            ["Category", "Payments", "VAT", "Payee"],
-            ["", sum_cell(1), sum_cell(2), ""]
-        ]
+        vs = RangesAndValues([
+            (self, [
+                ["Receipts including VAT"],
+                ["Category", "Payments", "VAT", "", "Payee"],
+                ["", sum_cell(1), sum_cell(2), ""]
+            ])])
         for r in [
             self.space_hire_range,
             self.total_bar_sales_range2,
-            self.zettle_credit_range2,
-            self.walk_in_sales_range3,
+            # self.zettle_credit_range2,
+            # self.walk_in_sales_range3,
         ]:
             vs += r.values
         return vs
@@ -609,8 +712,6 @@ class VATReturnsTab(Tab):
             self.collapse_all_groups_requests()
         )
 
-        values = vat_reclaim_fraction_range2.values + [
-            (vat_payments_range, vat_payments_range.values),
-            (vat_receipts_range, vat_receipts_range.values),
-        ]
-        self.workbook.batch_update_values(values)
+        values = vat_reclaim_fraction_range2.values + vat_payments_range.values + vat_receipts_range.values
+
+        self.workbook.batch_update_values(values.ranges_and_values)
