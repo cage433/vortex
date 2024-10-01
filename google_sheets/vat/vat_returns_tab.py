@@ -269,11 +269,11 @@ class WalkInSalesRange(TabRange):
             gigs_for_month = sorted(self.by_month[m].contracts_and_events,
                                     key=lambda t: (t.performance_date, t.event_titles))
             month_total_formula = f"=SUM({self[i_row + 1:i_row + 1 + len(gigs_for_month), 1].in_a1_notation})"
-            values.append(["", month_total_formula, m.month_name, ""])
+            values.append([m.month_name, month_total_formula, "", ""])
             contracts_and_events = sorted(self.by_month[m].contracts_and_events,
                                           key=lambda t: (t.performance_date, t.event_titles))
             for t in contracts_and_events:
-                values.append(["", t.total_walk_in_sales, t.performance_date, t.event_titles])
+                values.append([t.performance_date, t.total_walk_in_sales, "", t.event_titles])
             i_row += 1 + len(gigs_for_month)
         return values
 
