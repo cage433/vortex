@@ -107,8 +107,12 @@ class PayeeCategory(StrEnum):
             return False
 
     @staticmethod
-    def are_credits(category: Optional['PayeeCategory']) -> bool:
+    def is_credit(category: Optional['PayeeCategory']) -> bool:
         return category in [PayeeCategory.ZETTLE_CREDITS, PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.SPACE_HIRE]
+
+    @staticmethod
+    def is_debit(category: Optional['PayeeCategory']) -> bool:
+        return not PayeeCategory.is_credit(category)
 
 
 def matches_start(transaction, matches: any) -> bool:
