@@ -342,6 +342,8 @@ class CashFlowsRange(TabRange):
             6
         )
         self.pnl_cell: TabCell = self.top_left_cell.offset(3, 1)
+        self.vat_on_sales_cell: TabCell = self.top_left_cell.offset(4, 2)
+        self.vat_reclaimable_cell: TabCell = self.top_left_cell.offset(4, 4)
 
     @property
     def format_requests(self):
@@ -470,6 +472,32 @@ class BankCheckRange(TabRange):
             ["Terminal Balance", float(self.bank_activity.terminal_balance)],
             ["P/L", f"={terminal_balance_cell} - {initial_balance_cell}"],
             ["Difference", f"={pnl_balance_cell} - {self.net_cash_flow_cell.cell_coordinates.text}"],
+        ])])
+
+class VATSubmissionRange(TabRange):
+    def __init__(
+            self,
+            top_left_cell: TabCell,
+            cash_flows_range: CashFlowsRange,
+    ):
+        super().__init__(top_left_cell, num_rows=1, num_cols=2)
+        self.cash_flows_range: CashFlowsRange = checked_type(cash_flows_range, CashFlowsRange)
+
+    @property
+    def format_requests(self):
+        return [
+            self.outline_border_request(),
+            self[:, 1].set_currency_format_request(),
+            self[:, 0].set_bold_text_request(),
+            self[0].set_bold_text_request(),
+        ]
+
+    @property
+    def values(self) -> RangesAndValues:
+        return RangesAndValues([(self, [
+            ["Description", "Value"],
+            ["VAT due on Sales", ],
+            ["VAT Submission", self.cash_flows_range.pnl_cell.in_a1_notation]
         ])])
 
 
