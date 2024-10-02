@@ -354,8 +354,9 @@ class CashFlowsRange(TabRange):
         )
         self.net_receipts_cell: TabCell = self.top_left_cell.offset(3, 1)
         self.net_payments_cell: TabCell = self.top_left_cell.offset(3, 2)
-        self.vat_on_sales_cell: TabCell = self.top_left_cell.offset(4, 2)
-        self.vat_reclaimable_cell: TabCell = self.top_left_cell.offset(4, 4)
+        self.net_receipts_vat_cell: TabCell = self.top_left_cell.offset(3, 3)
+        self.net_payments_vat_cell: TabCell = self.top_left_cell.offset(3, 4)
+        self.net_reclaimable_vat_cell: TabCell = self.top_left_cell.offset(3, 5)
 
     @property
     def format_requests(self):
@@ -499,24 +500,42 @@ class VATSubmissionRange(TabRange):
             top_left_cell: TabCell,
             cash_flows_range: CashFlowsRange,
     ):
-        super().__init__(top_left_cell, num_rows=1, num_cols=2)
+        super().__init__(top_left_cell, num_rows=11, num_cols=2)
         self.cash_flows_range: CashFlowsRange = checked_type(cash_flows_range, CashFlowsRange)
 
     @property
     def format_requests(self):
         return [
             self.outline_border_request(),
-            self[:, 1].set_currency_format_request(),
+            self[2:, 1].set_currency_format_request(),
+            self[1:, 1].right_align_text_request(),
             self[:, 0].set_bold_text_request(),
-            self[0].set_bold_text_request(),
+            self[0:2].set_bold_text_request(),
+            self[0].merge_columns_request(),
+            self[0].center_text_request(),
         ]
 
     @property
     def values(self) -> RangesAndValues:
+        receipts, payments, receipts_vat, payments_vat, reclaimable_vat = [
+            c.cell_coordinates.text for c in [self.cash_flows_range.net_receipts_cell,
+                                              self.cash_flows_range.net_payments_cell,
+                                              self.cash_flows_range.net_receipts_vat_cell,
+                                              self.cash_flows_range.net_payments_vat_cell,
+                                              self.cash_flows_range.net_reclaimable_vat_cell,
+                                              ]]
         return RangesAndValues([(self, [
+            ["VAT Submission"],
             ["Description", "Value"],
-            ["VAT due on Sales", ],
-            ["VAT Submission", self.cash_flows_range.net_receipts_cell.in_a1_notation]
+            ["VAT due on Sales", f"={receipts_vat}"],
+            ["VAT due from EU", 0],
+            ["Total VAT due", "Calculated"],
+            ["VAT reclaimable", f"={reclaimable_vat} * -1"],
+            ["VAT to pay/claim", "Calculated"],
+            ["Total Sales (exc)", f"={receipts} - {receipts_vat}"],
+            ["Total Purchases (exc)", f"={payments} - {payments_vat}"],
+            ["Goods to EU (exc)", 0],
+            ["Goods from EU (exc)", 0],
         ])])
 
 
@@ -563,7 +582,7 @@ class VATReturnsTab(Tab):
 
         vat_reclaim_fraction_range = VatReclaimFractionRange(self.cell("B2"), categorised_transactions, gigs_info)
 
-        payments_range = CashFlowsRange(
+        cash_flows_range = CashFlowsRange(
             vat_reclaim_fraction_range.bottom_left_cell.offset(3),
             categorised_transactions,
             gigs_info,
@@ -571,18 +590,24 @@ class VATReturnsTab(Tab):
         )
 
         bank_check_range = BankCheckRange(
-            payments_range.bottom_left_cell.offset(3),
+            cash_flows_range.bottom_left_cell.offset(3),
             bank_activity,
-            payments_range.net_receipts_cell,
-            payments_range.net_payments_cell,
+            cash_flows_range.net_receipts_cell,
+            cash_flows_range.net_payments_cell,
+        )
+
+        vat_submission_range = VATSubmissionRange(
+            bank_check_range.bottom_left_cell.offset(3),
+            cash_flows_range,
         )
         self.workbook.batch_update(
             self._general_format_requests
         )
         format_requests = (
                 vat_reclaim_fraction_range.format_requests +
-                payments_range.format_requests +
-                bank_check_range.format_requests
+                cash_flows_range.format_requests +
+                bank_check_range.format_requests +
+                vat_submission_range.format_requests
         )
         self.workbook.batch_update(
             format_requests
@@ -591,6 +616,9 @@ class VATReturnsTab(Tab):
             self.collapse_all_groups_requests()
         )
 
-        values = vat_reclaim_fraction_range.values + payments_range.values + bank_check_range.values
+        values = (vat_reclaim_fraction_range.values
+                  + cash_flows_range.values
+                  + bank_check_range.values
+                  + vat_submission_range.values)
 
         self.workbook.batch_update_values(values.ranges_and_values)
