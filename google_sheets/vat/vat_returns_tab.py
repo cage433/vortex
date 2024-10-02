@@ -33,6 +33,7 @@ class PaymentsRangeForCategory(TabRange):
             self,
             top_left_cell: TabCell, transactions: List[CategorizedTransaction],
             category: Optional[PayeeCategory],
+            split_debit_credit: bool,
             reclaimable_vat_fraction_cell: Optional[TabCell],
     ):
         self.category: Optional[PayeeCategory] = checked_optional_type(category, PayeeCategory)
@@ -45,7 +46,8 @@ class PaymentsRangeForCategory(TabRange):
         self.reclaimable_vat_fraction_cell: Optional[TabCell] = checked_optional_type(reclaimable_vat_fraction_cell,
                                                                                       TabCell)
         self.include_vat_columns = self.reclaimable_vat_fraction_cell is not None
-        num_cols = 2 + (3 if self.include_vat_columns else 0) + 1
+        self.split_debit_credit = checked_type(split_debit_credit, bool)
+        num_cols = 2 + (1 if self.split_debit_credit else 0) + (3 if self.include_vat_columns else 0) + 1
         super().__init__(top_left_cell, num_rows=1 + len(self.transactions) + len(self.accounting_months),
                          num_cols=num_cols)
 
@@ -79,10 +81,9 @@ class PaymentsRangeForCategory(TabRange):
 
     @property
     def values(self) -> RangesAndValues:
-        if self.include_vat_columns:
-            summing_cols = range(1, 5)
-        else:
-            summing_cols = [1]
+        num_vat_columns = 3 if self.include_vat_columns else 0
+        num_cash_flow_columns = 2 if self.split_debit_credit else 1
+        summing_cols = range(1, 1 + num_cash_flow_columns + num_vat_columns)
         category_total_formulae = [
             "=" + "+".join(month_total_row[0, i_col].in_a1_notation for month_total_row in self.month_total_rows)
             for i_col in summing_cols
@@ -101,14 +102,22 @@ class PaymentsRangeForCategory(TabRange):
             values.append(row)
             for i_trans, t in enumerate(self.by_month[m]):
                 amount_cell = self[i_row + 1 + i_trans, 1]
-                row = [t.payment_date, t.amount]
+                row = [t.payment_date]
+                if self.split_debit_credit:
+                    if PayeeCategory.is_credit(self.category):
+                        row += [t.amount, ""]
+                    else:
+                        row += ["", t.amount]
+                        amount_cell = self[i_row + 1 + i_trans, 2]
+                else:
+                    row.append(t.amount)
                 if self.include_vat_columns:
                     vat_formula = f"={amount_cell.in_a1_notation} / 6.0"
                     is_credit = self.category is not None and PayeeCategory.is_credit(self.category)
                     if is_credit:
                         row += [vat_formula, "", ""]
                     else:
-                        full_vat_cell = self[i_row + 1 + i_trans, 3]
+                        full_vat_cell = self[i_row + 1 + i_trans, len(row) + 1]
                         reclaimable_vat_formula = f"={full_vat_cell.in_a1_notation} * {self.reclaimable_vat_fraction_cell.cell_coordinates.text}"
                         row += ["", vat_formula, reclaimable_vat_formula]
 
@@ -190,6 +199,7 @@ class TotalBarSalesRange(TabRange):
             top_left_cell.offset(1),
             categorised_transactions,
             PayeeCategory.ZETTLE_CREDITS,
+            split_debit_credit=False,
             reclaimable_vat_fraction_cell=None,
         )
         self.walk_in_sales_range = WalkInSalesRange(
@@ -216,7 +226,7 @@ class TotalBarSalesRange(TabRange):
         zettle_cell, walk_in_cell = [r.top_left_cell.offset(0, 1).cell_coordinates.text for r in
                                      [self.zettle_credit_range, self.walk_in_sales_range]]
         bar_sales_cell = self.top_left_cell.offset(0, 1).cell_coordinates.text
-        top_row = ["Total Bar Sales", f"={zettle_cell} - {walk_in_cell}", f"={bar_sales_cell} / 6"]
+        top_row = ["Total Bar Sales", f"={zettle_cell} - {walk_in_cell}", "", f"={bar_sales_cell} / 6"]
         return (RangesAndValues([(self[0, :], [top_row])]) +
                 self.zettle_credit_range.values + self.walk_in_sales_range.values)
 
@@ -240,7 +250,8 @@ class PaymentsRangeForCategories(TabRange):
                 top_left,
                 categorised_transactions,
                 category,
-                reclaimable_vat_cell,
+                split_debit_credit=True,
+                reclaimable_vat_fraction_cell=reclaimable_vat_cell,
             )
 
         self.category_ranges = [
@@ -254,7 +265,7 @@ class PaymentsRangeForCategories(TabRange):
         super().__init__(
             top_left_cell,
             num_rows=1 + sum(r.num_rows for r in self.category_ranges),
-            num_cols=6
+            num_cols=7
         )
 
     @property
@@ -274,7 +285,7 @@ class PaymentsRangeForCategories(TabRange):
             return f"={' + '.join(cells)}"
 
         headings = [
-            [self.name, sum_cell(1), sum_cell(2), sum_cell(3), sum_cell(4), ""]
+            [self.name] + [sum_cell(i_col) for i_col in range(1, 7)]
         ]
         vs = RangesAndValues([(self[0], headings)])
         for r in self.category_ranges:
@@ -339,9 +350,10 @@ class CashFlowsRange(TabRange):
         super().__init__(
             top_left_cell,
             4 + sum(r.num_rows for r in self.child_ranges),
-            6
+            7
         )
-        self.pnl_cell: TabCell = self.top_left_cell.offset(3, 1)
+        self.net_receipts_cell: TabCell = self.top_left_cell.offset(3, 1)
+        self.net_payments_cell: TabCell = self.top_left_cell.offset(3, 2)
         self.vat_on_sales_cell: TabCell = self.top_left_cell.offset(4, 2)
         self.vat_reclaimable_cell: TabCell = self.top_left_cell.offset(4, 4)
 
@@ -350,7 +362,7 @@ class CashFlowsRange(TabRange):
         formats = [
             self.outline_border_request(),
             self[0].merge_columns_request(),
-            self[1, 2:5].merge_columns_request(),
+            self[1, 3:6].merge_columns_request(),
             self[0:2].center_text_request(),
             self[2].right_align_text_request(),
             self[0:3].set_bold_text_request(),
@@ -369,9 +381,9 @@ class CashFlowsRange(TabRange):
 
         headings = [
             ["Cash Flows"],
-            ["", "", "VAT", "", "", ""],
-            ["", "Payments/Receipts", "Credit", "Debit", "Reclaimable", ""],
-            ["", sum_cell(1), sum_cell(2), sum_cell(3), sum_cell(4), ""]
+            ["", "", "", "VAT"],
+            ["", "Receipts", "Payments", "Credit", "Debit", "Reclaimable", ""],
+            [""] + [sum_cell(i_col) for i_col in range(1, 6)],
         ]
         vs = RangesAndValues([(self[0:4], headings)])
         for r in self.child_ranges:
@@ -386,6 +398,7 @@ class VatReclaimFractionRange(TabRange):
             top_left_cell.offset(1),
             categorised_transactions,
             PayeeCategory.ZETTLE_CREDITS,
+            split_debit_credit=False,
             reclaimable_vat_fraction_cell=None,
         )
         self.walk_in_sales_range = WalkInSalesRange(self.zettle_credit_range.bottom_left_cell.offset(num_rows=1),
@@ -394,12 +407,14 @@ class VatReclaimFractionRange(TabRange):
             self.walk_in_sales_range.bottom_left_cell.offset(num_rows=1),
             categorised_transactions,
             PayeeCategory.TICKETWEB_CREDITS,
+            split_debit_credit=False,
             reclaimable_vat_fraction_cell=None,
         )
         self.space_hires_range = PaymentsRangeForCategory(
             self.ticket_web_credits_range.bottom_left_cell.offset(num_rows=1),
             categorised_transactions,
             PayeeCategory.SPACE_HIRE,
+            split_debit_credit=False,
             reclaimable_vat_fraction_cell=None,
         )
         self.child_ranges = [self.zettle_credit_range, self.walk_in_sales_range, self.ticket_web_credits_range,
@@ -444,11 +459,13 @@ class BankCheckRange(TabRange):
             self,
             top_left_cell: TabCell,
             bank_activity: BankActivity,
-            net_cash_flow_cell: TabCell
+            net_receipts_cell: TabCell,
+            net_payments_cell: TabCell,
     ):
-        super().__init__(top_left_cell, num_rows = 5, num_cols=2)
+        super().__init__(top_left_cell, num_rows=5, num_cols=2)
         self.bank_activity: BankActivity = checked_type(bank_activity, BankActivity)
-        self.net_cash_flow_cell: TabCell = checked_type(net_cash_flow_cell, TabCell)
+        self.net_cash_flow_cell: TabCell = checked_type(net_receipts_cell, TabCell)
+        self.net_payments_cell: TabCell = checked_type(net_payments_cell, TabCell)
 
     @property
     def format_requests(self):
@@ -471,8 +488,10 @@ class BankCheckRange(TabRange):
             ["Initial Balance", float(self.bank_activity.initial_balance)],
             ["Terminal Balance", float(self.bank_activity.terminal_balance)],
             ["P/L", f"={terminal_balance_cell} - {initial_balance_cell}"],
-            ["Difference", f"={pnl_balance_cell} - {self.net_cash_flow_cell.cell_coordinates.text}"],
+            ["Difference",
+             f"={pnl_balance_cell} - {self.net_cash_flow_cell.cell_coordinates.text} - {self.net_payments_cell.cell_coordinates.text}"],
         ])])
+
 
 class VATSubmissionRange(TabRange):
     def __init__(
@@ -497,7 +516,7 @@ class VATSubmissionRange(TabRange):
         return RangesAndValues([(self, [
             ["Description", "Value"],
             ["VAT due on Sales", ],
-            ["VAT Submission", self.cash_flows_range.pnl_cell.in_a1_notation]
+            ["VAT Submission", self.cash_flows_range.net_receipts_cell.in_a1_notation]
         ])])
 
 
@@ -527,7 +546,8 @@ class VATReturnsTab(Tab):
             (self.MONTH_2, 150),
             (self.MONTH_3, 150),
             (self.TOTAL, 150),
-            (self.VAT, 250),
+            (self.VAT, 150),
+            (self.VAT + 1, 250),
         ]:
             format_requests.append(
                 self.set_column_width_request(1 + col, width=width)
@@ -553,7 +573,8 @@ class VATReturnsTab(Tab):
         bank_check_range = BankCheckRange(
             payments_range.bottom_left_cell.offset(3),
             bank_activity,
-            payments_range.pnl_cell
+            payments_range.net_receipts_cell,
+            payments_range.net_payments_cell,
         )
         self.workbook.batch_update(
             self._general_format_requests
