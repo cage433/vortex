@@ -1,6 +1,7 @@
 from typing import List, Optional, Tuple
 
 from airtable_db.gigs_info import GigsInfo
+from bank_statements import BankActivity
 from bank_statements.categorized_transaction import CategorizedTransaction
 from bank_statements.payee_categories import PayeeCategory
 from date_range.accounting_month import AccountingMonth
@@ -335,12 +336,12 @@ class CashFlowsRange(TabRange):
             self.vatable_payments_range,
             self.non_vatable_range,
         ]
-
         super().__init__(
             top_left_cell,
             4 + sum(r.num_rows for r in self.child_ranges),
             6
         )
+        self.pnl_cell: TabCell = self.top_left_cell.offset(3, 1)
 
     @property
     def format_requests(self):
@@ -436,6 +437,42 @@ class VatReclaimFractionRange(TabRange):
         return vs
 
 
+class BankCheckRange(TabRange):
+    def __init__(
+            self,
+            top_left_cell: TabCell,
+            bank_activity: BankActivity,
+            net_cash_flow_cell: TabCell
+    ):
+        super().__init__(top_left_cell, num_rows = 5, num_cols=2)
+        self.bank_activity: BankActivity = checked_type(bank_activity, BankActivity)
+        self.net_cash_flow_cell: TabCell = checked_type(net_cash_flow_cell, TabCell)
+
+    @property
+    def format_requests(self):
+        return [
+            self[0].merge_columns_request(),
+            self[0].center_text_request(),
+            self[0].set_bold_text_request(),
+            self[:, 0].set_bold_text_request(),
+            self[:, 1].set_currency_format_request(),
+            self.outline_border_request(),
+        ]
+
+    @property
+    def values(self) -> RangesAndValues:
+        initial_balance_cell = self[1, 1].in_a1_notation
+        terminal_balance_cell = self[2, 1].in_a1_notation
+        pnl_balance_cell = self[3, 1].in_a1_notation
+        return RangesAndValues([(self, [
+            ["Bank Check"],
+            ["Initial Balance", float(self.bank_activity.initial_balance)],
+            ["Terminal Balance", float(self.bank_activity.terminal_balance)],
+            ["P/L", f"={terminal_balance_cell} - {initial_balance_cell}"],
+            ["Difference", f"={pnl_balance_cell} - {self.net_cash_flow_cell.cell_coordinates.text}"],
+        ])])
+
+
 class VATReturnsTab(Tab):
     COLUMNS = ["Outputs", "Month 1", "Month 2", "Month 3", "Total For Quarter", "VAT"]
     (OUTPUTS, MONTH_1, MONTH_2, MONTH_3, TOTAL, VAT) = range(len(COLUMNS))
@@ -469,7 +506,12 @@ class VATReturnsTab(Tab):
             )
         return format_requests
 
-    def update(self, categorised_transactions: List[CategorizedTransaction], gigs_info: GigsInfo):
+    def update(
+            self,
+            categorised_transactions: List[CategorizedTransaction],
+            gigs_info: GigsInfo,
+            bank_activity: BankActivity
+    ):
 
         vat_reclaim_fraction_range = VatReclaimFractionRange(self.cell("B2"), categorised_transactions, gigs_info)
 
@@ -480,12 +522,18 @@ class VATReturnsTab(Tab):
             vat_reclaim_fraction_range.reclaim_percentage_cell
         )
 
+        bank_check_range = BankCheckRange(
+            payments_range.bottom_left_cell.offset(3),
+            bank_activity,
+            payments_range.pnl_cell
+        )
         self.workbook.batch_update(
             self._general_format_requests
         )
         format_requests = (
                 vat_reclaim_fraction_range.format_requests +
-                payments_range.format_requests
+                payments_range.format_requests +
+                bank_check_range.format_requests
         )
         self.workbook.batch_update(
             format_requests
@@ -494,6 +542,6 @@ class VATReturnsTab(Tab):
             self.collapse_all_groups_requests()
         )
 
-        values = vat_reclaim_fraction_range.values + payments_range.values
+        values = vat_reclaim_fraction_range.values + payments_range.values + bank_check_range.values
 
         self.workbook.batch_update_values(values.ranges_and_values)

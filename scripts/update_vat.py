@@ -1,4 +1,5 @@
 from airtable_db import VortexDB
+from bank_statements import BankActivity
 from bank_statements.bank_account import CURRENT_ACCOUNT
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
@@ -21,6 +22,7 @@ def update_tab_for_month(month: Month, force: bool):
         ).transaction_infos_from_tab()
 
     period = SimpleDateRange(accounting_months[0].first_day, accounting_months[-1].last_day)
+    bank_activity = BankActivity.build(force=force).restrict_to_account(CURRENT_ACCOUNT).restrict_to_period(period)
 
     tab = VATReturnsTab(Workbook(VAT_RETURNS_ID), months)
     gigs_info = VortexDB().gigs_info_for_period(period, force=force)
@@ -28,7 +30,7 @@ def update_tab_for_month(month: Month, force: bool):
     #     gi = VortexDB().gigs_info_for_period(m, force=force)
     #     print(f"Month: {m}, num gigs {len(gi.contracts_and_events)}, {gi.total_ticket_sales}")
     # print(f"Num contracts: {len(gigs_info.contracts_and_events)}")
-    tab.update(categorized_transactions, gigs_info)
+    tab.update(categorized_transactions, gigs_info, bank_activity)
 
 if __name__ == '__main__':
     update_tab_for_month(Month(2023, 8), force=True)
