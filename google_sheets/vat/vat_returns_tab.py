@@ -209,24 +209,21 @@ class WalkInSalesRange(TabRange):
 
 class TotalBarSalesRange(TabRange):
     def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
-                 gigs_info: GigsInfo, include_vat_column: bool, include_reclaimable_vat_column: bool,
-                 include_payee_column: bool):
+                 gigs_info: GigsInfo):
         self.zettle_credit_range = PaymentsRangeForCategory(
             top_left_cell.offset(1),
             categorised_transactions,
             PayeeCategory.ZETTLE_CREDITS,
             reclaimable_vat_fraction_cell=None,
-            include_vat_column=include_vat_column,
-            include_reclaimable_vat_column=include_reclaimable_vat_column,
-            include_payee_column=include_payee_column
+            include_vat_column=True,
+            include_reclaimable_vat_column=True,
+            include_payee_column=True
         )
         self.walk_in_sales_range = WalkInSalesRange(
             self.zettle_credit_range.bottom_left_cell.offset(num_rows=1),
             gigs_info,
             right_align_title=True,
         )
-        self.include_vat_column: bool = checked_type(include_vat_column, bool)
-        self.include_reclaimable_vat_column: bool = checked_type(include_reclaimable_vat_column, bool)
         super().__init__(top_left_cell,
                          1 + self.zettle_credit_range.num_rows + self.walk_in_sales_range.num_rows,
                          5)
@@ -234,8 +231,6 @@ class TotalBarSalesRange(TabRange):
     @property
     def format_requests(self):
         requests = [
-            # self.outline_border_request(style="SOLID"),
-            # self[0].offset(self.num_rows).border_request(["top"], style="SOLID"),
             self[0, 0].set_bold_text_request(),
             self.tab.group_rows_request(self.i_first_row + 1, self.i_first_row + self.num_rows - 1),
         ]
@@ -248,10 +243,8 @@ class TotalBarSalesRange(TabRange):
         zettle_cell, walk_in_cell = [r.top_left_cell.offset(0, 1).cell_coordinates.text for r in
                                      [self.zettle_credit_range, self.walk_in_sales_range]]
         bar_sales_cell = self.top_left_cell.offset(0, 1).cell_coordinates.text
-        top_row = ["Total Bar Sales", f"={zettle_cell} - {walk_in_cell}", f"={bar_sales_cell} / 6"]
-        if self.include_reclaimable_vat_column:
-            top_row.append(f"={bar_sales_cell} / 6")
-        top_row.append("")
+        top_row = ["Total Bar Sales", f"={zettle_cell} - {walk_in_cell}", f"={bar_sales_cell} / 6",
+                   f"={bar_sales_cell} / 6"]
         return (RangesAndValues([(self[0, :], [top_row])]) +
                 self.zettle_credit_range.values + self.walk_in_sales_range.values)
 
@@ -339,9 +332,7 @@ class CashFlowsRange(TabRange):
             [c for c in self.trans_categories if
              c not in debit_vat_categories and c not in credit_vat_categories and c is not PayeeCategory.ZETTLE_CREDITS]
         )
-        self.bar_sales_range = TotalBarSalesRange(top_left_cell.offset(3), categorised_transactions, gigs_info,
-                                                  include_vat_column=True, include_reclaimable_vat_column=True,
-                                                  include_payee_column=True)
+        self.bar_sales_range = TotalBarSalesRange(top_left_cell.offset(3), categorised_transactions, gigs_info)
         self.vatable_payments_range = PaymentsRangeForCategories(
             self.bar_sales_range.bottom_left_cell.offset(num_rows=1),
             "Vatable Payments",
