@@ -81,6 +81,7 @@ class PayeeCategory(StrEnum):
             PayeeCategory.DONATION, PayeeCategory.INTERNAL_TRANSFER,
             PayeeCategory.MUSIC_VENUE_TRUST, PayeeCategory.MUSICIAN_PAYMENTS, PayeeCategory.PETTY_CASH,
             PayeeCategory.RATES, PayeeCategory.SALARIES, PayeeCategory.SOUND_ENGINEER,
+            PayeeCategory.TICKETWEB_CREDITS,
             PayeeCategory.VAT, PayeeCategory.WORK_PERMITS
         ]:
             return False
@@ -99,7 +100,7 @@ class PayeeCategory(StrEnum):
             PayeeCategory.PRS, PayeeCategory.PIANO_TUNER, PayeeCategory.RENT, PayeeCategory.SECURITY,
             PayeeCategory.SERVICES, PayeeCategory.SLACK, PayeeCategory.SPACE_HIRE, PayeeCategory.SUBSCRIPTIONS,
             PayeeCategory.TELEPHONE, PayeeCategory.THAMES_WATER,
-            PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.WEB_HOST, PayeeCategory.ZETTLE_CREDITS
+            PayeeCategory.WEB_HOST, PayeeCategory.ZETTLE_CREDITS
         ]:
             return True
 
