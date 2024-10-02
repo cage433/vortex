@@ -127,7 +127,8 @@ class PaymentsRangeForCategory(TabRange):
                         row.append("")
                 if self.include_reclaimable_vat_column:
                     if self.show_reclaimable_vat:
-                        if self.category in [PayeeCategory.BAR_STOCK, PayeeCategory.BAR_SNACKS, PayeeCategory.SPACE_HIRE]:
+                        if self.category in [PayeeCategory.BAR_STOCK, PayeeCategory.BAR_SNACKS,
+                                             PayeeCategory.SPACE_HIRE]:
                             reclaimable_vat_formula = f"={amount_cell.in_a1_notation} / 6.0"
                         else:
                             reclaimable_vat_formula = f"={amount_cell.in_a1_notation} / 6.0 * {self.reclaimable_vat_fraction_cell.cell_coordinates.text}"
@@ -141,9 +142,15 @@ class PaymentsRangeForCategory(TabRange):
         return RangesAndValues([(self, values)])
 
 
-class WalkInSalesRange2(TabRange):
+class WalkInSalesRange(TabRange):
 
-    def __init__(self, top_left_cell: TabCell, gigsInfo: GigsInfo):
+    def __init__(
+            self,
+            top_left_cell: TabCell,
+            gigsInfo: GigsInfo,
+            right_align_title: bool,
+    ):
+        self.right_align_title: bool = checked_type(right_align_title, bool)
         self.gigsInfo: GigsInfo = gigsInfo.restrict_to_gigs()
         self.accounting_months = sorted(
             set(AccountingMonth.containing(ce.performance_date) for ce in self.gigsInfo.contracts_and_events))
@@ -160,10 +167,11 @@ class WalkInSalesRange2(TabRange):
     def format_requests(self):
         requests = [
             self[0, 0].set_bold_text_request(),
-            self[0, 0].right_align_text_request(),
             self[:, 1].set_currency_format_request(),
             self.tab.group_rows_request(self.i_first_row + 1, self.i_first_row + self.num_rows - 1),
         ]
+        if self.right_align_title:
+            requests.append(self[0, 0].right_align_text_request(), )
         for i_month, m in enumerate(self.accounting_months):
             month_total_cell = self.month_total_cells[i_month]
             requests += [
@@ -199,7 +207,7 @@ class WalkInSalesRange2(TabRange):
         return RangesAndValues([(self, values)])
 
 
-class TotalBarSalesRange2(TabRange):
+class TotalBarSalesRange(TabRange):
     def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
                  gigs_info: GigsInfo, include_vat_column: bool, include_reclaimable_vat_column: bool,
                  include_payee_column: bool):
@@ -212,9 +220,11 @@ class TotalBarSalesRange2(TabRange):
             include_reclaimable_vat_column=include_reclaimable_vat_column,
             include_payee_column=include_payee_column
         )
-        self.walk_in_sales_range = WalkInSalesRange2(
+        self.walk_in_sales_range = WalkInSalesRange(
             self.zettle_credit_range.bottom_left_cell.offset(num_rows=1),
-            gigs_info)
+            gigs_info,
+            right_align_title=True,
+        )
         self.include_vat_column: bool = checked_type(include_vat_column, bool)
         self.include_reclaimable_vat_column: bool = checked_type(include_reclaimable_vat_column, bool)
         super().__init__(top_left_cell,
@@ -244,8 +254,6 @@ class TotalBarSalesRange2(TabRange):
         top_row.append("")
         return (RangesAndValues([(self[0, :], [top_row])]) +
                 self.zettle_credit_range.values + self.walk_in_sales_range.values)
-
-
 
 
 class PaymentsRangeForCategories(TabRange):
@@ -331,9 +339,9 @@ class CashFlowsRange(TabRange):
             [c for c in self.trans_categories if
              c not in debit_vat_categories and c not in credit_vat_categories and c is not PayeeCategory.ZETTLE_CREDITS]
         )
-        self.bar_sales_range = TotalBarSalesRange2(top_left_cell.offset(3), categorised_transactions, gigs_info,
-                                                   include_vat_column=True, include_reclaimable_vat_column=True,
-                                                   include_payee_column=True)
+        self.bar_sales_range = TotalBarSalesRange(top_left_cell.offset(3), categorised_transactions, gigs_info,
+                                                  include_vat_column=True, include_reclaimable_vat_column=True,
+                                                  include_payee_column=True)
         self.vatable_payments_range = PaymentsRangeForCategories(
             self.bar_sales_range.bottom_left_cell.offset(num_rows=1),
             "Vatable Payments",
@@ -355,9 +363,10 @@ class CashFlowsRange(TabRange):
             categorised_transactions,
             reclaimable_vat_cell
         )
-        self.walk_in_sales_range = WalkInSalesRange2(
+        self.walk_in_sales_range = WalkInSalesRange(
             self.non_vatable_range.bottom_left_cell.offset(num_rows=1),
-            gigs_info
+            gigs_info,
+            right_align_title=False
         )
 
         self.child_ranges = [self.bar_sales_range, self.vatable_payments_range,
@@ -413,8 +422,8 @@ class VatReclaimFractionRange(TabRange):
             include_reclaimable_vat_column=False,
             include_payee_column=True
         )
-        self.walk_in_sales_range = WalkInSalesRange2(self.zettle_credit_range.bottom_left_cell.offset(num_rows=1),
-                                                     gigs_info)
+        self.walk_in_sales_range = WalkInSalesRange(self.zettle_credit_range.bottom_left_cell.offset(num_rows=1),
+                                                    gigs_info, right_align_title=True)
         self.ticket_web_credits_range = PaymentsRangeForCategory(
             self.walk_in_sales_range.bottom_left_cell.offset(num_rows=1),
             categorised_transactions,
@@ -464,8 +473,6 @@ class VatReclaimFractionRange(TabRange):
         for r in self.child_ranges:
             vs += r.values
         return vs
-
-
 
 
 class VATReturnsTab(Tab):
