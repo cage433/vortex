@@ -69,6 +69,7 @@ class PayeeCategory(StrEnum):
     TELEPHONE = "Telephone"
     THAMES_WATER = "Thames Water"
     TICKETWEB_CREDITS = "Ticketweb Credits"
+    TICKET_SALES = "Ticket sales"
     UTILITIES = "Utilities"
     VAT = "VAT"
     WEB_HOST = "Web Host"
@@ -485,3 +486,8 @@ def category_for_transaction(transaction: Transaction) -> Optional[PayeeCategory
             _maybe_work_permit(transaction) or
             _maybe_zettle_credits(transaction)
             )
+
+if __name__ == '__main__':
+    cat = PayeeCategory.WORK_PERMITS
+    print(type(cat))
+    print(cat == "Work Permits")

@@ -137,6 +137,8 @@ class StatementsTab(Tab):
         ])
 
     def transaction_infos_from_tab(self) -> List[CategorizedTransaction]:
+        # The Kashflow categories differ slightly from Tim's payee categories.
+        # For now we'll map them, but eventually we can probably just use the Kashflow categories.
         def to_payee_category(cell_value) -> Optional[PayeeCategory]:
             if isinstance(cell_value, str) and cell_value.strip() == "":
                 return None

@@ -1,23 +1,18 @@
 from decimal import Decimal
-from numbers import Number
 from typing import List
 
 from accounting.accounting_activity import AccountingActivity
 from airtable_db.gigs_info import GigsInfo
-from airtable_db.table_columns import TicketPriceLevel
 from bank_statements import BankActivity
 from bank_statements.bank_account import CHARITABLE_ACCOUNT, CURRENT_ACCOUNT, SAVINGS_ACCOUNT, BBL_ACCOUNT
-from bank_statements.categorized_transaction import CategorizedTransaction
+from bank_statements.categorized_transaction import CategorizedTransactions
 from bank_statements.payee_categories import PayeeCategory
 from date_range import DateRange
 from date_range.accounting_month import AccountingMonth
 from date_range.week import Week
-from env import CHARITABLE_ACCOUNT_ID, BBL_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, CURRENT_ACCOUNT_ID
-from google_sheets.tab_range import TabRange, TabCell
-from google_sheets.accounts.constants import MONTHLY_FOWLERS_ALARM, MONTHLY_RENT, \
-    MONTHLY_RENTOKILL, MONTHLY_WASTE_COLLECTION, MONTHLY_BIN_HIRE_EX_VAT, MONTHLY_DOOR_SECURITY, GRANTS, PRS_PAYMENTS, \
+from google_sheets.accounts.constants import GRANTS, PRS_PAYMENTS, \
     INSURANCE_PAYMENTS
-from kashflow.nominal_ledger import NominalLedger, NominalLedgerItemType
+from google_sheets.tab_range import TabRange, TabCell
 from utils import checked_type, checked_list_type
 
 
@@ -41,6 +36,7 @@ class AccountingReportRange(TabRange):
         # Bank accounts
         "", "", "", "",
         "Expected Bank Balance Change",
+        "", "", "", "", "",
         "Gig P&L",
         # Ticket sales
         "", "", "", "", "",
@@ -60,6 +56,8 @@ class AccountingReportRange(TabRange):
         # Costs
         "Regular Costs", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "",
     ]
     CAT_1_HEADINGS = [
         "", "", "",
@@ -80,6 +78,11 @@ class AccountingReportRange(TabRange):
         "Current", "Savings", "BBL", "Charitable",
         # Expected Bank P&L
         "",
+        "Bank Ticket Sales",
+        "Walk in Sales",
+        "Ticket Sales Discrepancy",
+        "Uncategorised Transactions",
+        "Unexplained Bank Movements",
         # Gig P&L
         "",
         "Ticket Sales",
@@ -111,6 +114,23 @@ class AccountingReportRange(TabRange):
         "Alarm (Fowler's)",
         "Equipment Maintenance",
         "Kashflow",
+        "Administration",
+        "Airtable",
+        "BT",
+        "Donation",
+        "Equipment Hire",
+        "Fire Alarm",
+        "Internal Transfer",
+        "Mailchimp",
+        "Licensing - Direct",
+        "Memberships",
+        "Music Venue Trust",
+        "Petty Cash",
+        "Slack",
+        "Subscriptions",
+        "Thames Water",
+        "Utilities",
+        "Web Host",
     ]
     CAT_2_HEADINGS = [
         "", "", "",
@@ -131,6 +151,7 @@ class AccountingReportRange(TabRange):
         "", "", "", "",
         # Expected Bank P&L
         "",
+        "", "", "", "", "",
         # Gig P&L
         "",
         # Ticket sales (money)
@@ -161,35 +182,58 @@ class AccountingReportRange(TabRange):
         # Costs
         "", "", "", "", "", "",
         "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "",
     ]
     (TITLE, PERIOD_START, PERIOD,
+
+     # P&L
      P_AND_L,
-     CAP_EX, BUILDING_WORKS, DOWNSTAIRS_WORKS, EQUIPMENT_PURCHASE,
+
+     # CAP EX
+     CAP_EX,
+     BUILDING_WORKS, DOWNSTAIRS_WORKS, EQUIPMENT_PURCHASE,
+
+     # Other credits
      GRANTS,
      INSURANCE_COMP,
      PRS_SPECIAL,
      FLOOD_CLEARANCE,
-     BANK_P_AND_L, CURRENT_ACC_P_AND_L, SAVINGS_ACC_P_AND_L, BBL_P_AND_L, CHARITABLE_ACC_P_AND_L,
+
+     # Bank accounts
+     BANK_P_AND_L,
+     CURRENT_ACC_P_AND_L, SAVINGS_ACC_P_AND_L, BBL_P_AND_L, CHARITABLE_ACC_P_AND_L,
+
      EXPECTED_BANK_P_AND_L,
+     BANK_TICKET_SALES,
+     WALK_IN_SALES,
+     TICKET_SALES_DISCREPANCY,
+     UNCATEGORISED_TRANSACTIONS,
+     UNEXPLAINED_BANK_MOVEMENTS,
+
+     # Gig P&L
      GIG_P_AND_L,
-     TICKET_SALES_TOTAL, FULL_PRICE_SALES, MEMBER_SALES, CONC_SALES, OTHER_TICKET_SALES,
-     GIG_COSTS, MUSICIAN_FEES,
-     SECURITY,
-     SOUND_ENGINEERING, PRS, MARKETING,
-     WORK_PERMITS,
-     PIANO_TUNING,
-     OTHER_COSTS, ACCOMMODATION, TRAVEL, CATERING,
+     TICKET_SALES_TOTAL,
+     FULL_PRICE_SALES, MEMBER_SALES, CONC_SALES, OTHER_TICKET_SALES,
+     GIG_COSTS,
+     MUSICIAN_FEES, SECURITY, SOUND_ENGINEERING, PRS, MARKETING, WORK_PERMITS, PIANO_TUNING,
+     OTHER_COSTS,
+     ACCOMMODATION, TRAVEL, CATERING,
 
-     HIRE_FEES, EVENING_HIRE_FEES, DAY_HIRE_FEES,
+     # Hire fees
+     HIRE_FEES,
+     EVENING_HIRE_FEES, DAY_HIRE_FEES,
 
-     BAR_P_AND_L, BAR_SALES, BAR_PURCHASES, ZETTLE_FEES,
+     # Bar
+     BAR_P_AND_L,
+     BAR_SALES, BAR_PURCHASES, ZETTLE_FEES,
 
+     # Other costs
      RATES,
      SALARIES,
      RENT,
      OPERATIONAL_COSTS,
      BUILDING_MAINTENANCE,
-
      VAT_PAYMENTS,
      COSTS_TOTAL,
      DAILY_CLEANING,
@@ -207,6 +251,23 @@ class AccountingReportRange(TabRange):
      FOWLERS_ALARM,
      EQUIPMENT_MAINTENANCE,
      KASHFLOW,
+     ADMINISTRATION,
+     AIRTABLE,
+     BT,
+     DONATION,
+     EQUIPMENT_HIRE,
+     FIRE_ALARM,
+     INTERNAL_TRANSFER,
+     MAILCHIMP,
+     LICENSING_DIRECT,
+     MEMBERSHIPS,
+     MUSIC_VENUE_TRUST,
+     PETTY_CASH,
+     SLACK,
+     SUBSCRIPTIONS,
+     THAMES_WATER,
+     UTILITIES,
+     WEB_HOST
 
      ) = range(len(ROW_HEADINGS))
 
@@ -219,6 +280,7 @@ class AccountingReportRange(TabRange):
             periods: List[DateRange],
             period_titles: List[str],
             accounting_activity: AccountingActivity,
+            categorized_transactions: CategorizedTransactions,
             vat_rate: float
     ):
         super().__init__(top_left_cell, len(self.ROW_HEADINGS), len(periods) + 4)
@@ -230,30 +292,22 @@ class AccountingReportRange(TabRange):
             accounting_activity.gigs_info.restrict_to_period(period)
             for period in self.periods
         ]
-        self.ledger_by_sub_period: list[NominalLedger] = [
-            accounting_activity.nominal_ledger.restrict_to_period(period)
-            for period in self.periods
-        ]
+        # self.ledger_by_sub_period: list[NominalLedger] = [
+        #     accounting_activity.nominal_ledger.restrict_to_period(period)
+        #     for period in self.periods
+        # ]
         self.bank_activity_by_sub_period: list[BankActivity] = [
             accounting_activity.bank_activity.restrict_to_period(period)
             for period in self.periods
         ]
-        self.categorized_transactions_by_sub_period: list[list[CategorizedTransaction]] = [
-            [CategorizedTransaction.heuristic(t) for t in
-             accounting_activity.bank_activity.restrict_to_period(period).sorted_transactions]
+        self.categorized_transactions_by_sub_period: list[CategorizedTransactions] = [
+            categorized_transactions.restrict_to_period(period)
             for period in self.periods
         ]
-        self.vat_rate: float = checked_type(vat_rate, Number)
+        self.vat_rate: float = 0.0  # checked_type(vat_rate, Number)
         self.LAST_PERIOD = self.PERIOD_1 + self.num_periods - 1
         self.TO_DATE = self.PERIOD_1 + self.num_periods
         self.NUM_ROWS = len(self.ROW_HEADINGS)
-
-    @staticmethod
-    def net_amount_for_category(categorized_transactions: list[CategorizedTransaction], category: str) -> Decimal:
-
-        return sum(
-            t.transaction.amount for t in categorized_transactions if t.category == category
-        )
 
     def format_requests(self):
         return [
@@ -276,8 +330,9 @@ class AccountingReportRange(TabRange):
                                         self.i_first_row + self.CHARITABLE_ACC_P_AND_L),
 
             self[self.FLOOD_CLEARANCE].border_request(["bottom"]),
-            self[self.EXPECTED_BANK_P_AND_L].border_request(["bottom"]),
-
+            self[self.UNEXPLAINED_BANK_MOVEMENTS].border_request(["bottom"]),
+            self.tab.group_rows_request(self.i_first_row + self.BANK_TICKET_SALES,
+                                        self.i_first_row + self.UNEXPLAINED_BANK_MOVEMENTS),
             # Gig P&L
             self.tab.group_rows_request(self.i_first_row + self.TICKET_SALES_TOTAL,
                                         self.i_first_row + self.CATERING),
@@ -306,7 +361,7 @@ class AccountingReportRange(TabRange):
                                         self.i_first_row + self.EQUIPMENT_PURCHASE),
             # Costs
             self.tab.group_rows_request(self.i_first_row + self.DAILY_CLEANING,
-                                        self.i_first_row + self.KASHFLOW),
+                                        self.i_first_row + self.WEB_HOST),
 
             # last row
             self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
@@ -352,24 +407,29 @@ class AccountingReportRange(TabRange):
             (
                 self.period_range(self.TICKET_SALES_TOTAL),
                 [
-                    f"=SUM({self[self.FULL_PRICE_SALES:self.OTHER_TICKET_SALES + 1, i_col].in_a1_notation})"
-                    for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1)
+                    ct.total_for(PayeeCategory.TICKET_SALES, PayeeCategory.TICKETWEB_CREDITS)
+                    + Decimal(gi.total_walk_in_sales)
+                    for ct, gi in zip(self.categorized_transactions_by_sub_period, self.gigs_by_sub_period)
                 ]
+                # [
+                #     f"=SUM({self[self.FULL_PRICE_SALES:self.OTHER_TICKET_SALES + 1, i_col].in_a1_notation})"
+                #     for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1)
+                # ]
             )
         ]
-        for i_row, level in [
-            (self.FULL_PRICE_SALES, TicketPriceLevel.FULL),
-            (self.MEMBER_SALES, TicketPriceLevel.MEMBER),
-            (self.CONC_SALES, TicketPriceLevel.CONCESSION)
-        ]:
-            values.append(
-                (self.period_range(i_row), [gig.ticket_sales(level) for gig in self.gigs_by_sub_period])
-            )
-
-        # Other ticket sales
-        values.append(
-            (self.period_range(self.OTHER_TICKET_SALES), [gig.other_ticket_sales for gig in self.gigs_by_sub_period])
-        )
+        # for i_row, level in [
+        #     (self.FULL_PRICE_SALES, TicketPriceLevel.FULL),
+        #     (self.MEMBER_SALES, TicketPriceLevel.MEMBER),
+        #     (self.CONC_SALES, TicketPriceLevel.CONCESSION)
+        # ]:
+        #     values.append(
+        #         (self.period_range(i_row), [gig.ticket_sales(level) for gig in self.gigs_by_sub_period])
+        #     )
+        #
+        # # Other ticket sales
+        # values.append(
+        #     (self.period_range(self.OTHER_TICKET_SALES), [gig.other_ticket_sales for gig in self.gigs_by_sub_period])
+        # )
         return values
 
     def sum_formula(self, first_row: int, last_row: int, i_col: int):
@@ -377,37 +437,50 @@ class AccountingReportRange(TabRange):
 
     def _gig_costs_values(self):
         values = []
-        for (i_row, func) in [
-            (self.MUSICIAN_FEES, lambda gig: -gig.musicians_fees),
-            (self.ACCOMMODATION, lambda gig: -gig.band_accommodation),
-            (self.TRAVEL, lambda gig: -gig.band_transport),
-            (self.CATERING, lambda gig: -gig.band_catering / (1 + self.vat_rate)),
-            (self.PRS, lambda gig: -gig.prs_fee_ex_vat),
+        for (i_row, category) in [
+            (self.MUSICIAN_FEES, PayeeCategory.MUSICIAN_PAYMENTS),
+            (self.ACCOMMODATION, PayeeCategory.MUSICIAN_COSTS),
+            # (self.TRAVEL, lambda gig: -gig.band_transport),
+            # (self.CATERING, lambda gig: -gig.band_catering / (1 + self.vat_rate)),
+            (self.PRS, PayeeCategory.PRS),
         ]:
             values.append(
-                (self.period_range(i_row), [func(gig) for gig in self.gigs_by_sub_period])
+                (self.period_range(i_row),
+                 [ct.total_for(category) for ct in self.categorized_transactions_by_sub_period])
             )
-        for (i_row, item_type) in [
-            (self.SOUND_ENGINEERING, NominalLedgerItemType.SOUND_ENGINEERING),
-            (self.SECURITY, NominalLedgerItemType.SECURITY),
-            (self.MARKETING, NominalLedgerItemType.MARKETING_INDIRECT),
-            (self.PIANO_TUNING, NominalLedgerItemType.PIANO_TUNING)
+        for (i_row, category, subtract_vat) in [
+            (self.SOUND_ENGINEERING, PayeeCategory.SOUND_ENGINEER, False),
+            (self.PIANO_TUNING, PayeeCategory.PIANO_TUNER, True),
+            (self.WORK_PERMITS, PayeeCategory.WORK_PERMITS, False),
         ]:
+            vat_adjustment = Decimal(1.0 + self.vat_rate) if subtract_vat else Decimal(1.0)
             values.append(
-                (self.period_range(i_row), [ledger.total_for(item_type) for ledger in self.ledger_by_sub_period])
+                (
+                    self.period_range(i_row),
+                    [ct.total_for(category) / vat_adjustment for ct in
+                     self.categorized_transactions_by_sub_period]
+                )
             )
 
         values.append(
-            (self.period_range(self.WORK_PERMITS),
-             [self.net_amount_for_category(categorized_transactions, PayeeCategory.WORK_PERMITS)
-              for categorized_transactions in self.categorized_transactions_by_sub_period])
+            (
+                self.period_range(self.MARKETING),
+                [
+                    cat_trans.total_for(PayeeCategory.MARKETING_INDIRECT, PayeeCategory.MARKETING_DIRECT)
+                    for cat_trans in
+                    self.categorized_transactions_by_sub_period
+                ]
+            )
         )
         values.append(
-            (self.period_range(self.MARKETING),
-             [self.net_amount_for_category(categorized_transactions, PayeeCategory.MARKETING_INDIRECT) +
-              ledger.total_for(NominalLedgerItemType.MARKETING_INDIRECT)
-              for categorized_transactions, ledger in
-              zip(self.categorized_transactions_by_sub_period, self.ledger_by_sub_period)])
+            (
+                self.period_range(self.SECURITY),
+                [
+                    cat_trans.total_for(PayeeCategory.BUILDING_SECURITY, PayeeCategory.SECURITY)
+                    for cat_trans in
+                    self.categorized_transactions_by_sub_period
+                ]
+            )
         )
 
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
@@ -426,24 +499,21 @@ class AccountingReportRange(TabRange):
         return values
 
     def _hire_fee_values(self):
+        # values = [
+        #     (
+        #         self.period_range(self.HIRE_FEES),
+        #         [
+        #             f"=SUM({self[self.EVENING_HIRE_FEES:self.DAY_HIRE_FEES + 1, i_col].in_a1_notation})"
+        #             for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1)
+        #         ]
+        #     )
+        # ]
         values = [
             (
                 self.period_range(self.HIRE_FEES),
-                [
-                    f"=SUM({self[self.EVENING_HIRE_FEES:self.DAY_HIRE_FEES + 1, i_col].in_a1_notation})"
-                    for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1)
-                ]
-            )
-        ]
-        values += [
-            (
-                self.period_range(self.EVENING_HIRE_FEES),
-                [gigs_info.excluding_hires.hire_fees / (1 + self.vat_rate) for gigs_info in self.gigs_by_sub_period]
+                [ct.total_for(PayeeCategory.SPACE_HIRE) / Decimal(1 + self.vat_rate) for ct in
+                 self.categorized_transactions_by_sub_period]
             ),
-            (
-                self.period_range(self.DAY_HIRE_FEES),
-                [ledger.total_for(NominalLedgerItemType.SPACE_HIRE) for ledger in self.ledger_by_sub_period]
-            )
         ]
         return values
 
@@ -489,29 +559,39 @@ class AccountingReportRange(TabRange):
         values += [
             (
                 self.period_range(self.BAR_SALES),
-                [gig.bar_takings / (1 + self.vat_rate) for gig in self.gigs_by_sub_period]
+                [
+                    ct.total_for(PayeeCategory.ZETTLE_CREDITS) - Decimal(gi.total_walk_in_sales)
+                    for ct, gi in zip(self.categorized_transactions_by_sub_period, self.gigs_by_sub_period)
+                ]
+                # [gig.bar_takings / (1 + self.vat_rate) for gig in self.gigs_by_sub_period]
             ),
             (
                 self.period_range(self.BAR_PURCHASES),
-                [ledger.total_for(NominalLedgerItemType.BAR_STOCK) for ledger in self.ledger_by_sub_period]
+                [
+                    ct.total_for(PayeeCategory.BAR_STOCK, PayeeCategory.BAR_SNACKS) / Decimal(1 + self.vat_rate)
+                    for ct in self.categorized_transactions_by_sub_period
+                ]
             ),
             (
                 self.period_range(self.ZETTLE_FEES),
-                [self.net_amount_for_category(categorized_transactions, PayeeCategory.CREDIT_CARD_FEES)
-                 for categorized_transactions in self.categorized_transactions_by_sub_period]
+                [
+                    cat_trans.total_for(PayeeCategory.CREDIT_CARD_FEES)
+                    for cat_trans in self.categorized_transactions_by_sub_period
+                ]
             )
         ]
         return values
 
     def _cap_ex_values(self):
         values = []
-        for (i_row, ledger_item) in [
-            (self.BUILDING_WORKS, NominalLedgerItemType.BUILDING_WORKS),
-            (self.DOWNSTAIRS_WORKS, NominalLedgerItemType.DOWNSTAIRS_BUILDING_WORKS),
-            (self.EQUIPMENT_PURCHASE, NominalLedgerItemType.EQUIPMENT_PURCHASE),
+        for (i_row, category) in [
+            (self.BUILDING_WORKS, PayeeCategory.BUILDING_MAINTENANCE),
+            (self.EQUIPMENT_PURCHASE, PayeeCategory.EQUIPMENT_PURCHASE),
         ]:
             values.append(
-                (self.period_range(i_row), [ledger.total_for(ledger_item) for ledger in self.ledger_by_sub_period])
+                (self.period_range(i_row),
+                 [ct.total_for(category) / Decimal(1.0 + self.vat_rate) for ct in
+                  self.categorized_transactions_by_sub_period])
             )
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
             values.append(
@@ -524,11 +604,13 @@ class AccountingReportRange(TabRange):
 
     def _exceptional_values(self):
         values = []
-        for (i_row, ledger_item) in [
-            (self.FLOOD_CLEARANCE, NominalLedgerItemType.FLOOD_CLEARANCE),
+        for (i_row, category) in [
+            (self.FLOOD_CLEARANCE, PayeeCategory.FLOOD),
         ]:
             values.append(
-                (self.period_range(i_row), [ledger.total_for(ledger_item) for ledger in self.ledger_by_sub_period])
+                (self.period_range(i_row),
+                 [ct.total_for(category) / Decimal(1.0 + self.vat_rate) for ct in
+                  self.categorized_transactions_by_sub_period])
             )
         return values
 
@@ -548,53 +630,69 @@ class AccountingReportRange(TabRange):
                 return monthly_cost
 
         values += [
-            (self.period_range(self.RENT), [period_cost(-MONTHLY_RENT) for _ in range(self.num_periods)]),
-            (self.period_range(self.RENTOKIL), [period_cost(-MONTHLY_RENTOKILL) for _ in range(self.num_periods)]),
-            (self.period_range(self.WASTE_COLLECTION),
-             [period_cost(-MONTHLY_WASTE_COLLECTION) for _ in range(self.num_periods)]),
-            (
-                self.period_range(self.BIN_HIRE),
-                [period_cost(-MONTHLY_BIN_HIRE_EX_VAT) for _ in range(self.num_periods)]),
-            (self.period_range(self.CONSOLIDATED_DOOR_SECURITY),
-             [period_cost(-MONTHLY_DOOR_SECURITY) for _ in range(self.num_periods)]),
-            (self.period_range(self.FOWLERS_ALARM),
-             [period_cost(-MONTHLY_FOWLERS_ALARM) for _ in range(self.num_periods)]),
+            # (self.period_range(self.RENT), [period_cost(-MONTHLY_RENT) for _ in range(self.num_periods)]),
+            # (self.period_range(self.RENTOKIL), [period_cost(-MONTHLY_RENTOKILL) for _ in range(self.num_periods)]),
+            # (self.period_range(self.WASTE_COLLECTION),
+            #  [period_cost(-MONTHLY_WASTE_COLLECTION) for _ in range(self.num_periods)]),
+            # (
+            #     self.period_range(self.BIN_HIRE),
+            #     [period_cost(-MONTHLY_BIN_HIRE_EX_VAT) for _ in range(self.num_periods)]),
+            # (self.period_range(self.CONSOLIDATED_DOOR_SECURITY),
+            #  [period_cost(-MONTHLY_DOOR_SECURITY) for _ in range(self.num_periods)]),
+            # (self.period_range(self.FOWLERS_ALARM),
+            #  [period_cost(-MONTHLY_FOWLERS_ALARM) for _ in range(self.num_periods)]),
         ]
-        for (i_row, ledger_item) in [
-            (self.TELEPHONE, NominalLedgerItemType.TELEPHONE),
-            (self.SALARIES, NominalLedgerItemType.STAFF_COSTS),
-            (self.DAILY_CLEANING, NominalLedgerItemType.CLEANING),
-            (self.BUILDING_MAINTENANCE, NominalLedgerItemType.BUILDING_MAINTENANCE),
-            (self.EQUIPMENT_PURCHASE, NominalLedgerItemType.EQUIPMENT_PURCHASE),
-            (self.EQUIPMENT_MAINTENANCE, NominalLedgerItemType.EQUIPMENT_MAINTENANCE),
-            (self.OPERATIONAL_COSTS, NominalLedgerItemType.OPERATIONAL_COSTS),
-            (self.LICENSING_INDIRECT, NominalLedgerItemType.LICENSING_INDIRECT),
-        ]:
-            values.append(
-                (self.period_range(i_row), [ledger.total_for(ledger_item) for ledger in self.ledger_by_sub_period])
-            )
-
         for (i_row, category, subtract_vat) in [
+            # (self.RENTOKIL, PayeeCategory.RENT, False),
+            (self.RENT, PayeeCategory.RENT, False),
+            (self.TELEPHONE, PayeeCategory.TELEPHONE, True),
+            (self.SALARIES, PayeeCategory.SALARIES, False),
+            (self.DAILY_CLEANING, PayeeCategory.CLEANING, True),
+            (self.EQUIPMENT_HIRE, PayeeCategory.EQUIPMENT_HIRE, True),
+            (self.FIRE_ALARM, PayeeCategory.FIRE_ALARM, True),
+            (self.INTERNAL_TRANSFER, PayeeCategory.INTERNAL_TRANSFER, False),
+            (self.MAILCHIMP, PayeeCategory.MAILCHIMP, False),
+            (self.EQUIPMENT_MAINTENANCE, PayeeCategory.EQUIPMENT_MAINTENANCE, True),
+            (self.OPERATIONAL_COSTS, PayeeCategory.OPERATIONAL_COSTS, True),
+            (self.BUILDING_MAINTENANCE, PayeeCategory.BUILDING_MAINTENANCE, True),
+            (self.LICENSING_INDIRECT, PayeeCategory.LICENSING_INDIRECT, True),
+            (self.LICENSING_DIRECT, PayeeCategory.LICENSING_DIRECT, True),
+            (self.MEMBERSHIPS, PayeeCategory.MEMBERSHIPS, True),
+            (self.MUSIC_VENUE_TRUST, PayeeCategory.MUSIC_VENUE_TRUST, True),
+            (self.PETTY_CASH, PayeeCategory.PETTY_CASH, True),
+            (self.SLACK, PayeeCategory.SLACK, True),
+            (self.SUBSCRIPTIONS, PayeeCategory.SUBSCRIPTIONS, True),
+            (self.THAMES_WATER, PayeeCategory.THAMES_WATER, True),
+            (self.UTILITIES, PayeeCategory.UTILITIES, True),
+            (self.WEB_HOST, PayeeCategory.WEB_HOST, True),
             (self.RATES, PayeeCategory.RATES, False),
             (self.ELECTRICITY, PayeeCategory.ELECTRICITY, True),
             (self.INSURANCE, PayeeCategory.INSURANCE, False),
             (self.KASHFLOW, PayeeCategory.KASHFLOW, True),
+            (self.ADMINISTRATION, PayeeCategory.ADMINISTRATION, True),
+            (self.AIRTABLE, PayeeCategory.AIRTABLE, True),
+            (self.BT, PayeeCategory.BT, True),
+            (self.DONATION, PayeeCategory.DONATION, False),
             (self.BB_LOAN, PayeeCategory.BB_LOAN, False),
             (self.BANK_FEES, PayeeCategory.BANK_FEES, False),
             (self.BANK_INTEREST, PayeeCategory.BANK_INTEREST, False),
         ]:
-            vat_adjustment = Decimal(1.2) if subtract_vat else Decimal(1.0)
+            vat_adjustment = Decimal(1.0 + self.vat_rate) if subtract_vat else Decimal(1.0)
             values.append(
-                (self.period_range(i_row),
-                 [self.net_amount_for_category(categorized_transactions, category) / vat_adjustment
-                  for categorized_transactions in self.categorized_transactions_by_sub_period])
+                (
+                    self.period_range(i_row),
+                    [
+                        cat_trans.total_for(category) / vat_adjustment
+                        for cat_trans in self.categorized_transactions_by_sub_period
+                    ]
+                )
             )
 
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
             values.append(
                 (
                     self[self.COSTS_TOTAL, i_col],
-                    f"={self.sum_formula(self.DAILY_CLEANING, self.KASHFLOW, i_col)}"
+                    f"={self.sum_formula(self.DAILY_CLEANING, self.WEB_HOST, i_col)}"
                 )
             )
         return values
@@ -611,7 +709,7 @@ class AccountingReportRange(TabRange):
             (
                 self.period_range(self.VAT_PAYMENTS),
                 [
-                    ba.total_vat_payments for ba in self.bank_activity_by_sub_period
+                    ba.total_for(PayeeCategory.VAT) for ba in self.categorized_transactions_by_sub_period
                 ]
             ),
 
@@ -665,6 +763,38 @@ class AccountingReportRange(TabRange):
             )
         return values
 
+    def _bank_balance_changes_values(self):
+        values = [
+            (
+                self.period_range(self.BANK_TICKET_SALES),
+                [
+                    ct.total_for(PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.TICKET_SALES) for ct in
+                    self.categorized_transactions_by_sub_period
+                ]
+            ),
+            (
+                self.period_range(self.WALK_IN_SALES),
+                [
+                    gi.total_walk_in_sales for gi in self.gigs_by_sub_period
+                ]
+            ),
+            (
+                self.period_range(self.TICKET_SALES_DISCREPANCY),
+                [
+                    f"={self[self.TICKET_SALES_TOTAL, i_col].in_a1_notation} - ({self[self.BANK_TICKET_SALES, i_col].in_a1_notation} - {self[self.WALK_IN_SALES, i_col].in_a1_notation})"
+                    for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1)
+                ]
+            ),
+            (
+                self.period_range(self.UNCATEGORISED_TRANSACTIONS),
+                [
+                    ct.total_for(None) for ct in self.categorized_transactions_by_sub_period
+                ]
+            ),
+
+        ]
+        return values
+
     def values(self):
         values = self._heading_values() \
                  + self._ticket_sales_values() \
@@ -675,6 +805,7 @@ class AccountingReportRange(TabRange):
                  + self._costs_values() \
                  + self._cap_ex_values() \
                  + self._exceptional_values() \
-                 + self._p_and_l_values()
+                 + self._p_and_l_values() \
+                 + self._bank_balance_changes_values()
 
         return values

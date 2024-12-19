@@ -135,15 +135,15 @@ class WalkInSalesRange(TabRange):
     def __init__(
             self,
             top_left_cell: TabCell,
-            gigsInfo: GigsInfo,
+            gigs_info: GigsInfo,
             right_align_title: bool,
     ):
         self.right_align_title: bool = checked_type(right_align_title, bool)
-        self.gigsInfo: GigsInfo = gigsInfo.restrict_to_gigs()
+        self.gigs_info: GigsInfo = gigs_info.restrict_to_gigs()
         self.accounting_months = sorted(
-            set(AccountingMonth.containing(ce.performance_date) for ce in self.gigsInfo.contracts_and_events))
-        self.by_month = {m: self.gigsInfo.restrict_to_period(m) for m in self.accounting_months}
-        super().__init__(top_left_cell, num_rows=1 + self.gigsInfo.number_of_gigs + len(self.accounting_months),
+            set(AccountingMonth.containing(ce.performance_date) for ce in self.gigs_info.contracts_and_events))
+        self.by_month = {m: self.gigs_info.restrict_to_period(m) for m in self.accounting_months}
+        super().__init__(top_left_cell, num_rows=1 + self.gigs_info.number_of_gigs + len(self.accounting_months),
                          num_cols=3)
 
         self.month_total_cells = [self[1, 1]]

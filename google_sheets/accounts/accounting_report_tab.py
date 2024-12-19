@@ -1,11 +1,13 @@
 from typing import List
 
 from accounting.accounting_activity import AccountingActivity
+from bank_statements.categorized_transaction import CategorizedTransactions
 from date_range import DateRange
 from date_range.accounting_year import AccountingYear
 from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.accounts.accounting_report_range import AccountingReportRange
+from google_sheets.accounts.accounts_by_category import AccountsByCategoryRange
 from google_sheets.accounts.audience_report_range import AudienceReportRange
 from google_sheets.accounts.bank_activity_range import BankActivityRange
 from google_sheets.accounts.constants import VAT_RATE
@@ -20,16 +22,26 @@ class AccountingReportTab(Tab):
             periods: List[DateRange],
             period_titles: List[str],
             accounting_activity: AccountingActivity,
+            categorized_transactions: CategorizedTransactions,
             show_transactions: bool
     ):
         super().__init__(workbook, tab_name=title)
-        self.report_range = AccountingReportRange(
+        # self.report_range = AccountingReportRange(
+        #     self.cell("B2"),
+        #     title,
+        #     periods,
+        #     period_titles,
+        #     accounting_activity,
+        #     categorized_transactions,
+        #     VAT_RATE
+        # )
+        self.report_range = AccountsByCategoryRange(
             self.cell("B2"),
             title,
             periods,
             period_titles,
             accounting_activity,
-            VAT_RATE
+            categorized_transactions,
         )
         self.audience_numbers_range = AudienceReportRange(
             self.report_range.bottom_left_cell.offset(num_rows=2),
@@ -68,8 +80,11 @@ class AccountingReportTab(Tab):
             self.report_range.raw_values() + self.audience_numbers_range.raw_values(),
             value_input_option="RAW"  # Prevent creation of dates
         )
+        foo = self.report_range.values()
+        bar = self.audience_numbers_range.values()
         self.workbook.batch_update_values(
-            self.report_range.values() + self.audience_numbers_range.values()
+            foo + bar
+            # self.report_range.values() + self.audience_numbers_range.values()
         )
 
         if self.show_transactions:
