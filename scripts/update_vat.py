@@ -33,4 +33,4 @@ def update_tab_for_month(month: Month, force: bool):
     tab.update(categorized_transactions, gigs_info, bank_activity)
 
 if __name__ == '__main__':
-    update_tab_for_month(Month(2023, 8), force=True)
+    update_tab_for_month(Month(2024, 8), force=True)

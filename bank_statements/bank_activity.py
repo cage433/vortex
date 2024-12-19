@@ -106,21 +106,4 @@ class BankActivity:
 
 
 if __name__ == '__main__':
-    acc = BankActivity.build(force=False)
-    acc = acc.restrict_to_period(AccountingYear(2024))
-    dodgy_amount = 374.97
-    print(f"Dodgy = {dodgy_amount}, with 20% = {dodgy_amount * 1.2}")
-
-
-    def trans_is_close(t: Transaction) -> bool:
-        if abs(abs(t.amount) - abs(dodgy_amount)) < 0.10:
-            return True
-
-        if abs(abs(t.amount) - abs(dodgy_amount * 1.2)) < 0.10:
-            return True
-        return False
-
-
-    dodgy_transactions = [t for t in acc.sorted_transactions if trans_is_close(t)]
-    for t in dodgy_transactions:
-        print(t)
+    acc = BankActivity.build(force=True)

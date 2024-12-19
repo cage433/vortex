@@ -118,7 +118,10 @@ class PaymentsRangeForCategory(TabRange):
                         row += [vat_formula, "", ""]
                     else:
                         full_vat_cell = self[i_row + 1 + i_trans, len(row) + 1]
-                        reclaimable_vat_formula = f"={full_vat_cell.in_a1_notation} * {self.reclaimable_vat_fraction_cell.cell_coordinates.text}"
+                        if self.category in [PayeeCategory.BAR_STOCK, PayeeCategory.BAR_SNACKS]:
+                            reclaimable_vat_formula = f"={full_vat_cell.in_a1_notation}"
+                        else:
+                            reclaimable_vat_formula = f"={full_vat_cell.in_a1_notation} * {self.reclaimable_vat_fraction_cell.cell_coordinates.text}"
                         row += ["", vat_formula, reclaimable_vat_formula]
 
                 row.append(t.transaction.payee)
@@ -215,6 +218,7 @@ class TotalBarSalesRange(TabRange):
     def format_requests(self):
         requests = [
             self[0, 0].set_bold_text_request(),
+            self[0, 1:].set_currency_format_request(),
             self.tab.group_rows_request(self.i_first_row + 1, self.i_first_row + self.num_rows - 1),
         ]
         requests += self.zettle_credit_range.format_requests
@@ -244,6 +248,7 @@ class PaymentsRangeForCategories(TabRange):
         self.categories = checked_type(categories, list)
         self.trans_categories = set(t.category for t in categorised_transactions)
         self.categories_to_display = [c for c in self.categories if c in self.trans_categories]
+        self.reclaimable_vat_cell: Optional[TabCell] = checked_optional_type(reclaimable_vat_cell, TabCell)
 
         def payments_range(top_left: TabCell, category: Optional[PayeeCategory]):
             return PaymentsRangeForCategory(
@@ -284,8 +289,9 @@ class PaymentsRangeForCategories(TabRange):
             cells = [r[0, i_col].in_a1_notation for r in self.category_ranges]
             return f"={' + '.join(cells)}"
 
+        sum_cols = range(1, 6) if self.reclaimable_vat_cell is not None else range(1, 3)
         headings = [
-            [self.name] + [sum_cell(i_col) for i_col in range(1, 7)]
+            [self.name] + [sum_cell(i_col) for i_col in sum_cols]
         ]
         vs = RangesAndValues([(self[0], headings)])
         for r in self.category_ranges:

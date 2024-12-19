@@ -81,6 +81,7 @@ class PayeeCategory(StrEnum):
             PayeeCategory.DONATION, PayeeCategory.INTERNAL_TRANSFER,
             PayeeCategory.MUSIC_VENUE_TRUST, PayeeCategory.MUSICIAN_PAYMENTS, PayeeCategory.PETTY_CASH,
             PayeeCategory.RATES, PayeeCategory.SALARIES, PayeeCategory.SOUND_ENGINEER,
+            PayeeCategory.SECURITY,
             PayeeCategory.TICKETWEB_CREDITS,
             PayeeCategory.VAT, PayeeCategory.WORK_PERMITS
         ]:
@@ -97,7 +98,7 @@ class PayeeCategory(StrEnum):
             PayeeCategory.LICENSING_DIRECT, PayeeCategory.LICENSING_INDIRECT,
             PayeeCategory.MAILCHIMP, PayeeCategory.MARKETING_DIRECT, PayeeCategory.MARKETING_INDIRECT,
             PayeeCategory.MEMBERSHIPS, PayeeCategory.MUSICIAN_COSTS, PayeeCategory.OPERATIONAL_COSTS,
-            PayeeCategory.PRS, PayeeCategory.PIANO_TUNER, PayeeCategory.RENT, PayeeCategory.SECURITY,
+            PayeeCategory.PRS, PayeeCategory.PIANO_TUNER, PayeeCategory.RENT,
             PayeeCategory.SERVICES, PayeeCategory.SLACK, PayeeCategory.SPACE_HIRE, PayeeCategory.SUBSCRIPTIONS,
             PayeeCategory.TELEPHONE, PayeeCategory.THAMES_WATER,
             PayeeCategory.WEB_HOST, PayeeCategory.ZETTLE_CREDITS
@@ -376,7 +377,7 @@ def _maybe_mvt(tr: Transaction) -> Optional[str]:
 
 def _maybe_tissues(tr: Transaction) -> Optional[str]:
     if matches_start(tr, "nisbets"):
-        return PayeeCategory.TISSUES
+        return PayeeCategory.OPERATIONAL_COSTS
 
 
 def _maybe_telephone(tr: Transaction) -> Optional[str]:

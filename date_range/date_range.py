@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 
 __all__ = ["DateRange", "ContiguousDateRange"]
@@ -11,30 +13,30 @@ class SplitType(Enum):
     OUTER = 1
     INNER = 2
 
-
 class DateRange(ABC):
     @property
     @abstractmethod
-    def first_day(self) -> 'Day':
+    def first_day(self) -> "Day":
         raise NotImplementedError()
 
     @property
     @abstractmethod
-    def last_day(self) -> 'Day':
+    def last_day(self) -> "Day":
         raise NotImplementedError()
 
-    def contains_day(self, day: 'Day') -> bool:
+    def contains_day(self, day: "Day") -> bool:
         return self.first_day <= day <= self.last_day
 
-    def contains(self, period: 'DateRange') -> bool:
+    def contains(self, period: DateRange) -> bool:
         return self.first_day <= period.first_day and period.last_day <= self.last_day
 
     @property
     def num_days(self) -> int:
         return self.last_day.days_since(self.first_day) + 1
 
-    def intersection(self, rhs: 'DateRange') -> 'Optional[DateRange]':
+    def intersection(self, rhs: "DateRange") -> "Optional[DateRange]":
         from date_range.simple_date_range import SimpleDateRange
+
         first_day = max(self.first_day, rhs.first_day)
         last_day = min(self.last_day, rhs.last_day)
         if first_day > last_day:
@@ -42,7 +44,7 @@ class DateRange(ABC):
         return SimpleDateRange(first_day, last_day)
 
     @property
-    def days(self) -> list['Day']:
+    def days(self) -> list["Day"]:
         ds = []
         d = self.first_day
         while d <= self.last_day:
@@ -50,7 +52,7 @@ class DateRange(ABC):
             d += 1
         return ds
 
-    def split_into(self, period_type, split_type: SplitType) -> List['DateRange']:
+    def split_into(self, period_type, split_type: SplitType) -> List["DateRange"]:
         c = period_type.containing(self.first_day)
         split = [c]
         while c.last_day < self.last_day:
@@ -69,8 +71,8 @@ class DateRange(ABC):
 
 class ContiguousDateRange(DateRange, ABC):
     @abstractmethod
-    def __add__(self, n) -> 'ContiguousDateRange':
+    def __add__(self, n) -> "ContiguousDateRange":
         raise NotImplementedError()
 
-    def __sub__(self, n) -> 'ContiguousDateRange':
+    def __sub__(self, n) -> "ContiguousDateRange":
         return self + (-n)
