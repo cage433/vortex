@@ -58,7 +58,8 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
     uncategorized = [t for t in transaction_infos if t.category is None]
     kashflow_period = SimpleDateRange(month.first_day - 30, month.last_day + 30)
     ledger_items = AccountingActivity.activity_for_period(kashflow_period, force=False, force_bank=False,
-                                                      force_nominal_ledger=False, force_airtable=True).nominal_ledger.ledger_items
+                                                          force_nominal_ledger=False,
+                                                          force_airtable=True).nominal_ledger.ledger_items
 
     for t in uncategorized:
         print()
@@ -99,8 +100,8 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
             print("No candidates found")
 
 
-
 if __name__ == '__main__':
-    month = AccountingMonth.from_calendar_month(Month(2023, 6))
-    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, refresh_bank_activity=False, refresh_sheet=True)
-    compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, month)
+    m = 12
+    month = AccountingMonth.from_calendar_month(Month(2024, m))
+    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, refresh_bank_activity=True, refresh_sheet=True)
+    compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, AccountingMonth.from_calendar_month(Month(2024, m)))

@@ -61,7 +61,6 @@ class StatementsReader:
                     csv_files = list(directory.glob("*.csv"))
                     transactions_for_account = []
                     for file in csv_files:
-                        print(f"Reading {file} for transactions")
                         rows = read_csv_file(file)[1:]
                         for row in rows:
                             day = Day.parse(row[0])

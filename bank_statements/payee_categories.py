@@ -69,6 +69,7 @@ class PayeeCategory(StrEnum):
     TELEPHONE = "Telephone"
     THAMES_WATER = "Thames Water"
     TICKETWEB_CREDITS = "Ticketweb Credits"
+    UTILITIES = "Utilities"
     VAT = "VAT"
     WEB_HOST = "Web Host"
     WORK_PERMITS = "Work Permits"
@@ -168,6 +169,9 @@ def _maybe_electricity(transaction: Transaction) -> Optional[str]:
     if matches_anywhere(transaction, "edf energy"):
         return PayeeCategory.ELECTRICITY
 
+def _maybe_equipment_costs(transaction: Transaction) -> Optional[str]:
+    if matches_start(transaction, "gear4music"):
+        return PayeeCategory.EQUIPMENT_PURCHASE
 
 def _maybe_insurance(transaction: Transaction) -> Optional[str]:
     if matches_start(
@@ -257,6 +261,7 @@ def _maybe_bar_purchases(transaction: Transaction) -> Optional[str]:
     if matches_start(
             transaction,
             [
+                "drinksuper",
                 "dalston local",
                 "east london brew",
                 "flint wines",
@@ -450,6 +455,7 @@ def category_for_transaction(transaction: Transaction) -> Optional[PayeeCategory
             _maybe_cc_fees(transaction) or
             _maybe_cleaning(transaction) or
             _maybe_electricity(transaction) or
+            _maybe_equipment_costs(transaction) or
             _maybe_fire_alarm(transaction) or
             _maybe_host(transaction) or
             _maybe_insurance(transaction) or

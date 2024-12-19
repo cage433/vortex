@@ -34,8 +34,6 @@ def checked_optional_type(obj, expected_type):
 
 
 def checked_opt_type(obj, expected_type):
-    if not isinstance(obj, Opt):
-        print("here")
     checked_type(obj, Opt)
     obj.for_each(lambda x: checked_type(x, expected_type))
     return obj

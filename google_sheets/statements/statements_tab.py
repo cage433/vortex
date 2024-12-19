@@ -172,11 +172,11 @@ class StatementsTab(Tab):
             payee = row[self.PAYEE]
             amount = to_decimal(row[self.AMOUNT])
             transaction_type = row[self.TYPE]
-            ftid = row[self.ID]
+            # ftid = row[self.ID]
             category = to_payee_category(row[self.CATEGORY])
             transaction = Transaction(
                 account=self.bank_account,
-                ftid=ftid,
+                ftid="",
                 payment_date=payment_date,
                 payee=payee,
                 amount=amount,

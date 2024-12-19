@@ -30,8 +30,6 @@ class BankAccountDataItem:
         self.payee: str = checked_type(payee, str)
         self.tims_description: str = checked_type(tims_description, str)
         self.transaction: Number = checked_type(transaction, Number)
-        if not isinstance(account_mapping_item, Opt):
-            print("here")
         self.account_mapping_item: Opt[AccountMappingItem] = \
             checked_opt_type(account_mapping_item, AccountMappingItem)
 
@@ -79,7 +77,6 @@ class BankAccountData:
         with shelve.open(str(SHELF)) as shelf:
             key = f"Bank Data {mapping_table is not None}"
             if key not in shelf or force:
-                print("Rebuilding bank account data")
                 df = pandas.read_excel(spreadsheet, sheet_name="Current account", usecols="A:F", skiprows=[1])
                 items = []
                 for _, row in df.iterrows():

@@ -21,8 +21,6 @@ class PivotFilter:
         def check_value(x: PivotValue):
             if isinstance(x, StringPivotValue):
                 print(f"Comparing {x.value} to {value}")
-                if x.value == "Rates":
-                    print("Here")
             return x == value
         return PivotFilter(field, check_value)
 

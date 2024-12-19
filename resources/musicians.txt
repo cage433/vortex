@@ -8,6 +8,7 @@ albemarle music
 alcyona mick
 alex harper
 alex hitchcock
+alexander hawkins
 alexandra ridout
 alex ridout
 alice leggett
@@ -43,9 +44,13 @@ cameron scott
 caroline kraabel
 carol grimes
 charlotte keeffe
+chiara spigariol
 chris batchelor
 chris stylianides
 chris williams
+christian billard
+clara green
+clare cope
 cleveland watkiss
 coco mbassi
 copasetic fndatn
@@ -55,9 +60,13 @@ dave manington
 dave storey
 david austin grey
 david bowden
+david ferris
 david preston
+david smith
 dee byrne
+denys baptiste
 deschanel gordon
+devin gray
 django bates
 dolphin hyperspace
 dornbusch
@@ -69,6 +78,7 @@ eddie parker
 elchin shirinov
 elliot galvin
 empirical
+ewan hastie
 ezekiel ajie
 donovan haffner
 emma rawicz
@@ -76,6 +86,8 @@ evelyn hill
 faith brackenbury
 ferg ireland
 fini bearman
+finn carter
+finn genockey
 florian arbenz
 g forbes-amos
 gareth lockrane
@@ -89,13 +101,17 @@ guido spannocchi
 hannes reipler
 hans koller
 harrison smith
+harry christelis
 heidi vogel
 helena kay
 henry lowther
 henry spencer
 huw warren
 huw williams
+immy churchill
+irini arabatzi
 ivo neame
+jack courtney
 jack yardley
 jakub klimiuk
 james allsopp
@@ -107,14 +123,18 @@ jas kayser
 jasper hoiby
 jean de talhouet
 jean toussaint
+jelly cleaver
 jesse doniach
 jim rattigan
 jmi
 joel ross
 johanna bernard
+john escreet
 john etheridge
 john williamson
+johnny hunter
 jonathan davis
+jonny ford
 jonny mansfield
 jonny wickham
 jon onabowu
@@ -123,17 +143,21 @@ joy ellis
 julian seigel
 julian woods
 julie sassoon
+julien durand
 karim saber
 larry bartley
 larry stabbins
 laura jurd
 lauren kinsella
+lekan
 leo richardson
 liam noble
 linley hamilton
 lise rossi
+lorenzobellini
 loz keystone
 loz speyer
+lukas derungs
 luke bacchus
 luke bainbridge
 maddalena ghezzi
@@ -146,6 +170,7 @@ mark sanders
 martin speake
 matthew jacobs
 matt anderson
+matt cook
 matt hurley
 matt ridley
 matthew herd
@@ -175,6 +200,7 @@ noah stoneman
 nye banfield
 olie brice
 olivia murphy
+olly chalk
 oren marshall
 orlando le fleming
 paula rea gibson
@@ -183,6 +209,7 @@ paul jolly
 phil robson
 pietro cavassa
 paul clarvis
+pennington alasdai
 penny waterhouse
 poppy daniels
 rachael cohen
@@ -190,17 +217,21 @@ radhika de saram
 r stone-lonergon
 rebecka edlund
 reiss beckles
+reuben goldmark
 richard fairhurst
+richard foote
 rick simpson
 robert cope
 robert mitchell
 rob luft
 rod oughton
 rory ingham
+ruth goller
 russell brown
 sam braysher
 sam hogarth
 sam leak
+samuel norris
 sarah heneghan
 scott stroman
 sean gibbs
@@ -214,10 +245,13 @@ steve banks
 steve lehman
 sultan stevenson
 suna alen
+tde promotions
 ted morcaldi
+teis semey
 tereza catarov
 thomas ridout
 thomas riviere
+tim berne
 tim whitehead
 tivon pennicott
 toby medland
@@ -227,13 +261,18 @@ tom cawley
 tom niblock
 tom ollendorf
 tom smith company
+tomorrows warriors
 toni kofi
 tori freestone
+trish clowes
+tullis rennie
 veryan weston
 vicente magalhaes
 viva voce
 v hawthorn-nelson
 will barry
+will glaser
 world music band
+xhosa cole
 zoe mullen
 zoe rahman
