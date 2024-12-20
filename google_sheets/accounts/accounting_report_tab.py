@@ -6,11 +6,9 @@ from date_range import DateRange
 from date_range.accounting_year import AccountingYear
 from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
-from google_sheets.accounts.accounting_report_range import AccountingReportRange
 from google_sheets.accounts.accounts_by_category import AccountsByCategoryRange
 from google_sheets.accounts.audience_report_range import AudienceReportRange
 from google_sheets.accounts.bank_activity_range import BankActivityRange
-from google_sheets.accounts.constants import VAT_RATE
 from utils import checked_type
 
 
@@ -43,6 +41,14 @@ class AccountingReportTab(Tab):
             accounting_activity,
             categorized_transactions,
         )
+        # self.bank_account_report_range = BankAccountReportRange(
+        #     self.report_range.bottom_left_cell.offset(num_rows=2),
+        #     title,
+        #     periods,
+        #     period_titles,
+        #     accounting_activity,
+        #     categorized_transactions,
+        # )
         self.audience_numbers_range = AudienceReportRange(
             self.report_range.bottom_left_cell.offset(num_rows=2),
             title,
@@ -60,12 +66,14 @@ class AccountingReportTab(Tab):
             self.workbook.add_tab(self.tab_name)
 
     def _workbook_format_requests(self):
-        return self.delete_all_groups_requests() + [
+        return (self.delete_all_groups_requests() + [
             # Workbook
             self.set_columns_width_request(i_first_col=1, i_last_col=2, width=75),
             self.set_columns_width_request(i_first_col=3, i_last_col=3, width=110),
             self.set_columns_width_request(i_first_col=4, i_last_col=14, width=75),
-        ] + self.report_range.format_requests() + self.audience_numbers_range.format_requests()
+        ] + self.report_range.format_requests() +
+                # self.bank_account_report_range.format_requests() +
+                self.audience_numbers_range.format_requests())
 
     def update(self):
         self.workbook.batch_update(
@@ -77,14 +85,15 @@ class AccountingReportTab(Tab):
         )
 
         self.workbook.batch_update_values(
-            self.report_range.raw_values() + self.audience_numbers_range.raw_values(),
+            self.report_range.raw_values() +
+            # self.bank_account_report_range.raw_values() +
+            self.audience_numbers_range.raw_values(),
             value_input_option="RAW"  # Prevent creation of dates
         )
-        foo = self.report_range.values()
-        bar = self.audience_numbers_range.values()
         self.workbook.batch_update_values(
-            foo + bar
-            # self.report_range.values() + self.audience_numbers_range.values()
+            self.report_range.values() +
+            # self.bank_account_report_range.values() +
+            self.audience_numbers_range.values()
         )
 
         if self.show_transactions:

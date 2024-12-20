@@ -65,6 +65,8 @@ if __name__ == '__main__':
     acc_month = AccountingMonth.from_calendar_month(Month(2024, 8))
     create_month_tab(acc_month, force=False)
 
+    # for y in range(2024, 2025):
+    #     create_ytd_tab(AccountingYear(y), show_transactions=True, force=True)
     # for m in [1, 2, 3, 4]:
     #     create_month_tab(AccountingMonth(AccountingYear(2025), m), force=True)
     # for y in range(2025, 2026):
