@@ -724,7 +724,7 @@ class AccountingReportRange(TabRange):
                  [
                      bacc.balance_at_eod(period.last_day) - bacc.balance_at_sod(period.first_day)
                      for ba, period in zip(self.bank_activity_by_sub_period, self.periods)
-                     for bacc in [ba.restrict_to_account(account)]
+                     for bacc in [ba.restrict_to_accounts(account)]
                  ]
                  )
             )

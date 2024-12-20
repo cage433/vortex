@@ -10,7 +10,6 @@ __all__ = ["BankActivity"]
 from bank_statements.bank_account import BankAccount, CURRENT_ACCOUNT
 
 from date_range import Day, DateRange
-from date_range.accounting_year import AccountingYear
 
 from utils import checked_list_type, checked_type
 from utils.collection_utils import group_into_dict
@@ -19,8 +18,11 @@ from utils.collection_utils import group_into_dict
 class BankActivity:
     def __init__(self, statements: List[Statement]):
         checked_list_type(statements, Statement)
+        self.accounts: List[BankAccount] = sorted(list(set([s.account for s in statements])), key=lambda a: a.name)
+        assert len(statements) == len(self.accounts), "Duplicate accounts"
         self.statements: dict[BankAccount, Statement] = {
-            statement.account: statement for statement in statements
+            statement.account: statement
+            for statement in statements
         }
         self.sorted_transactions: List[Transaction] = sorted(
             [t for s in self.statements.values() for t in s.transactions],
@@ -83,9 +85,11 @@ class BankActivity:
     def current_account_statement(self):
         return self.statements[CURRENT_ACCOUNT]
 
-    def restrict_to_account(self, account: BankAccount) -> 'BankActivity':
-        checked_type(account, BankAccount)
-        return BankActivity([self.statements[account]])
+    def restrict_to_accounts(self, *accounts) -> 'BankActivity':
+        merged_statements = []
+        for account in accounts:
+            merged_statements.append(self.statements[account])
+        return BankActivity(merged_statements)
 
     @property
     def total_vat_payments(self):

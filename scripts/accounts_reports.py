@@ -10,18 +10,16 @@ from date_range.simple_date_range import SimpleDateRange
 from env import YTD_ACCOUNTS_SPREADSHEET_ID, BBL_ACCOUNT_ID
 from google_sheets import Workbook
 from google_sheets.accounts.accounting_report_tab import AccountingReportTab
-from google_sheets.statements.categorised_transactions import categorised_transactions_from_tabs
+from google_sheets.statements.categorised_transactions import current_account_transactions_from_tabs
 
 
-def create_accounting_tab(periods: List[DateRange], period_names: List[str], title: str, show_transactions: bool,
-                          force: bool):
+def create_accounting_tab(periods: List[DateRange], period_names: List[str], title: str, force: bool):
     workbook = Workbook(YTD_ACCOUNTS_SPREADSHEET_ID)
     bounding_period = SimpleDateRange(periods[0].first_day, periods[-1].last_day)
 
     accounting_activity = AccountingActivity.activity_for_period(bounding_period, force)
-    categorised_transactions = categorised_transactions_from_tabs(bounding_period)
     tab = AccountingReportTab(workbook, title,
-                              periods, period_names, accounting_activity, categorised_transactions, show_transactions)
+                              periods, period_names, accounting_activity)
     tab.update()
 
 
@@ -29,7 +27,7 @@ def create_month_tab(month: AccountingMonth, force: bool):
     weeks = month.weeks
     period_titles = [f"W{w.week_no}" for w in weeks]
     title = f"MTD {month.month_name}"
-    create_accounting_tab(weeks, period_titles, title, show_transactions=True, force=force)
+    create_accounting_tab(weeks, period_titles, title, force=force)
 
 
 def create_ytd_tab(year: AccountingYear, show_transactions: bool, force: bool):
@@ -39,14 +37,14 @@ def create_ytd_tab(year: AccountingYear, show_transactions: bool, force: bool):
         print(f"Creating YTD tab for {year.y}")
         period_titles = [m.month_name for m in months]
         title = f"YTD {year.y}"
-        create_accounting_tab(months, period_titles, title, show_transactions=show_transactions, force=force)
+        create_accounting_tab(months, period_titles, title, force=force)
 
 
 def report_on_bank_pnl():
     m = AccountingMonth(AccountingYear(2018), 1)
     last_month = AccountingMonth(AccountingYear(2024), 11)
     full_period = SimpleDateRange(m.first_day, last_month.last_day)
-    bank_activity = BankActivity.build(False).restrict_to_period(full_period).restrict_to_account(BBL_ACCOUNT_ID)
+    bank_activity = BankActivity.build(False).restrict_to_period(full_period).restrict_to_accounts(BBL_ACCOUNT_ID)
     while m <= last_month:
         pnl_change = bank_activity.balance_at_eod(m.last_day) - bank_activity.balance_at_sod(m.first_day)
         print(f"{m.month_name}: {pnl_change:1.2f}, end balance {bank_activity.balance_at_eod(m.last_day):1.2f}")

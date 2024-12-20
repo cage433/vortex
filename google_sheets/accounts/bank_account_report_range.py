@@ -146,7 +146,7 @@ class BankAccountReportRange(TabRange):
                  [
                      bacc.balance_at_eod(period.last_day) - bacc.balance_at_sod(period.first_day)
                      for ba, period in zip(self.bank_activity_by_sub_period, self.periods)
-                     for bacc in [ba.restrict_to_account(account)]
+                     for bacc in [ba.restrict_to_accounts(account)]
                  ]
                  )
             )
@@ -154,7 +154,7 @@ class BankAccountReportRange(TabRange):
                 (
                     self[i_row, self.INITIAL_BALANCE],
                     [
-                        self.bank_activity_by_sub_period[0].restrict_to_account(account).balance_at_sod(self.periods[0].first_day)
+                        self.bank_activity_by_sub_period[0].restrict_to_accounts(account).balance_at_sod(self.periods[0].first_day)
                     ]
                 )
             )
@@ -162,7 +162,7 @@ class BankAccountReportRange(TabRange):
                 (
                     self[i_row, self.TERMINAL_BALANCE],
                     [
-                        self.bank_activity_by_sub_period[-1].restrict_to_account(account).balance_at_sod(self.periods[-1].last_day)
+                        self.bank_activity_by_sub_period[-1].restrict_to_accounts(account).balance_at_sod(self.periods[-1].last_day)
                     ]
                 )
             )

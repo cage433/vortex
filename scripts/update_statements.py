@@ -45,7 +45,7 @@ def statements_consistent(tab: StatementsTab, activity: BankActivity, fail_on_in
 def ensure_tab_consistent_with_account(account: BankAccount, month: AccountingMonth, refresh_bank_activity: bool,
                                        refresh_sheet: bool):
     tab = statements_tab_for_month(account, month)
-    bank_activity = BankActivity.build(force=refresh_bank_activity).restrict_to_account(account).restrict_to_period(
+    bank_activity = BankActivity.build(force=refresh_bank_activity).restrict_to_accounts(account).restrict_to_period(
         month)
     if (not statements_consistent(tab, bank_activity, fail_on_inconsistency=False)) or refresh_sheet:
         tab.update(bank_activity)

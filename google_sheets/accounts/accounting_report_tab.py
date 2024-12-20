@@ -20,48 +20,20 @@ class AccountingReportTab(Tab):
             periods: List[DateRange],
             period_titles: List[str],
             accounting_activity: AccountingActivity,
-            categorized_transactions: CategorizedTransactions,
-            show_transactions: bool
     ):
         super().__init__(workbook, tab_name=title)
-        # self.report_range = AccountingReportRange(
-        #     self.cell("B2"),
-        #     title,
-        #     periods,
-        #     period_titles,
-        #     accounting_activity,
-        #     categorized_transactions,
-        #     VAT_RATE
-        # )
         self.report_range = AccountsByCategoryRange(
             self.cell("B2"),
             title,
             periods,
             period_titles,
             accounting_activity,
-            categorized_transactions,
         )
-        # self.bank_account_report_range = BankAccountReportRange(
-        #     self.report_range.bottom_left_cell.offset(num_rows=2),
-        #     title,
-        #     periods,
-        #     period_titles,
-        #     accounting_activity,
-        #     categorized_transactions,
-        # )
-        self.audience_numbers_range = AudienceReportRange(
-            self.report_range.bottom_left_cell.offset(num_rows=2),
-            title,
-            periods,
-            period_titles,
-            accounting_activity.gigs_info,
+        self.transaction_range = BankActivityRange(
+            self.report_range.bottom_left_cell.offset(num_rows=5),
+            accounting_activity,
+            periods
         )
-        self.show_transactions = checked_type(show_transactions, bool)
-        if self.show_transactions:
-            self.transaction_range = BankActivityRange(
-                self.audience_numbers_range.bottom_right_cell.offset(num_rows=2, num_cols=2),
-                accounting_activity.bank_activity
-            )
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
 
@@ -72,8 +44,8 @@ class AccountingReportTab(Tab):
             self.set_columns_width_request(i_first_col=3, i_last_col=3, width=110),
             self.set_columns_width_request(i_first_col=4, i_last_col=14, width=75),
         ] + self.report_range.format_requests() +
-                # self.bank_account_report_range.format_requests() +
-                self.audience_numbers_range.format_requests())
+                self.transaction_range.format_requests()
+                )
 
     def update(self):
         self.workbook.batch_update(
@@ -85,24 +57,14 @@ class AccountingReportTab(Tab):
         )
 
         self.workbook.batch_update_values(
-            self.report_range.raw_values() +
-            # self.bank_account_report_range.raw_values() +
-            self.audience_numbers_range.raw_values(),
+            self.report_range.raw_values(),
             value_input_option="RAW"  # Prevent creation of dates
         )
         self.workbook.batch_update_values(
             self.report_range.values() +
-            # self.bank_account_report_range.values() +
-            self.audience_numbers_range.values()
+            self.transaction_range.values(),
         )
 
-        if self.show_transactions:
-            self.workbook.batch_update(
-                self.transaction_range.format_requests()
-            )
-            self.workbook.batch_update_values(
-                self.transaction_range.values()
-            )
 
 
 if __name__ == '__main__':
@@ -113,6 +75,6 @@ if __name__ == '__main__':
     acc_months = acc_year.accounting_months
     period_titles = [m.month_name for m in acc_months]
     tab = AccountingReportTab(workbook, "YTD 2023",
-                              acc_months, period_titles, accounting_activity, show_transactions=True)
+                              acc_months, period_titles, accounting_activity)
 
     tab.update()
