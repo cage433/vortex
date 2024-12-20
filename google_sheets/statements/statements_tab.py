@@ -158,6 +158,8 @@ class StatementsTab(Tab):
                 return PayeeCategory.EQUIPMENT_HIRE
             if cell_value == "Staff Costs":
                 return PayeeCategory.SALARIES
+            if cell_value == "Musicians Costs":
+                return PayeeCategory.MUSICIAN_COSTS
             return PayeeCategory(cell_value)
 
         def to_decimal(cell_value):

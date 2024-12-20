@@ -22,6 +22,7 @@ def current_account_transactions_from_tabs(period: DateRange, force: bool) -> Ca
             last_acc_month = AccountingMonth.containing(period.last_day)
             transactions = []
             while acc_month <= last_acc_month:
+                print(f"Processing {acc_month}")
                 transactions += StatementsTab(
                     Workbook(CURRENT_ACCOUNT_STATEMENTS_ID),
                     CURRENT_ACCOUNT,

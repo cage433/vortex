@@ -30,7 +30,7 @@ def create_month_tab(month: AccountingMonth, force: bool):
     create_accounting_tab(weeks, period_titles, title, force=force)
 
 
-def create_ytd_tab(year: AccountingYear, show_transactions: bool, force: bool):
+def create_ytd_tab(year: AccountingYear, force: bool):
     last_month = AccountingMonth.from_calendar_month(Day.today().month)
     months = [m for m in year.accounting_months if m <= last_month]
     if months:
@@ -60,11 +60,11 @@ def find_transactions_for_payee(payee: str):
 
 
 if __name__ == '__main__':
-    acc_month = AccountingMonth.from_calendar_month(Month(2024, 8))
-    create_month_tab(acc_month, force=False)
+    # acc_month = AccountingMonth.from_calendar_month(Month(2024, 2))
+    # create_month_tab(acc_month, force=False)
 
-    # for y in range(2024, 2025):
-    #     create_ytd_tab(AccountingYear(y), show_transactions=True, force=True)
+    for y in range(2024, 2026):
+        create_ytd_tab(AccountingYear(y), force=False)
     # for m in [1, 2, 3, 4]:
     #     create_month_tab(AccountingMonth(AccountingYear(2025), m), force=True)
     # for y in range(2025, 2026):

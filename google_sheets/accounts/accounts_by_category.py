@@ -18,7 +18,7 @@ class AccountsByCategoryRange(TabRange):
     CURRENT_ACCOUNT_CHECK_TITLE = ["Check"]
     GIGS_PNL_TITLE = ["Gigs"]
     TICKET_SALES_TITLE = ["Ticket Sales"]
-    ONLINE_AND_WALK_IN_TITLES = ["Online Sales", "Walk In Sales"]
+    ONLINE_AND_WALK_IN_TITLES = ["Online", "Walk In"]
     GIG_COSTS_TITLE = ["Gig Costs"]
     GIG_COSTS_BREAKDOWN = [
         "Musician Fees", "Security", "Sound Engineer", "PRS", "Marketing", "Work Permits",
@@ -54,6 +54,7 @@ class AccountsByCategoryRange(TabRange):
     OTHER_COSTS_TITLE = ["Other Costs"]
     OTHER_COSTS_BREAKDOWN_TITLES = [
         "Airtable", "Bank Fees",
+        "Donation",
         "Equipment",
         "Fire Alarm",
         "Flood", "Insurance", "Kashflow",
@@ -128,7 +129,7 @@ class AccountsByCategoryRange(TabRange):
     CAT_3_HEADINGS = (HEADINGS_BLANKS +
                       [""] * len(CURRENT_ACCOUNT_TITLE + CURRENT_ACCOUNT_CHECK_TITLE + GIGS_PNL_TITLE) +
                       [""] * len(TICKET_SALES_TITLE) +
-                      [""] * len(ONLINE_AND_WALK_IN_TITLES) +
+                      ONLINE_AND_WALK_IN_TITLES +
                       [""] * len(GIG_COSTS_TITLE) +
                       GIG_COSTS_BREAKDOWN +
                       [""] * len(BAR_PNL_TITLE) +
@@ -188,18 +189,19 @@ class AccountsByCategoryRange(TabRange):
         VAT_ROW,
     ) = MAJOR_COSTS_BREAKDOWN_ROWS
 
-    MINOR_COSTS_ROW = MAJOR_COSTS_BREAKDOWN_ROWS[-1] + 1
-    MINOR_COSTS_BREAKDOWN_ROWS = list(
-        range(MINOR_COSTS_ROW + 1, MINOR_COSTS_ROW + 1 + len(OTHER_COSTS_BREAKDOWN_TITLES)))
+    OTHER_COSTS_ROW = MAJOR_COSTS_BREAKDOWN_ROWS[-1] + 1
+    OTHER_COSTS_BREAKDOWN_ROWS = list(
+        range(OTHER_COSTS_ROW + 1, OTHER_COSTS_ROW + 1 + len(OTHER_COSTS_BREAKDOWN_TITLES)))
 
     (AIRTABLE_ROW, BANK_FEES_ROW,
+     DONATION_ROW,
      EQUIPMENT_ROW,
      FIRE_ALARM_ROW, FLOOD_ROW, INSURANCE_ROW, KASHFLOW_ROW,
      MAILCHIMP_ROW, LICENSING_ROW,
      MUSIC_VENUE_TRUST_ROW,
      SERVICES_ROW, SLACK_ROW, SUBSCRIPTIONS_ROW, TELEPHONE_ROW,
-     WEB_HOST_ROW) = MINOR_COSTS_BREAKDOWN_ROWS
-    UNCATEGORIZED_ROW = MINOR_COSTS_BREAKDOWN_ROWS[-1] + 1
+     WEB_HOST_ROW) = OTHER_COSTS_BREAKDOWN_ROWS
+    UNCATEGORIZED_ROW = OTHER_COSTS_BREAKDOWN_ROWS[-1] + 1
     SAVINGS_ACCOUNT_ROW, BBL_ACCOUNT_ROW, CHARITABLE_ACCOUNT_ROW = range(UNCATEGORIZED_ROW + 1, UNCATEGORIZED_ROW + 4)
     TOTAL_ROW = CHARITABLE_ACCOUNT_ROW + 1
 
@@ -245,20 +247,18 @@ class AccountsByCategoryRange(TabRange):
             # Headings
             self.outline_border_request(),
             self[self.TITLE_ROW].merge_columns_request(),
-            self[self.TITLE_ROW].center_text_request(),
+            self[self.TITLE_ROW:self.PERIOD_ROW + 1].center_text_request(),
             self[self.PERIOD_START_ROW].date_format_request("d Mmm"),
-            self[self.PERIOD_ROW, self.CAT_2:].right_align_text_request(),
             self[self.PERIOD_ROW].border_request(["bottom"]),
             self[self.TITLE_ROW:self.PERIOD_ROW + 1].set_bold_text_request(),
             self[:, self.ROW_TITLE].set_bold_text_request(),
             self[1:, self.PERIOD_1].border_request(["left"]),
             self[-1:].border_request(["top"]),
             self[1:, self.INITIAL_BALANCE].border_request(["left"]),
+            self[1:, self.TO_DATE].border_request(["left"]),
 
             # P&L
             self[self.CURRENT_ACCOUNT_ROW:, self.PERIOD_1:].set_decimal_format_request("#,##0"),
-            # self.tab.group_rows_request(self.i_first_row + self.CURRENT_ACCOUNT_ROW,
-            #                             self.i_first_row + self.CHARITABLE_ACCOUNT_ROW),
             self.tab.group_rows_request(self.i_first_row + self.CURRENT_ACCOUNT_CHECK_ROW,
                                         self.i_first_row + self.UNCATEGORIZED_ROW),
             self.tab.group_rows_request(self.i_first_row + self.TOTAL_TICKET_SALES_ROW,
@@ -269,10 +269,11 @@ class AccountsByCategoryRange(TabRange):
                                         self.i_first_row + self.GIG_COSTS_BREAKDOWN_ROWS[-1]),
             self.tab.group_rows_request(self.i_first_row + self.BAR_BREAKDOWN_ROWS[0],
                                         self.i_first_row + self.BAR_BREAKDOWN_ROWS[-1]),
-            self.tab.group_rows_request(self.i_first_row + self.MINOR_COSTS_BREAKDOWN_ROWS[0],
-                                        self.i_first_row + self.MINOR_COSTS_BREAKDOWN_ROWS[-1]),
+            self.tab.group_rows_request(self.i_first_row + self.OTHER_COSTS_BREAKDOWN_ROWS[0],
+                                        self.i_first_row + self.OTHER_COSTS_BREAKDOWN_ROWS[-1]),
             self.tab.group_rows_request(self.i_first_row + self.BUILDING_COSTS_BREAKDOWN_ROWS[0],
                                         self.i_first_row + self.BUILDING_COSTS_BREAKDOWN_ROWS[-1]),
+            self[self.PERIOD_START_ROW, self.INITIAL_BALANCE:self.TERMINAL_BALANCE + 1].merge_columns_request(),
 
             # last row
             self[-1].offset(rows=1).border_request(["top"], style="SOLID_MEDIUM"),
@@ -300,6 +301,9 @@ class AccountsByCategoryRange(TabRange):
         values.append((
             self.period_range(self.PERIOD_START_ROW),
             [w.first_day.date for w in self.periods]
+        ))
+        values.append((
+            self[self.PERIOD_START_ROW, self.INITIAL_BALANCE], ["Balances"]
         ))
         values.append((self[2:, self.CAT_1], self.CAT_1_HEADINGS[2:]))
         values.append((self[2:, self.CAT_2], self.CAT_2_HEADINGS[2:]))
@@ -389,25 +393,15 @@ class AccountsByCategoryRange(TabRange):
             ]
         for i_col in range(self.PERIOD_1, self.LAST_PERIOD + 1):
             values += [
-                # (
-                #     self[self.CURRENT_ACCOUNT_ROW, i_col],
-                #     self._sum_rows_text(
-                #         [
-                #             self.GIGS_PNL_ROW, self.BAR_PNL_ROW, self.HIRE_PNL_ROW, self.MEMBERSHIPS_ROW,
-                #             self.BUILDING_COSTS_ROW, self.ADMINISTRATION_ROW, self.BB_LOAN_ROW, self.SALARIES_ROW,
-                #             self.OPERATIONAL_COSTS_ROW, self.PETTY_CASH_ROW, self.VAT_ROW, self.MINOR_COSTS_ROW,
-                #         ],
-                #         i_col
-                #     )
-                # ),
                 (
                     self[self.CURRENT_ACCOUNT_CHECK_ROW, i_col],
                     self._sum_rows_text(
                         [
                             self.GIGS_PNL_ROW, self.BAR_PNL_ROW, self.HIRE_PNL_ROW, self.MEMBERSHIPS_ROW,
-                            self.BUILDING_COSTS_ROW, self.ADMINISTRATION_ROW, self.BB_LOAN_ROW, self.SALARIES_ROW,
-                            self.OPERATIONAL_COSTS_ROW, self.PETTY_CASH_ROW, self.VAT_ROW, self.MINOR_COSTS_ROW,
-                        ],
+                            self.BUILDING_COSTS_ROW
+                        ] +
+                        self.MAJOR_COSTS_BREAKDOWN_ROWS +
+                        [self.OTHER_COSTS_ROW, self.UNCATEGORIZED_ROW],
                         i_col
                     )
                 ),
@@ -454,10 +448,10 @@ class AccountsByCategoryRange(TabRange):
                     )
                 ),
                 (
-                    self[self.MINOR_COSTS_ROW, i_col],
+                    self[self.OTHER_COSTS_ROW, i_col],
                     self._sum_range(
-                        self.MINOR_COSTS_BREAKDOWN_ROWS[0],
-                        self.MINOR_COSTS_BREAKDOWN_ROWS[-1],
+                        self.OTHER_COSTS_BREAKDOWN_ROWS[0],
+                        self.OTHER_COSTS_BREAKDOWN_ROWS[-1],
                         i_col
                     )
                 ),
@@ -466,6 +460,7 @@ class AccountsByCategoryRange(TabRange):
             (self.MUSICIAN_FEES_ROW, [PayeeCategory.MUSICIAN_PAYMENTS]),
             (self.SECURITY_ROW, [PayeeCategory.BUILDING_SECURITY, PayeeCategory.SECURITY]),
             (self.SOUND_ENGINEER_ROW, [PayeeCategory.SOUND_ENGINEER]),
+            (self.PRS_ROW, [PayeeCategory.PRS]),
             (self.MARKETING_ROW, [PayeeCategory.MARKETING_DIRECT, PayeeCategory.MARKETING_INDIRECT]),
             (self.WORK_PERMITS_ROW, [PayeeCategory.WORK_PERMITS]),
             (self.PIANO_TUNER_ROW, [PayeeCategory.PIANO_TUNER]),
@@ -488,6 +483,8 @@ class AccountsByCategoryRange(TabRange):
             (self.BUILDING_MAINTENANCE_ROW, [PayeeCategory.BUILDING_MAINTENANCE]),
             (self.EQUIPMENT_ROW,
              [PayeeCategory.EQUIPMENT_HIRE, PayeeCategory.EQUIPMENT_PURCHASE, PayeeCategory.EQUIPMENT_MAINTENANCE]),
+            (self.DONATION_ROW,
+             [PayeeCategory.DONATION]),
             (self.FIRE_ALARM_ROW, [PayeeCategory.FIRE_ALARM]),
             (self.FLOOD_ROW, [PayeeCategory.FLOOD]),
             (self.INSURANCE_ROW, [PayeeCategory.INSURANCE]),
