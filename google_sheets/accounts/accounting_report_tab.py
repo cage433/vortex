@@ -1,15 +1,12 @@
 from typing import List
 
 from accounting.accounting_activity import AccountingActivity
-from bank_statements.categorized_transaction import CategorizedTransactions
 from date_range import DateRange
 from date_range.accounting_year import AccountingYear
 from env import YTD_ACCOUNTS_SPREADSHEET_ID
 from google_sheets import Tab, Workbook
 from google_sheets.accounts.accounts_by_category import AccountsByCategoryRange
-from google_sheets.accounts.audience_report_range import AudienceReportRange
 from google_sheets.accounts.bank_activity_range import BankActivityRange
-from utils import checked_type
 
 
 class AccountingReportTab(Tab):

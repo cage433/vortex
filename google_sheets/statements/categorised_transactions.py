@@ -7,7 +7,7 @@ from bank_statements.bank_account import CURRENT_ACCOUNT
 from bank_statements.categorized_transaction import CategorizedTransactions
 from date_range import DateRange
 from date_range.accounting_month import AccountingMonth
-from env import CURRENT_ACCOUNT_STATEMENTS_ID
+from env import CURRENT_ACCOUNT_2024_STATEMENTS_ID
 from google_sheets import Workbook
 from google_sheets.statements.statements_tab import StatementsTab
 
@@ -24,7 +24,7 @@ def current_account_transactions_from_tabs(period: DateRange, force: bool) -> Ca
             while acc_month <= last_acc_month:
                 print(f"Processing {acc_month}")
                 transactions += StatementsTab(
-                    Workbook(CURRENT_ACCOUNT_STATEMENTS_ID),
+                    Workbook(StatementsTab.sheet_id_for_account(CURRENT_ACCOUNT, acc_month)),
                     CURRENT_ACCOUNT,
                     acc_month.month_name,
                     acc_month

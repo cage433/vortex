@@ -6,21 +6,17 @@ from bank_statements.bank_account import CURRENT_ACCOUNT, BankAccount
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange
-from env import CURRENT_ACCOUNT_STATEMENTS_ID
+from env import CURRENT_ACCOUNT_2024_STATEMENTS_ID, CURRENT_ACCOUNT_2023_STATEMENTS_ID, \
+    CURRENT_ACCOUNT_2025_STATEMENTS_ID
 from google_sheets import Workbook
 from google_sheets.statements.statements_tab import StatementsTab
-from kashflow.nominal_ledger import NominalLedgerItemType
-
-
-def _sheet_id_for_account(account: BankAccount):
-    if account == CURRENT_ACCOUNT:
-        return CURRENT_ACCOUNT_STATEMENTS_ID
-    raise ValueError(f"Unrecognized account {account}")
+from kashflow.nominal_ledger import NominalLedgerItemType, NominalLedger
 
 
 def statements_tab_for_month(account: BankAccount, month: AccountingMonth) -> StatementsTab:
+    id = StatementsTab.sheet_id_for_account(account, month)
     return StatementsTab(
-        Workbook(_sheet_id_for_account(account)),
+        Workbook(id),
         account,
         month.month_name,
         month
@@ -53,13 +49,12 @@ def ensure_tab_consistent_with_account(account: BankAccount, month: AccountingMo
 
 
 def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingMonth):
-    tab = StatementsTab(Workbook(_sheet_id_for_account(account)), account, month.month_name, month)
+    sheet_id = StatementsTab.sheet_id_for_account(account, month)
+    tab = StatementsTab(Workbook(sheet_id), account, month.month_name, month)
     transaction_infos = tab.transaction_infos_from_tab()
     uncategorized = [t for t in transaction_infos if t.category is None]
     kashflow_period = SimpleDateRange(month.first_day - 30, month.last_day + 30)
-    ledger_items = AccountingActivity.activity_for_period(kashflow_period, force=False, force_bank=False,
-                                                          force_nominal_ledger=False,
-                                                          force_airtable=True).nominal_ledger.ledger_items
+    ledger_items = NominalLedger.from_latest_csv_file(force=False).restrict_to_period(kashflow_period).ledger_items
 
     for t in uncategorized:
         print()
@@ -101,7 +96,6 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
 
 
 if __name__ == '__main__':
-    m = 12
-    month = AccountingMonth.from_calendar_month(Month(2024, m))
-    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, month, refresh_bank_activity=True, refresh_sheet=True)
-    compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, AccountingMonth.from_calendar_month(Month(2024, m)))
+    acc_month = AccountingMonth.from_calendar_month(Month(2022, 9))
+    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, acc_month, refresh_bank_activity=False, refresh_sheet=True)
+    compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, acc_month)

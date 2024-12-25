@@ -2,10 +2,13 @@ from decimal import Decimal
 from typing import List, Optional
 
 from bank_statements import BankActivity, Transaction
-from bank_statements.bank_account import BankAccount
+from bank_statements.bank_account import BankAccount, CURRENT_ACCOUNT
 from bank_statements.categorized_transaction import CategorizedTransaction
 from bank_statements.payee_categories import category_for_transaction, PayeeCategory
 from date_range import Day, DateRange
+from date_range.accounting_month import AccountingMonth
+from env import CURRENT_ACCOUNT_2023_STATEMENTS_ID, CURRENT_ACCOUNT_2024_STATEMENTS_ID, \
+    CURRENT_ACCOUNT_2025_STATEMENTS_ID
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
 from google_sheets.tab_range import TabRange
@@ -188,3 +191,16 @@ class StatementsTab(Tab):
             )
             infos.append(CategorizedTransaction(transaction, category))
         return infos
+
+    @staticmethod
+    def sheet_id_for_account(account: BankAccount, month: AccountingMonth) -> str:
+        if account == CURRENT_ACCOUNT:
+            year = month.year.y
+            if year == 2023:
+                return CURRENT_ACCOUNT_2023_STATEMENTS_ID
+            elif year == 2024:
+                return CURRENT_ACCOUNT_2024_STATEMENTS_ID
+            elif year == 2023:
+                return CURRENT_ACCOUNT_2025_STATEMENTS_ID
+        raise ValueError(f"Unrecognized account/month {account}/{month}")
+

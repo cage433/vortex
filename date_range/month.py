@@ -44,6 +44,9 @@ class Month(ContiguousDateRange):
     def month_name(self):
         return date(self.y, self.m, 1).strftime("%b %y")
 
+    def __hash__(self):
+        return hash((self.y, self.m))
+
     @property
     def tab_name(self):
         return self.month_name

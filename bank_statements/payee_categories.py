@@ -205,6 +205,8 @@ def _maybe_bb_loan(transaction: Transaction) -> Optional[str]:
 def _maybe_petty_cash(transaction: Transaction) -> Optional[str]:
     if matches_anywhere(transaction, "cash halifax"):
         return PayeeCategory.PETTY_CASH
+    if matches_start(transaction, "cash notemac"):
+        return PayeeCategory.PETTY_CASH
 
 
 def _maybe_bank_fees(transaction: Transaction) -> Optional[str]:
@@ -234,6 +236,7 @@ def _maybe_salaries(transaction: Transaction) -> Optional[str]:
                 "kim macari",
                 "tea earle",
                 "ted mitchell",
+                "k hingwan vortex",
             ]
 
     ):
@@ -296,6 +299,8 @@ def _maybe_vat(transaction: Transaction) -> Optional[str]:
 def _maybe_cleaning(transaction: Transaction) -> Optional[str]:
     if matches_start(transaction, "poolfresh"):
         return PayeeCategory.CLEANING
+    if matches_start(transaction, "direct 365"):
+        return PayeeCategory.CLEANING
 
 
 def _maybe_piano_tuner(transaction: Transaction) -> Optional[str]:
@@ -319,6 +324,7 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
         "joe mashiter",
         "jorge martinez",
         "kinga ilyes",
+        "laura kazaroff",    # On behalf of Mike O'Malley
         "mike omalley",
         "mike o'malley",
         "milo mcguire",
@@ -374,6 +380,8 @@ def _maybe_musician_payments(tr: Transaction) -> Optional[str]:
                 return PayeeCategory.MUSICIAN_PAYMENTS
             if m in payee and "new vortex jazz" in payee:
                 return PayeeCategory.MUSICIAN_PAYMENTS
+            if m in payee and payee.startswith("vortex"):
+                return PayeeCategory.MUSICIAN_PAYMENTS
 
 
 def _maybe_mvt(tr: Transaction) -> Optional[str]:
@@ -383,6 +391,8 @@ def _maybe_mvt(tr: Transaction) -> Optional[str]:
 
 def _maybe_tissues(tr: Transaction) -> Optional[str]:
     if matches_start(tr, "nisbets"):
+        return PayeeCategory.OPERATIONAL_COSTS
+    if matches_start(tr, "amznmktplace") and 0 > tr.amount > -100:
         return PayeeCategory.OPERATIONAL_COSTS
 
 

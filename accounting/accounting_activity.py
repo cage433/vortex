@@ -25,6 +25,14 @@ class AccountingActivity:
                                                                                   CategorizedTransactions)
 
     @staticmethod
+    def gig_info_for_period(period: DateRange, force: bool) -> GigsInfo:
+        gigs_info_list = []
+        for month in period.split_into(Month, SplitType.EXACT):
+            month_info = VortexDB().gigs_info_for_period(month, force)
+            gigs_info_list += month_info.contracts_and_events
+        return GigsInfo(gigs_info_list)
+
+    @staticmethod
     def activity_for_period(
             period: DateRange,
             force: bool,
@@ -33,13 +41,8 @@ class AccountingActivity:
             force_airtable: bool = False,
             force_transactions: bool = False
     ) -> 'AccountingActivity':
-        gigs_info_list = []
 
-        for month in period.split_into(Month, SplitType.EXACT):
-            month_info = VortexDB().gigs_info_for_period(month, force or force_airtable)
-            gigs_info_list += month_info.contracts_and_events
-
-        gigs_info = GigsInfo(gigs_info_list)
+        gigs_info = AccountingActivity.gig_info_for_period(period, force or force_airtable)
         nominal_ledger = NominalLedger.from_latest_csv_file(force or force_nominal_ledger).restrict_to_period(period)
         bank_activity = BankActivity.build(force or force_bank).restrict_to_period(period)
         current_account_transactions = current_account_transactions_from_tabs(period, force or force_transactions)
