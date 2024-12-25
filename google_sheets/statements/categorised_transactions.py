@@ -28,7 +28,7 @@ def current_account_transactions_from_tabs(period: DateRange, force: bool) -> Ca
                     CURRENT_ACCOUNT,
                     acc_month.month_name,
                     acc_month
-                ).transaction_infos_from_tab()
+                ).categorised_transactions_from_tab()
                 acc_month += 1
             shelf[key] = CategorizedTransactions(transactions).restrict_to_period(period)
         return shelf[key]

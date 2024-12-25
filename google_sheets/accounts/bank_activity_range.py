@@ -3,6 +3,7 @@ from typing import List
 from accounting.accounting_activity import AccountingActivity
 from bank_statements.bank_account import CURRENT_ACCOUNT
 from bank_statements.categorized_transaction import CategorizedTransactions, CategorizedTransaction
+from bank_statements.payee_categories import PayeeCategory
 from date_range import DateRange
 from google_sheets.tab_range import TabRange, TabCell
 from utils import checked_type, checked_list_type
@@ -16,7 +17,7 @@ class BankActivityRange(TabRange):
         other_bank_accounts = [a for a in accounting_activity.bank_activity.accounts if a != CURRENT_ACCOUNT]
         self.categorised_transactions: CategorizedTransactions = CategorizedTransactions(
             [
-                CategorizedTransaction(t, category=None)
+                CategorizedTransaction(t, category=PayeeCategory.UNCATEGORISED)
                 for t in
                 accounting_activity.bank_activity.restrict_to_accounts(*other_bank_accounts).sorted_transactions
             ]

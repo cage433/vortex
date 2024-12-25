@@ -13,7 +13,7 @@ def update_tab_for_month(month: Month, force: bool):
     months = [month -2, month - 1, month]
     accounting_months = [AccountingMonth.from_calendar_month(m) for m in months]
     period = SimpleDateRange(accounting_months[0].first_day, accounting_months[-1].last_day)
-    categorized_transactions = current_account_transactions_from_tabs(period)
+    categorized_transactions = current_account_transactions_from_tabs(period, force)
     bank_activity = BankActivity.build(force=force).restrict_to_accounts(CURRENT_ACCOUNT).restrict_to_period(period)
 
     tab = VATReturnsTab(Workbook(VAT_RETURNS_ID), months)
@@ -25,4 +25,4 @@ def update_tab_for_month(month: Month, force: bool):
     tab.update(categorized_transactions.transactions, gigs_info, bank_activity)
 
 if __name__ == '__main__':
-    update_tab_for_month(Month(2024, 11), force=True)
+    update_tab_for_month(Month(2023, 2), force=False)

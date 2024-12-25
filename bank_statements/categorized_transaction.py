@@ -1,11 +1,11 @@
 from decimal import Decimal
-from typing import Optional, List
+from typing import List
 
 from bank_statements import Transaction
 from bank_statements.bank_account import BankAccount
 from bank_statements.payee_categories import category_for_transaction, PayeeCategory
 from date_range import Day, DateRange
-from utils import checked_type, checked_optional_type, checked_list_type
+from utils import checked_type, checked_list_type
 
 
 # Adds a category to a Transaction if possible.
@@ -17,10 +17,10 @@ class CategorizedTransaction:
     def __init__(
             self,
             transaction: Transaction,
-            category: Optional[PayeeCategory],
+            category: PayeeCategory,
     ):
         self.transaction: Transaction = checked_type(transaction, Transaction)
-        self.category: Optional[PayeeCategory] = checked_optional_type(category, PayeeCategory)
+        self.category: PayeeCategory = checked_type(category, PayeeCategory)
 
     @property
     def payment_date(self) -> Day:
@@ -58,15 +58,16 @@ class CategorizedTransactions:
     def is_empty(self) -> bool:
         return self.num_transactions == 0
 
-    def restrict_to_category(self, category: Optional[PayeeCategory]) -> 'CategorizedTransactions':
+    def restrict_to_category(self, category: PayeeCategory) -> 'CategorizedTransactions':
         return CategorizedTransactions([t for t in self.transactions if t.category == category])
 
     def restrict_to_period(self, period: DateRange) -> 'CategorizedTransactions':
         return CategorizedTransactions([t for t in self.transactions if period.contains(t.payment_date)])
 
     @property
-    def categories(self) -> List[Optional[PayeeCategory]]:
-        return sorted(list(set([t.category for t in self.transactions])), key=lambda c: "ZZZZ" if c is None else c.name)
+    def categories(self) -> List[PayeeCategory]:
+        return sorted(list(set([t.category for t in self.transactions])),
+                      key=lambda c: "ZZZZ" if c is PayeeCategory.UNCATEGORISED else c.name)
 
     def total_for(self, *categories):
         return sum(self.restrict_to_category(c).total_amount for c in categories)

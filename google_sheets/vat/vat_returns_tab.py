@@ -32,11 +32,11 @@ class PaymentsRangeForCategory(TabRange):
     def __init__(
             self,
             top_left_cell: TabCell, transactions: List[CategorizedTransaction],
-            category: Optional[PayeeCategory],
+            category: PayeeCategory,
             split_debit_credit: bool,
             reclaimable_vat_fraction_cell: Optional[TabCell],
     ):
-        self.category: Optional[PayeeCategory] = checked_optional_type(category, PayeeCategory)
+        self.category: PayeeCategory = checked_type(category, PayeeCategory)
         self.transactions = [t for t in transactions if t.category == category]
         self.by_month = group_into_dict(
             self.transactions,
@@ -89,7 +89,7 @@ class PaymentsRangeForCategory(TabRange):
             for i_col in summing_cols
         ]
         values = [
-            [self.category or "Uncategorized"] + category_total_formulae
+            [self.category] + category_total_formulae
         ]
         i_row = 1
         for m in self.accounting_months:
@@ -113,7 +113,7 @@ class PaymentsRangeForCategory(TabRange):
                     row.append(t.amount)
                 if self.include_vat_columns:
                     vat_formula = f"={amount_cell.in_a1_notation} / 6.0"
-                    is_credit = self.category is not None and PayeeCategory.is_credit(self.category)
+                    is_credit = PayeeCategory.is_credit(self.category)
                     if is_credit:
                         row += [vat_formula, "", ""]
                     else:
@@ -240,7 +240,7 @@ class PaymentsRangeForCategories(TabRange):
             self,
             top_left_cell: TabCell,
             name: str,
-            categories: List[Optional[PayeeCategory]],
+            categories: List[PayeeCategory],
             categorised_transactions: List[CategorizedTransaction],
             reclaimable_vat_cell: Optional[TabCell]
     ):
@@ -250,7 +250,7 @@ class PaymentsRangeForCategories(TabRange):
         self.categories_to_display = [c for c in self.categories if c in self.trans_categories]
         self.reclaimable_vat_cell: Optional[TabCell] = checked_optional_type(reclaimable_vat_cell, TabCell)
 
-        def payments_range(top_left: TabCell, category: Optional[PayeeCategory]):
+        def payments_range(top_left: TabCell, category: PayeeCategory):
             return PaymentsRangeForCategory(
                 top_left,
                 categorised_transactions,

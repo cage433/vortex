@@ -35,7 +35,7 @@ class StatementsTab(Tab):
             self.workbook.add_tab(self.tab_name)
 
     def update(self, bank_activity: BankActivity):
-        sheet_transaction_infos = self.transaction_infos_from_tab()
+        tab_categorised_transactions = self.categorised_transactions_from_tab()
 
         if bank_activity.non_empty:
             if bank_activity.first_date < self.period.first_day or bank_activity.last_date > self.period.last_day:
@@ -108,14 +108,17 @@ class StatementsTab(Tab):
 
         transaction_values = [self.HEADINGS]
 
-        def category_to_use(i_transaction, bank_transaction):
-            if len(sheet_transaction_infos) == len(transactions):
-                sheet_info = sheet_transaction_infos[i_transaction]
-                sheet_category = sheet_info.category
-                if sheet_info.transaction == bank_transaction:
-                    if sheet_category is not None:
+        def category_cell_value(i_transaction, bank_transaction):
+            if len(tab_categorised_transactions) == len(transactions):
+                categorised_transaction = tab_categorised_transactions[i_transaction]
+                sheet_category = categorised_transaction.category
+                if categorised_transaction.transaction == bank_transaction:
+                    if sheet_category != PayeeCategory.UNCATEGORISED:
                         return sheet_category
-            return category_for_transaction(bank_transaction)
+            calculated_category = category_for_transaction(bank_transaction)
+            if calculated_category == PayeeCategory.UNCATEGORISED:
+                return ""
+            return calculated_category
 
         balance = bank_activity.initial_balance
         for i_trans, t in enumerate(transactions):
@@ -126,7 +129,7 @@ class StatementsTab(Tab):
                     t.payee,
                     float(t.amount),
                     float(balance),
-                    category_to_use(i_trans, t) or "",
+                    category_cell_value(i_trans, t),
                     t.transaction_type,
                     t.ftid,
                 ]
@@ -139,12 +142,13 @@ class StatementsTab(Tab):
             (transaction_range, transaction_values),
         ])
 
-    def transaction_infos_from_tab(self) -> List[CategorizedTransaction]:
+    def categorised_transactions_from_tab(self) -> List[CategorizedTransaction]:
         # The Kashflow categories differ slightly from Tim's payee categories.
         # For now we'll map them, but eventually we can probably just use the Kashflow categories.
-        def to_payee_category(cell_value) -> Optional[PayeeCategory]:
+        # We also use this to repair categories, as they get redefined
+        def to_payee_category(payee, cell_value) -> PayeeCategory:
             if isinstance(cell_value, str) and cell_value.strip() == "":
-                return None
+                return PayeeCategory.UNCATEGORISED
             if cell_value == "Bar Purchases":
                 return PayeeCategory.BAR_STOCK
             if cell_value == "Toilet Tissues":
@@ -180,7 +184,7 @@ class StatementsTab(Tab):
             amount = to_decimal(row[self.AMOUNT])
             transaction_type = row[self.TYPE]
             # ftid = row[self.ID]
-            category = to_payee_category(row[self.CATEGORY])
+            category = to_payee_category(payee, row[self.CATEGORY])
             transaction = Transaction(
                 account=self.bank_account,
                 ftid="",
@@ -200,7 +204,7 @@ class StatementsTab(Tab):
                 return CURRENT_ACCOUNT_2023_STATEMENTS_ID
             elif year == 2024:
                 return CURRENT_ACCOUNT_2024_STATEMENTS_ID
-            elif year == 2023:
+            elif year == 2025:
                 return CURRENT_ACCOUNT_2025_STATEMENTS_ID
         raise ValueError(f"Unrecognized account/month {account}/{month}")
 

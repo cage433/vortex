@@ -70,6 +70,7 @@ class PayeeCategory(StrEnum):
     THAMES_WATER = "Thames Water"
     TICKETWEB_CREDITS = "Ticketweb Credits"
     TICKET_SALES = "Ticket sales"
+    UNCATEGORISED = "Uncategorised"
     UTILITIES = "Utilities"
     VAT = "VAT"
     WEB_HOST = "Web Host"
@@ -77,21 +78,23 @@ class PayeeCategory(StrEnum):
     ZETTLE_CREDITS = "Zettle Credits"
 
     @staticmethod
-    def is_subject_to_vat(category: Optional['PayeeCategory']) -> bool:
+    def is_subject_to_vat(category: 'PayeeCategory') -> bool:
         if category in [
+            PayeeCategory.BANK_FEES,
             PayeeCategory.BB_LOAN, PayeeCategory.BANK_INTEREST, PayeeCategory.CREDIT_CARD_FEES,
             PayeeCategory.DONATION, PayeeCategory.INTERNAL_TRANSFER,
             PayeeCategory.MUSIC_VENUE_TRUST, PayeeCategory.MUSICIAN_PAYMENTS, PayeeCategory.PETTY_CASH,
             PayeeCategory.RATES, PayeeCategory.SALARIES, PayeeCategory.SOUND_ENGINEER,
             PayeeCategory.SECURITY,
             PayeeCategory.TICKETWEB_CREDITS,
+            PayeeCategory.UNCATEGORISED,
             PayeeCategory.VAT, PayeeCategory.WORK_PERMITS
         ]:
             return False
 
         if category in [
             PayeeCategory.ADMINISTRATION,
-            PayeeCategory.AIRTABLE, PayeeCategory.BANK_FEES, PayeeCategory.BAR_SNACKS,
+            PayeeCategory.AIRTABLE, PayeeCategory.BAR_SNACKS,
             PayeeCategory.BAR_STOCK, PayeeCategory.BT, PayeeCategory.BUILDING_MAINTENANCE, PayeeCategory.BUILDING_SECURITY,
             PayeeCategory.CLEANING, PayeeCategory.ELECTRICITY,
             PayeeCategory.EQUIPMENT_HIRE, PayeeCategory.EQUIPMENT_MAINTENANCE, PayeeCategory.EQUIPMENT_PURCHASE,
@@ -107,15 +110,16 @@ class PayeeCategory(StrEnum):
         ]:
             return True
 
-        if category is False:
-            return False
+        raise ValueError(f"Unknown category {category}")
 
     @staticmethod
-    def is_credit(category: Optional['PayeeCategory']) -> bool:
+    def is_credit(category: 'PayeeCategory') -> bool:
+        checked_type(category, PayeeCategory)
         return category in [PayeeCategory.ZETTLE_CREDITS, PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.SPACE_HIRE]
 
     @staticmethod
-    def is_debit(category: Optional['PayeeCategory']) -> bool:
+    def is_debit(category: 'PayeeCategory') -> bool:
+        checked_type(category, PayeeCategory)
         return not PayeeCategory.is_credit(category)
 
 
@@ -453,7 +457,7 @@ def _maybe_subscriptions(tr: Transaction) -> Optional[str]:
     if matches_start(tr, ["music venues allia wimborne", "jazz in london vortex"]):
         return PayeeCategory.SUBSCRIPTIONS
 
-def category_for_transaction(transaction: Transaction) -> Optional[PayeeCategory]:
+def category_for_transaction(transaction: Transaction) -> PayeeCategory:
     return (_maybe_airtable(transaction) or
             _maybe_bank_fees(transaction) or
             _maybe_bank_interest(transaction) or
@@ -494,7 +498,8 @@ def category_for_transaction(transaction: Transaction) -> Optional[PayeeCategory
             _maybe_tissues(transaction) or
             _maybe_vat(transaction) or
             _maybe_work_permit(transaction) or
-            _maybe_zettle_credits(transaction)
+            _maybe_zettle_credits(transaction) or
+            PayeeCategory.UNCATEGORISED
             )
 
 if __name__ == '__main__':

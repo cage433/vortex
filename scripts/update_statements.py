@@ -1,13 +1,10 @@
 from decimal import Decimal
 
-from accounting.accounting_activity import AccountingActivity
 from bank_statements import BankActivity
 from bank_statements.bank_account import CURRENT_ACCOUNT, BankAccount
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange
-from env import CURRENT_ACCOUNT_2024_STATEMENTS_ID, CURRENT_ACCOUNT_2023_STATEMENTS_ID, \
-    CURRENT_ACCOUNT_2025_STATEMENTS_ID
 from google_sheets import Workbook
 from google_sheets.statements.statements_tab import StatementsTab
 from kashflow.nominal_ledger import NominalLedgerItemType, NominalLedger
@@ -24,7 +21,7 @@ def statements_tab_for_month(account: BankAccount, month: AccountingMonth) -> St
 
 
 def statements_consistent(tab: StatementsTab, activity: BankActivity, fail_on_inconsistency: bool) -> bool:
-    tab_transactions = [t.transaction for t in tab.transaction_infos_from_tab()]
+    tab_transactions = [t.transaction for t in tab.categorised_transactions_from_tab()]
     activity_transactions = activity.sorted_transactions
     if len(tab_transactions) != len(activity_transactions):
         if fail_on_inconsistency:
@@ -51,7 +48,7 @@ def ensure_tab_consistent_with_account(account: BankAccount, month: AccountingMo
 def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingMonth):
     sheet_id = StatementsTab.sheet_id_for_account(account, month)
     tab = StatementsTab(Workbook(sheet_id), account, month.month_name, month)
-    transaction_infos = tab.transaction_infos_from_tab()
+    transaction_infos = tab.categorised_transactions_from_tab()
     uncategorized = [t for t in transaction_infos if t.category is None]
     kashflow_period = SimpleDateRange(month.first_day - 30, month.last_day + 30)
     ledger_items = NominalLedger.from_latest_csv_file(force=False).restrict_to_period(kashflow_period).ledger_items
@@ -96,6 +93,6 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
 
 
 if __name__ == '__main__':
-    acc_month = AccountingMonth.from_calendar_month(Month(2022, 9))
-    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, acc_month, refresh_bank_activity=False, refresh_sheet=True)
+    acc_month = AccountingMonth.from_calendar_month(Month(2023, 9))
+    ensure_tab_consistent_with_account(CURRENT_ACCOUNT, acc_month, refresh_bank_activity=True, refresh_sheet=True)
     compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, acc_month)
