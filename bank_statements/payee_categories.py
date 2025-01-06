@@ -97,6 +97,7 @@ class PayeeCategory(StrEnum):
             PayeeCategory.AIRTABLE, PayeeCategory.BAR_SNACKS,
             PayeeCategory.BAR_STOCK, PayeeCategory.BT, PayeeCategory.BUILDING_MAINTENANCE,
             PayeeCategory.BUILDING_SECURITY,
+            PayeeCategory.CARD_SALES,
             PayeeCategory.CLEANING, PayeeCategory.ELECTRICITY,
             PayeeCategory.EQUIPMENT_HIRE, PayeeCategory.EQUIPMENT_MAINTENANCE, PayeeCategory.EQUIPMENT_PURCHASE,
             PayeeCategory.FIRE_ALARM, PayeeCategory.FLOOD,
@@ -108,7 +109,8 @@ class PayeeCategory(StrEnum):
             PayeeCategory.RENT,
             PayeeCategory.SERVICES, PayeeCategory.SLACK, PayeeCategory.SPACE_HIRE, PayeeCategory.SUBSCRIPTIONS,
             PayeeCategory.TELEPHONE, PayeeCategory.THAMES_WATER,
-            PayeeCategory.WEB_HOST, PayeeCategory.CARD_SALES
+            PayeeCategory.UTILITIES,
+            PayeeCategory.WEB_HOST,
         ]:
             return True
 
@@ -117,7 +119,8 @@ class PayeeCategory(StrEnum):
     @staticmethod
     def is_credit(category: 'PayeeCategory') -> bool:
         checked_type(category, PayeeCategory)
-        return category in [PayeeCategory.CARD_SALES, PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.SPACE_HIRE]
+        return category in [PayeeCategory.CARD_SALES, PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.SPACE_HIRE,
+                            PayeeCategory.MEMBERSHIPS]
 
     @staticmethod
     def is_debit(category: 'PayeeCategory') -> bool:
@@ -133,6 +136,7 @@ def matches_start(transaction, matches: any) -> bool:
         if payee.startswith(match):
             return True
     return False
+
 
 def matches_end(transaction, matches: any) -> bool:
     if isinstance(matches, str):
@@ -474,8 +478,6 @@ def _maybe_space_hire(tr: Transaction) -> Optional[str]:
             return PayeeCategory.SPACE_HIRE
         if matches_end(tr, "rehearsal"):
             return PayeeCategory.SPACE_HIRE
-
-
 
 
 def _maybe_subscriptions(tr: Transaction) -> Optional[str]:

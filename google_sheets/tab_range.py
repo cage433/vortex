@@ -75,6 +75,10 @@ class TabCell:
         self.cell_coordinates: CellCoordinates = checked_type(coordinates, CellCoordinates)
 
     @property
+    def in_a1_notation(self):
+        return self.cell_coordinates.text
+
+    @property
     def i_row(self) -> int:
         return self.cell_coordinates.i_row
 
