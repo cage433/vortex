@@ -22,7 +22,7 @@ MUSICIANS = _musicians()
 
 @verify(UNIQUE)
 class PayeeCategory(StrEnum):
-    ADMINISTRATION = "Administration"
+    ACCOUNTANT = "Accountant"
     AIRTABLE = "Airtable"
     BANK_FEES = "Bank Fees"
     BANK_INTEREST = "Bank Interest"
@@ -32,6 +32,7 @@ class PayeeCategory(StrEnum):
     BT = "BT"
     BUILDING_MAINTENANCE = "Building Maintenance"
     BUILDING_SECURITY = "Building Security"
+    CARD_SALES = "Card Sales"
     CLEANING = "Cleaning"
     CREDIT_CARD_FEES = "Credit Card Fees"
     DONATION = "Donation"
@@ -41,26 +42,24 @@ class PayeeCategory(StrEnum):
     EQUIPMENT_PURCHASE = "Equipment Purchase"
     FIRE_ALARM = "Fire Alarm"
     FLOOD = "Flood"
+    GIG_SECURITY = "Gig Security"
     INSURANCE = "Insurance"
     INTERNAL_TRANSFER = "Internal Transfer"
     KASHFLOW = "Kashflow"
     MAILCHIMP = "Mailchimp"
-    LICENSING_DIRECT = "Licensing - Direct"
-    LICENSING_INDIRECT = "Licensing - Indirect"
-    MARKETING_DIRECT = "Marketing - Direct"
-    MARKETING_INDIRECT = "Marketing - Indirect"
+    LICENSING = "Licensing"
+    MARKETING = "Marketing Direct"
     MEMBERSHIPS = "Memberships"
     MUSICIAN_COSTS = "Musician Costs"
     MUSICIAN_PAYMENTS = "Musician Payments"
     MUSIC_VENUE_TRUST = "Music Venue Trust"
     OPERATIONAL_COSTS = "Operational Costs"
-    PETTY_CASH = "Petty cash"
+    PETTY_CASH = "Petty Cash"
     PIANO_TUNER = "Piano Tuner"
     PRS = "PRS"
     RATES = "Rates"
     RENT = "Rent"
     SALARIES = "Salaries"
-    SECURITY = "Security"
     SERVICES = "Services"
     SLACK = "Slack"
     SOUND_ENGINEER = "Sound Engineer"
@@ -69,23 +68,24 @@ class PayeeCategory(StrEnum):
     TELEPHONE = "Telephone"
     THAMES_WATER = "Thames Water"
     TICKETWEB_CREDITS = "Ticketweb Credits"
-    TICKET_SALES = "Ticket sales"
+    TICKET_SALES = "Ticket Sales"
     UNCATEGORISED = "Uncategorised"
     UTILITIES = "Utilities"
     VAT = "VAT"
     WEB_HOST = "Web Host"
     WORK_PERMITS = "Work Permits"
-    ZETTLE_CREDITS = "Zettle Credits"
 
     @staticmethod
     def is_subject_to_vat(category: 'PayeeCategory') -> bool:
         if category in [
             PayeeCategory.BANK_FEES,
             PayeeCategory.BB_LOAN, PayeeCategory.BANK_INTEREST, PayeeCategory.CREDIT_CARD_FEES,
-            PayeeCategory.DONATION, PayeeCategory.INTERNAL_TRANSFER,
+            PayeeCategory.DONATION,
+            PayeeCategory.GIG_SECURITY,
+            PayeeCategory.INTERNAL_TRANSFER,
             PayeeCategory.MUSIC_VENUE_TRUST, PayeeCategory.MUSICIAN_PAYMENTS, PayeeCategory.PETTY_CASH,
+            PayeeCategory.PIANO_TUNER,
             PayeeCategory.RATES, PayeeCategory.SALARIES, PayeeCategory.SOUND_ENGINEER,
-            PayeeCategory.SECURITY,
             PayeeCategory.TICKETWEB_CREDITS,
             PayeeCategory.UNCATEGORISED,
             PayeeCategory.VAT, PayeeCategory.WORK_PERMITS
@@ -93,20 +93,22 @@ class PayeeCategory(StrEnum):
             return False
 
         if category in [
-            PayeeCategory.ADMINISTRATION,
+            PayeeCategory.ACCOUNTANT,
             PayeeCategory.AIRTABLE, PayeeCategory.BAR_SNACKS,
-            PayeeCategory.BAR_STOCK, PayeeCategory.BT, PayeeCategory.BUILDING_MAINTENANCE, PayeeCategory.BUILDING_SECURITY,
+            PayeeCategory.BAR_STOCK, PayeeCategory.BT, PayeeCategory.BUILDING_MAINTENANCE,
+            PayeeCategory.BUILDING_SECURITY,
             PayeeCategory.CLEANING, PayeeCategory.ELECTRICITY,
             PayeeCategory.EQUIPMENT_HIRE, PayeeCategory.EQUIPMENT_MAINTENANCE, PayeeCategory.EQUIPMENT_PURCHASE,
             PayeeCategory.FIRE_ALARM, PayeeCategory.FLOOD,
             PayeeCategory.INSURANCE, PayeeCategory.KASHFLOW,
-            PayeeCategory.LICENSING_DIRECT, PayeeCategory.LICENSING_INDIRECT,
-            PayeeCategory.MAILCHIMP, PayeeCategory.MARKETING_DIRECT, PayeeCategory.MARKETING_INDIRECT,
+            PayeeCategory.LICENSING,
+            PayeeCategory.MAILCHIMP, PayeeCategory.MARKETING,
             PayeeCategory.MEMBERSHIPS, PayeeCategory.MUSICIAN_COSTS, PayeeCategory.OPERATIONAL_COSTS,
-            PayeeCategory.PRS, PayeeCategory.PIANO_TUNER, PayeeCategory.RENT,
+            PayeeCategory.PRS,
+            PayeeCategory.RENT,
             PayeeCategory.SERVICES, PayeeCategory.SLACK, PayeeCategory.SPACE_HIRE, PayeeCategory.SUBSCRIPTIONS,
             PayeeCategory.TELEPHONE, PayeeCategory.THAMES_WATER,
-            PayeeCategory.WEB_HOST, PayeeCategory.ZETTLE_CREDITS
+            PayeeCategory.WEB_HOST, PayeeCategory.CARD_SALES
         ]:
             return True
 
@@ -115,7 +117,7 @@ class PayeeCategory(StrEnum):
     @staticmethod
     def is_credit(category: 'PayeeCategory') -> bool:
         checked_type(category, PayeeCategory)
-        return category in [PayeeCategory.ZETTLE_CREDITS, PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.SPACE_HIRE]
+        return category in [PayeeCategory.CARD_SALES, PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.SPACE_HIRE]
 
     @staticmethod
     def is_debit(category: 'PayeeCategory') -> bool:
@@ -129,6 +131,15 @@ def matches_start(transaction, matches: any) -> bool:
     payee = transaction.payee.lower()
     for match in matches:
         if payee.startswith(match):
+            return True
+    return False
+
+def matches_end(transaction, matches: any) -> bool:
+    if isinstance(matches, str):
+        matches = [matches]
+    payee = transaction.payee.lower()
+    for match in matches:
+        if payee.endswith(match):
             return True
     return False
 
@@ -169,14 +180,15 @@ def _maybe_rates(transaction: Transaction) -> Optional[str]:
         return PayeeCategory.RATES
 
 
-
 def _maybe_electricity(transaction: Transaction) -> Optional[str]:
     if matches_anywhere(transaction, "edf energy"):
         return PayeeCategory.ELECTRICITY
 
+
 def _maybe_equipment_costs(transaction: Transaction) -> Optional[str]:
     if matches_start(transaction, "gear4music"):
         return PayeeCategory.EQUIPMENT_PURCHASE
+
 
 def _maybe_insurance(transaction: Transaction) -> Optional[str]:
     if matches_start(
@@ -254,9 +266,11 @@ def _maybe_memberships(transaction: Transaction) -> Optional[str]:
         return PayeeCategory.MEMBERSHIPS
 
 
-def _maybe_zettle_credits(transaction: Transaction) -> Optional[str]:
+def _maybe_card_sales(transaction: Transaction) -> Optional[str]:
     if matches_anywhere(transaction, "paypal ppwdl"):
-        return PayeeCategory.ZETTLE_CREDITS
+        return PayeeCategory.CARD_SALES
+    if matches_anywhere(transaction, "rails ltd butlr"):
+        return PayeeCategory.CARD_SALES
 
 
 def _maybe_ticketweb_credits(transaction: Transaction) -> Optional[str]:
@@ -285,9 +299,9 @@ def _maybe_bar_purchases(transaction: Transaction) -> Optional[str]:
         return PayeeCategory.BAR_STOCK
 
 
-def _maybe_security(transaction: Transaction) -> Optional[str]:
+def _maybe_gig_security(transaction: Transaction) -> Optional[str]:
     if matches_start(transaction, "denise williams"):
-        return PayeeCategory.SECURITY
+        return PayeeCategory.GIG_SECURITY
 
 
 def _maybe_fire_alarm(transaction: Transaction) -> Optional[str]:
@@ -328,7 +342,7 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
         "joe mashiter",
         "jorge martinez",
         "kinga ilyes",
-        "laura kazaroff",    # On behalf of Mike O'Malley
+        "laura kazaroff",  # On behalf of Mike O'Malley
         "mike omalley",
         "mike o'malley",
         "milo mcguire",
@@ -427,7 +441,7 @@ def _maybe_operational_costs(tr: Transaction) -> Optional[str]:
                 "leyland",
                 "dalston stationers",
                 "www.nisbets.com",
-                "lb hackney genfund"       # Hackney Council, bin collection
+                "lb hackney genfund"  # Hackney Council, bin collection
             ]):
         return PayeeCategory.OPERATIONAL_COSTS
 
@@ -439,23 +453,35 @@ def _maybe_rent(tr: Transaction) -> Optional[str]:
     if matches_start(tr, "hcd vortex rent"):
         return PayeeCategory.RENT
 
+
 def _maybe_license_renewal(tr: Transaction) -> Optional[str]:
     if matches_start(tr, "hackney.gov.uk"):
-        return PayeeCategory.LICENSING_DIRECT
+        return PayeeCategory.LICENSING
+
 
 def _maybe_building_security(tr: Transaction) -> Optional[str]:
     if matches_start(tr, ["adt inv", "adt fire"]):
         return PayeeCategory.BUILDING_SECURITY
 
+
 def _maybe_space_hire(tr: Transaction) -> Optional[str]:
-    if matches_start(tr, "cheng xie"):
-        return PayeeCategory.SPACE_HIRE
-    if matches_anywhere(tr, "mushroom") and matches_anywhere(tr, "stripe"):
-        return PayeeCategory.SPACE_HIRE
+    if tr.amount > 0:
+        if matches_start(tr, ["cheng xie", "david miller"]):
+            return PayeeCategory.SPACE_HIRE
+        if matches_anywhere(tr, "mushroom") and matches_anywhere(tr, "stripe"):
+            return PayeeCategory.SPACE_HIRE
+        if matches_anywhere(tr, "lise rossi"):
+            return PayeeCategory.SPACE_HIRE
+        if matches_end(tr, "rehearsal"):
+            return PayeeCategory.SPACE_HIRE
+
+
+
 
 def _maybe_subscriptions(tr: Transaction) -> Optional[str]:
     if matches_start(tr, ["music venues allia wimborne", "jazz in london vortex"]):
         return PayeeCategory.SUBSCRIPTIONS
+
 
 def category_for_transaction(transaction: Transaction) -> PayeeCategory:
     return (_maybe_airtable(transaction) or
@@ -472,6 +498,7 @@ def category_for_transaction(transaction: Transaction) -> PayeeCategory:
             _maybe_electricity(transaction) or
             _maybe_equipment_costs(transaction) or
             _maybe_fire_alarm(transaction) or
+            _maybe_gig_security(transaction) or
             _maybe_host(transaction) or
             _maybe_insurance(transaction) or
             _maybe_kashflow(transaction) or
@@ -488,7 +515,6 @@ def category_for_transaction(transaction: Transaction) -> PayeeCategory:
             _maybe_rates(transaction) or
             _maybe_rent(transaction) or
             _maybe_salaries(transaction) or
-            _maybe_security(transaction) or
             _maybe_slack(transaction) or
             _maybe_sound_engineer(transaction) or
             _maybe_space_hire(transaction) or
@@ -498,9 +524,10 @@ def category_for_transaction(transaction: Transaction) -> PayeeCategory:
             _maybe_tissues(transaction) or
             _maybe_vat(transaction) or
             _maybe_work_permit(transaction) or
-            _maybe_zettle_credits(transaction) or
+            _maybe_card_sales(transaction) or
             PayeeCategory.UNCATEGORISED
             )
+
 
 if __name__ == '__main__':
     cat = PayeeCategory.WORK_PERMITS

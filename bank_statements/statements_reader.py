@@ -71,7 +71,6 @@ class StatementsReader:
                             amount = paid_in - paid_out
                             trans = Transaction(
                                 account,
-                                "",
                                 day,
                                 payee,
                                 amount,
@@ -103,7 +102,6 @@ class StatementsReader:
                         for tr in ofx.account.statement.transactions:
                             trans = Transaction(
                                 account,
-                                tr.id.strip(),
                                 Day.from_date(tr.date),
                                 tr.payee,
                                 Decimal(tr.amount),

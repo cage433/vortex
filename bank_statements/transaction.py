@@ -12,14 +12,12 @@ class Transaction:
     def __init__(
             self,
             account: BankAccount,
-            ftid: str,
             payment_date: Day,
             payee: str,
             amount: Decimal,
             transaction_type: str,
     ):
         self.account: BankAccount = checked_type(account, BankAccount)
-        self.ftid = checked_type(ftid, str)
         self.payment_date: Day = checked_type(payment_date, Day)
         self.payee: str = checked_type(payee, str)
         self.amount: Decimal = checked_type(amount, Decimal)
@@ -34,7 +32,6 @@ class Transaction:
     def clone(
             self,
             account: Optional[BankAccount] = None,
-            ftid: Optional[str] = None,
             payment_date: Optional[Day] = None,
             payee: Optional[str] = None,
             amount: Optional[float] = None,
@@ -42,7 +39,6 @@ class Transaction:
     ):
         return Transaction(
             account=account or self.account,
-            ftid=ftid or self.ftid,
             payment_date=payment_date or self.payment_date,
             payee=payee or self.payee,
             amount=amount or self.amount,

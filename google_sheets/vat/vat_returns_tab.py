@@ -201,7 +201,7 @@ class TotalBarSalesRange(TabRange):
         self.zettle_credit_range = PaymentsRangeForCategory(
             top_left_cell.offset(1),
             categorised_transactions,
-            PayeeCategory.ZETTLE_CREDITS,
+            PayeeCategory.CARD_SALES,
             split_debit_credit=False,
             reclaimable_vat_fraction_cell=None,
         )
@@ -312,11 +312,11 @@ class CashFlowsRange(TabRange):
         credit_vat_categories = sorted(
             [c for c in PayeeCategory if
              c in self.trans_categories and PayeeCategory.is_credit(c) and PayeeCategory.is_subject_to_vat(c)
-             and c is not PayeeCategory.ZETTLE_CREDITS
+             and c is not PayeeCategory.CARD_SALES
              ])
         non_vat_categories = sorted(
             [c for c in self.trans_categories if
-             c not in debit_vat_categories and c not in credit_vat_categories and c is not PayeeCategory.ZETTLE_CREDITS]
+             c not in debit_vat_categories and c not in credit_vat_categories and c is not PayeeCategory.CARD_SALES]
         )
         self.bar_sales_range = TotalBarSalesRange(top_left_cell.offset(4), categorised_transactions, gigs_info)
         self.walk_in_sales_range = WalkInSalesRange(
@@ -404,7 +404,7 @@ class VatReclaimFractionRange(TabRange):
         self.zettle_credit_range = PaymentsRangeForCategory(
             top_left_cell.offset(1),
             categorised_transactions,
-            PayeeCategory.ZETTLE_CREDITS,
+            PayeeCategory.CARD_SALES,
             split_debit_credit=False,
             reclaimable_vat_fraction_cell=None,
         )

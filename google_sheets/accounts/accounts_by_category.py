@@ -335,7 +335,7 @@ class AccountsByCategoryRange(TabRange):
             (
                 self.period_range(self.BAR_SALES_ROW),
                 [
-                    ct.total_for(PayeeCategory.ZETTLE_CREDITS) - Decimal(gi.total_walk_in_sales)
+                    ct.total_for(PayeeCategory.CARD_SALES) - Decimal(gi.total_walk_in_sales)
                     for ct, gi in zip(
                     self.categorized_transactions_by_sub_period,
                     self.gigs_by_sub_period
@@ -477,7 +477,7 @@ class AccountsByCategoryRange(TabRange):
             (self.BB_LOAN_ROW, [PayeeCategory.BB_LOAN]),
             (self.OPERATIONAL_COSTS_ROW, [PayeeCategory.OPERATIONAL_COSTS]),
             (self.PETTY_CASH_ROW, [PayeeCategory.PETTY_CASH]),
-            (self.ADMINISTRATION_ROW, [PayeeCategory.ADMINISTRATION]),
+            (self.ADMINISTRATION_ROW, [PayeeCategory.ACCOUNTANT]),
             (self.AIRTABLE_ROW, [PayeeCategory.AIRTABLE]),
             (self.BANK_FEES_ROW, [PayeeCategory.BANK_FEES, PayeeCategory.BANK_INTEREST]),
             (self.BUILDING_MAINTENANCE_ROW, [PayeeCategory.BUILDING_MAINTENANCE]),

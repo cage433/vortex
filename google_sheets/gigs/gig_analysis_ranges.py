@@ -210,7 +210,7 @@ class BankDrinkSalesRange(MonthAnalysisRange):
         if month not in self.gigs_by_month:
             return 0
         walk_ins = self.gigs_by_month[month].total_walk_in_sales
-        zettle = self.categorised_transactions_by_month[month].total_for(PayeeCategory.ZETTLE_CREDITS)
+        zettle = self.categorised_transactions_by_month[month].total_for(PayeeCategory.CARD_SALES)
         return zettle - Decimal(walk_ins)
 
 class AirtableDrinkSalesPerCustomerRange(MonthAnalysisRange):
@@ -295,7 +295,7 @@ class BankDrinkSalesPerCustomerRange(MonthAnalysisRange):
         if month not in self.gigs_by_month:
             return 0
         walk_ins = self.gigs_by_month[month].total_walk_in_sales
-        zettle = self.categorised_transactions_by_month[month].total_for(PayeeCategory.ZETTLE_CREDITS)
+        zettle = self.categorised_transactions_by_month[month].total_for(PayeeCategory.CARD_SALES)
         sales = zettle - Decimal(walk_ins)
         num_tickets = self.gigs_by_month[month].total_tickets
         return sales / Decimal(num_tickets)
