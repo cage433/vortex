@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from bank_statements import BankActivity
 from bank_statements.bank_account import CURRENT_ACCOUNT, BankAccount
+from bank_statements.payee_categories import PayeeCategory
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange
@@ -49,7 +50,7 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
     sheet_id = StatementsTab.sheet_id_for_account(account, month)
     tab = StatementsTab(Workbook(sheet_id), account, month.month_name, month)
     transaction_infos = tab.categorised_transactions_from_tab()
-    uncategorized = [t for t in transaction_infos if t.category is None]
+    uncategorized = [t for t in transaction_infos if t.category == PayeeCategory.UNCATEGORISED]
     kashflow_period = SimpleDateRange(month.first_day - 30, month.last_day + 30)
     ledger_items = NominalLedger.from_latest_csv_file(force=False).restrict_to_period(kashflow_period).ledger_items
 
@@ -93,9 +94,9 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
 
 
 if __name__ == '__main__':
-    acc_month = AccountingMonth.from_calendar_month(Month(2024, 9))
-    for i in range(3):
+    acc_month = AccountingMonth.from_calendar_month(Month(2021, 12))
+    for i in range(1):
         print(f"Refreshing {acc_month}")
-        ensure_tab_consistent_with_account(CURRENT_ACCOUNT, acc_month, refresh_bank_activity=True, refresh_sheet=True)
+        ensure_tab_consistent_with_account(CURRENT_ACCOUNT, acc_month, refresh_bank_activity=False, refresh_sheet=True)
         compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, acc_month)
         acc_month = acc_month + 1

@@ -43,6 +43,7 @@ class PayeeCategory(StrEnum):
     FIRE_ALARM = "Fire Alarm"
     FLOOD = "Flood"
     GIG_SECURITY = "Gig Security"
+    GRANT = "Grant"
     INSURANCE = "Insurance"
     INTERNAL_TRANSFER = "Internal Transfer"
     KASHFLOW = "Kashflow"
@@ -336,6 +337,7 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
 
     known_engineers = [
         "adrian kunstler",
+        "andrei eliade",
         "andrew marriott",
         "bella cooper",
         "chris penty",
@@ -343,6 +345,7 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[str]:
         "felix threadgill",
         "giulo matheson",
         "giulio matheson",
+        "jeremy sliwerski",
         "joe mashiter",
         "jorge martinez",
         "kinga ilyes",
@@ -443,6 +446,7 @@ def _maybe_operational_costs(tr: Transaction) -> Optional[str]:
             [
                 "post office",
                 "leyland",
+                "krystal",
                 "dalston stationers",
                 "www.nisbets.com",
                 "lb hackney genfund"  # Hackney Council, bin collection
@@ -470,11 +474,13 @@ def _maybe_building_security(tr: Transaction) -> Optional[str]:
 
 def _maybe_space_hire(tr: Transaction) -> Optional[str]:
     if tr.amount > 0:
-        if matches_start(tr, ["cheng xie", "david miller"]):
+        if matches_start(tr, ["cheng xie", "david miller", "allsopp j"]):
             return PayeeCategory.SPACE_HIRE
         if matches_anywhere(tr, "mushroom") and matches_anywhere(tr, "stripe"):
             return PayeeCategory.SPACE_HIRE
-        if matches_anywhere(tr, "lise rossi"):
+        if matches_anywhere(tr, ["lise rossi", "duke street"]):
+            return PayeeCategory.SPACE_HIRE
+        if matches_anywhere(tr, "state of tru"):
             return PayeeCategory.SPACE_HIRE
         if matches_end(tr, "rehearsal"):
             return PayeeCategory.SPACE_HIRE

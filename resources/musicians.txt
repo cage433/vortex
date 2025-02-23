@@ -1,10 +1,12 @@
 alex dmochowski
 adam glasser
 adam osmianski
+adam woodcock
 adrian kunstler
 aidan pearson
 aidan pope
 alan wilkinson
+alastair martin
 albemarle music
 alcyona mick
 alex bonney
@@ -19,14 +21,17 @@ ali watson
 alice leggett
 alina bzhezhinska
 alison rayner
+alistair martin
 aliyah qayum
 amy baldwin
 amy gadiaga
 ana silvera
 andrea di biase
 andrew bain
+andrew linham
 andrew lisle
 andrew woodhead
+andrew woolf
 andy watts
 anita wardell
 annie whitehead
@@ -48,6 +53,7 @@ bill marrows
 binker golding
 brandon allen
 brigitte beraha
+bruno d ambra
 bruno heinen
 byron wallen
 caius williams
@@ -83,8 +89,10 @@ dee byrne
 denys baptiste
 deschanel gordon
 devin gray
+diarra walcott
 django bates
 dolphin hyperspace
+donovan haffner
 dornbusch
 dom pusey
 duncan eagles
@@ -95,13 +103,13 @@ ed puddick
 eddie myer
 eddie parker
 elchin shirinov
+eliot frost
 elliot galvin
 empirical
 ethan iverson
 evangeline coplan
 ewan hastie
 ezekiel ajie
-donovan haffner
 emilia martensson
 emma rawicz
 evelyn hill
@@ -124,17 +132,22 @@ guido spannocchi
 hannes reipler
 hans koller
 harrison smith
+harry baker
 harry christelis
 heidi vogel
 helena kay
+henrick jensen
+henrik jensen
 henry lowther
 henry spencer
 huw warren
 huw williams
+huw v williams
 immy churchill
 irini arabatzi
 ivo neame
 jack courtney
+jack wilson
 jack yardley
 jakub klimiuk
 james allsopp
@@ -149,8 +162,8 @@ jean toussaint
 jelly cleaver
 jesse doniach
 jessica bullen
+jim mullen
 jim rattigan
-jmi
 joel ross
 johanna bernard
 john escreet
@@ -163,6 +176,7 @@ jonny mansfield
 jonny wickham
 jon onabowu
 joseph leighton
+joseph tzabar
 josephine davies
 joy ellis
 julian seigel
@@ -170,7 +184,9 @@ julian woods
 julie sassoon
 julien durand
 karim saber
+kasper rietkerk
 kate shortt
+kris davis
 kristian borring
 larry bartley
 larry stabbins
@@ -193,6 +209,7 @@ luna cohen
 maddalena ghezzi
 maddy coombs
 marble sun
+marek dorcik
 maria argiro
 maria harper
 maria rehakova
@@ -211,7 +228,10 @@ matt hurley
 matt ridley
 matthew herd
 maya caskie
+meg bird
 michael feinberg
+michael parr
+mick foster
 miguel gorodi
 mike chillingworth
 mike de souza
@@ -251,6 +271,7 @@ paula rea gibson
 paul edis
 paul jolly
 pete wareham
+petra haller
 phil robson
 pietro cavassa
 paul clarvis
@@ -272,8 +293,10 @@ robert cope
 robert mitchell
 rob luft
 rod oughton
+roella oloro
 ron magril
 rory ingham
+rowland sutherland
 ruth goller
 russell brown
 sam braysher
@@ -298,6 +321,7 @@ simon moullier
 simon purcell
 steven saunders
 steve banks
+steve beresford
 steve buckley
 steve lehman
 sultan stevenson
@@ -318,6 +342,7 @@ toby medland
 tomas challenger
 tom barford
 tom cawley
+tom chant
 tom niblock
 tom ollendorf
 tom smith company
@@ -328,16 +353,20 @@ tony dudley evans
 tori freestone
 trish clowes
 tullis rennie
+vasileios podaras
 veryan weston
 vittorio mura
 vicente magalhaes
 viva voce
 v hawthorn-nelson
+wandering wires
 will barry
 will cleasby
 will glaser
 will vinson
+william hobson
 world music band
 xhosa cole
+zhenya strigalev
 zoe mullen
 zoe rahman
