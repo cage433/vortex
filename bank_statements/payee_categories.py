@@ -87,6 +87,7 @@ class PayeeCategory(StrEnum):
             PayeeCategory.MUSIC_VENUE_TRUST, PayeeCategory.MUSICIAN_PAYMENTS, PayeeCategory.PETTY_CASH,
             PayeeCategory.PIANO_TUNER,
             PayeeCategory.RATES, PayeeCategory.SALARIES, PayeeCategory.SOUND_ENGINEER,
+            PayeeCategory.TICKET_SALES,
             PayeeCategory.TICKETWEB_CREDITS,
             PayeeCategory.UNCATEGORISED,
             PayeeCategory.VAT, PayeeCategory.WORK_PERMITS
@@ -115,7 +116,7 @@ class PayeeCategory(StrEnum):
         ]:
             return True
 
-        raise ValueError(f"Unknown category {category}")
+        raise ValueError(f"Unknown category for VAT [{category}]")
 
     @staticmethod
     def is_credit(category: 'PayeeCategory') -> bool:

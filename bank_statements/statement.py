@@ -114,7 +114,12 @@ class Statement:
     def earliest_balance(self) -> Optional[Decimal]:
         if len(self.published_balances) == 0:
             return None
-        return self.published_balances[min(self.published_balances.keys())]
+        earliest_day = min(self.published_balances.keys())
+        earliest_day_payments = sum(
+            tr.amount for tr in self.transactions_by_date.get(earliest_day, [])
+        )
+        balance_at_eod = self.published_balances[earliest_day]
+        return balance_at_eod - earliest_day_payments
 
     @property
     def latest_balance(self) -> Optional[Decimal]:
