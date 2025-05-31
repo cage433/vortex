@@ -1,4 +1,5 @@
 from decimal import Decimal
+from time import sleep
 
 from bank_statements import BankActivity
 from bank_statements.bank_account import CURRENT_ACCOUNT, BankAccount
@@ -8,14 +9,14 @@ from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange
 from google_sheets import Workbook
 from google_sheets.statements.statements_tab import StatementsTab
+from google_sheets.statements.statements_tab import StatementsTab
 from kashflow.nominal_ledger import NominalLedgerItemType, NominalLedger
 
 
-def statements_tab_for_month(account: BankAccount, month: AccountingMonth) -> StatementsTab:
-    id = StatementsTab.sheet_id_for_account(account, month)
+def statements_tab_for_month(month: AccountingMonth) -> StatementsTab:
+    id = StatementsTab.sheet_id_for_month(month)
     return StatementsTab(
         Workbook(id),
-        account,
         month.month_name,
         month
     )
@@ -36,19 +37,20 @@ def statements_consistent(tab: StatementsTab, activity: BankActivity, fail_on_in
     return True
 
 
-def ensure_tab_consistent_with_account(account: BankAccount, month: AccountingMonth, refresh_bank_activity: bool,
-                                       refresh_sheet: bool):
-    tab = statements_tab_for_month(account, month)
-    bank_activity = BankActivity.build(force=refresh_bank_activity).restrict_to_accounts(account).restrict_to_period(
-        month)
-    if (not statements_consistent(tab, bank_activity, fail_on_inconsistency=False)) or refresh_sheet:
+def ensure_tab_consistent(month: AccountingMonth, refresh_bank_activity: bool, refresh_sheet: bool):
+    tab = statements_tab_for_month(month)
+
+
+    bank_activity = BankActivity.build(force=refresh_bank_activity).restrict_to_period(month)
+    if refresh_sheet or (not statements_consistent(tab, bank_activity, fail_on_inconsistency=False)):
+        tab.clear_all()
         tab.update(bank_activity)
     statements_consistent(tab, bank_activity, fail_on_inconsistency=True)
 
 
-def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingMonth):
-    sheet_id = StatementsTab.sheet_id_for_account(account, month)
-    tab = StatementsTab(Workbook(sheet_id), account, month.month_name, month)
+def compare_uncategorized_with_kashflow(month: AccountingMonth):
+    sheet_id = StatementsTab.sheet_id_for_month(month)
+    tab = StatementsTab(Workbook(sheet_id), month.month_name, month)
     transaction_infos = tab.categorised_transactions_from_tab()
     uncategorized = [t for t in transaction_infos if t.category == PayeeCategory.UNCATEGORISED]
     kashflow_period = SimpleDateRange(month.first_day - 30, month.last_day + 30)
@@ -94,9 +96,10 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
 
 
 if __name__ == '__main__':
-    acc_month = AccountingMonth.from_calendar_month(Month(2020, 8))
-    for i in range(1):
+    acc_month = AccountingMonth.from_calendar_month(Month(2019, 9))
+    for i in range(12):
         print(f"Refreshing {acc_month}")
-        ensure_tab_consistent_with_account(CURRENT_ACCOUNT, acc_month, refresh_bank_activity=False, refresh_sheet=True)
-        compare_uncategorized_with_kashflow(CURRENT_ACCOUNT, acc_month)
+        ensure_tab_consistent(acc_month, refresh_bank_activity=False, refresh_sheet=True)
+        compare_uncategorized_with_kashflow(acc_month)
         acc_month = acc_month + 1
+        sleep(10)

@@ -25,6 +25,8 @@ class CategorizedTransaction:
     def with_category(self, category: PayeeCategory) -> 'CategorizedTransaction':
         return CategorizedTransaction(self.transaction, category)
 
+    def __str__(self):
+        return f"{self.category}: {self.transaction}"
     @property
     def payment_date(self) -> Day:
         return self.transaction.payment_date
@@ -67,6 +69,9 @@ class CategorizedTransactions:
 
     def restrict_to_period(self, period: DateRange) -> 'CategorizedTransactions':
         return CategorizedTransactions([t for t in self.transactions if period.contains(t.payment_date)])
+
+    def restrict_to_user(self, user: str) -> 'CategorizedTransactions':
+        return CategorizedTransactions([t for t in self.transactions if user.lower() in t.payee.lower()])
 
     @property
     def categories(self) -> List[PayeeCategory]:

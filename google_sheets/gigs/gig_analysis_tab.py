@@ -8,7 +8,7 @@ from google_sheets import Tab, Workbook
 from google_sheets.gigs.gig_analysis_ranges import GigNumbersRange, AirtableTicketSalesRange, BankTicketSalesRange, \
     BankDrinkSalesRange, BankDrinkSalesPerCustomerRange, AirtableDrinkSalesRange, AirtableDrinkSalesPerCustomerRange, \
     AirtableNumTicketsSoldRange
-from google_sheets.statements.categorised_transactions import current_account_transactions_from_tabs
+from google_sheets.statements.statements_tab import StatementsTab
 
 
 class GigAnalysisTab(Tab):
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         Day(2023, 9, 1),
         Day.today()
     )
-    categorised_transactions = current_account_transactions_from_tabs(trans_period, force)
+    categorised_transactions = StatementsTab.categorized_transactions(trans_period, force)
     tab = GigAnalysisTab(workbook, period, trans_period, gig_info, categorised_transactions)
 
     tab.update()

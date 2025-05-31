@@ -5,7 +5,7 @@ from bank_statements.categorized_transaction import CategorizedTransactions
 from date_range import DateRange
 from date_range.date_range import SplitType
 from date_range.month import Month
-from google_sheets.statements.categorised_transactions import current_account_transactions_from_tabs
+from google_sheets.statements.statements_tab import StatementsTab
 from kashflow.nominal_ledger import NominalLedger
 from utils import checked_type
 
@@ -45,5 +45,5 @@ class AccountingActivity:
         gigs_info = AccountingActivity.gig_info_for_period(period, force or force_airtable)
         nominal_ledger = NominalLedger.from_latest_csv_file(force or force_nominal_ledger).restrict_to_period(period)
         bank_activity = BankActivity.build(force or force_bank).restrict_to_period(period)
-        current_account_transactions = current_account_transactions_from_tabs(period, force or force_transactions)
+        current_account_transactions = StatementsTab.categorized_transactions(period, force or force_transactions)
         return AccountingActivity(gigs_info, nominal_ledger, bank_activity, current_account_transactions)
