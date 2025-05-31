@@ -1,4 +1,5 @@
 from decimal import Decimal
+from time import sleep
 
 from bank_statements import BankActivity
 from bank_statements.bank_account import CURRENT_ACCOUNT, BankAccount
@@ -45,7 +46,8 @@ def ensure_tab_consistent(month: AccountingMonth, refresh_bank_activity: bool, r
     old_current_account_infos = old_current_account_tab.categorised_transactions_from_tab()
 
     bank_activity = BankActivity.build(force=refresh_bank_activity).restrict_to_period(month)
-    if (not statements_consistent(tab, bank_activity, fail_on_inconsistency=False)) or refresh_sheet:
+    if refresh_sheet or (not statements_consistent(tab, bank_activity, fail_on_inconsistency=False)):
+        tab.clear_all()
         tab.update(bank_activity, old_current_account_infos)
     statements_consistent(tab, bank_activity, fail_on_inconsistency=True)
 
@@ -98,9 +100,10 @@ def compare_uncategorized_with_kashflow(month: AccountingMonth):
 
 
 if __name__ == '__main__':
-    acc_month = AccountingMonth.from_calendar_month(Month(2024, 9))
-    for i in range(1):
+    acc_month = AccountingMonth.from_calendar_month(Month(2019, 9))
+    for i in range(12):
         print(f"Refreshing {acc_month}")
         ensure_tab_consistent(acc_month, refresh_bank_activity=False, refresh_sheet=True)
         compare_uncategorized_with_kashflow(acc_month)
         acc_month = acc_month + 1
+        sleep(10)

@@ -9,7 +9,10 @@ from date_range import Day, DateRange
 from date_range.accounting_month import AccountingMonth
 from env import CURRENT_ACCOUNT_2023_STATEMENTS_ID, CURRENT_ACCOUNT_2024_STATEMENTS_ID, \
     CURRENT_ACCOUNT_2025_STATEMENTS_ID, CURRENT_ACCOUNT_2022_STATEMENTS_ID, CURRENT_ACCOUNT_2021_STATEMENTS_ID, \
-    CURRENT_ACCOUNT_2020_STATEMENTS_ID, COPY_OF_CURRENT_ACCOUNT_2025_STATEMENTS_ID
+    CURRENT_ACCOUNT_2020_STATEMENTS_ID, COPY_OF_CURRENT_ACCOUNT_2025_STATEMENTS_ID, \
+    COPY_OF_CURRENT_ACCOUNT_2024_STATEMENTS_ID, COPY_OF_CURRENT_ACCOUNT_2023_STATEMENTS_ID, \
+    COPY_OF_CURRENT_ACCOUNT_2022_STATEMENTS_ID, COPY_OF_CURRENT_ACCOUNT_2021_STATEMENTS_ID, \
+    COPY_OF_CURRENT_ACCOUNT_2020_STATEMENTS_ID
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
 from google_sheets.tab_range import TabRange
@@ -210,17 +213,17 @@ class StatementsTab(Tab):
     def sheet_id_for_account(account: BankAccount, month: AccountingMonth) -> str:
         if account == CURRENT_ACCOUNT:
             year = month.year.y
-            # if year == 2020:
-            #     return CURRENT_ACCOUNT_2020_STATEMENTS_ID
-            # if year == 2021:
-            #     return CURRENT_ACCOUNT_2021_STATEMENTS_ID
-            # if year == 2022:
-            #     return CURRENT_ACCOUNT_2022_STATEMENTS_ID
-            # if year == 2023:
-            #     return CURRENT_ACCOUNT_2023_STATEMENTS_ID
-            # elif year == 2024:
-            #     return CURRENT_ACCOUNT_2024_STATEMENTS_ID
-            if year == 2025:
+            if year == 2020:
+                return COPY_OF_CURRENT_ACCOUNT_2020_STATEMENTS_ID
+            elif year == 2021:
+                return COPY_OF_CURRENT_ACCOUNT_2021_STATEMENTS_ID
+            elif year == 2022:
+                return COPY_OF_CURRENT_ACCOUNT_2022_STATEMENTS_ID
+            elif year == 2023:
+                return COPY_OF_CURRENT_ACCOUNT_2023_STATEMENTS_ID
+            elif year == 2024:
+                return COPY_OF_CURRENT_ACCOUNT_2024_STATEMENTS_ID
+            elif year == 2025:
                 return COPY_OF_CURRENT_ACCOUNT_2025_STATEMENTS_ID
         raise ValueError(f"Unrecognized account/month {account}/{month}")
 

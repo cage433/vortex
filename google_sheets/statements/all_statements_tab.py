@@ -7,7 +7,9 @@ from bank_statements.categorized_transaction import CategorizedTransaction
 from bank_statements.payee_categories import category_for_transaction, PayeeCategory
 from date_range import Day, DateRange
 from date_range.accounting_month import AccountingMonth
-from env import ALL_ACCOUNTS_2025_STATEMENTS_ID
+from env import ALL_ACCOUNTS_2025_STATEMENTS_ID, CURRENT_ACCOUNT_2025_STATEMENTS_ID, CURRENT_ACCOUNT_2024_STATEMENTS_ID, \
+    CURRENT_ACCOUNT_2023_STATEMENTS_ID, CURRENT_ACCOUNT_2022_STATEMENTS_ID, CURRENT_ACCOUNT_2021_STATEMENTS_ID, \
+    CURRENT_ACCOUNT_2020_STATEMENTS_ID
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
 from google_sheets.tab_range import TabRange
@@ -15,8 +17,12 @@ from google_sheets.tab_range import TabRange
 
 class AllStatementsTab(Tab):
     accounts = [CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT]
-    HEADINGS = ["Date", "Account", "Payee", "Category", "Amount", "Current", "Savings", "Charitable", "BBL", "Balance"]
-    (DATE, ACCOUNT, PAYEE, CATEGORY, AMOUNT, CURRENT, SAVINGS, CHARITABLE, BBL, BALANCE) = range(len(HEADINGS))
+    HEADINGS = ["Date", "Account", "Payee", "", "Category", "Amount", "Current", "Savings", "Charitable", "BBL",
+                "Balance"]
+    (DATE, ACCOUNT, PAYEE, BLANK, CATEGORY, AMOUNT, CURRENT, SAVINGS, CHARITABLE, BBL, BALANCE) = range(len(HEADINGS))
+
+    (INFO_ROW_1, INFO_ROW_2, INFO_DATE, INFO_BALANCE, INFO_CURRENT, INFO_SAVINGS, INFO_CHARITABLE, INFO_BBL,
+     INFO_UNCATEGORISED) = range(9)
 
     def __init__(
             self,
@@ -25,12 +31,16 @@ class AllStatementsTab(Tab):
             period: DateRange
     ):
         super().__init__(workbook, tab_name=title)
-        self.info_range = TabRange(self.cell("B2"), num_rows=9, num_cols=3)
+        self.info_range = TabRange(self.cell("B2"), num_rows=10, num_cols=3)
         self.heading_range = TabRange(self.info_range.bottom_left_cell.offset(2, 0), num_rows=1,
                                       num_cols=len(self.HEADINGS))
         self.period: DateRange = period
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
+
+    def clear_all(self):
+        format_requests = self.clear_values_and_formats_requests()
+        self.workbook.batch_update(format_requests)
 
     def update(self, bank_activity: BankActivity, old_current_account_infos: List[CategorizedTransaction]):
         categories_by_date_and_payee = {
@@ -43,16 +53,12 @@ class AllStatementsTab(Tab):
                 key = (transaction.payment_date, transaction.payee)
                 if key in categories_by_date_and_payee:
                     return transaction.with_category(categories_by_date_and_payee[key])
-                print("here")
             return transaction
 
         tab_categorised_transactions = [
             update_transaction_category(t) for t in self.categorised_transactions_from_tab()
         ]
 
-        for t in tab_categorised_transactions:
-            if t.category == PayeeCategory.UNCATEGORISED or t.category is None:
-                print("here")
         if bank_activity.non_empty:
             if bank_activity.first_date < self.period.first_day or bank_activity.last_date > self.period.last_day:
                 raise ValueError(f"Bank activity is not within the period {self.period}")
@@ -66,8 +72,9 @@ class AllStatementsTab(Tab):
         for col, width in [
             (self.DATE, 100),
             (self.ACCOUNT, 100),
-            (self.PAYEE, 200),
-            (self.CATEGORY, 100),
+            (self.PAYEE, 100),
+            (self.BLANK, 200),
+            (self.CATEGORY, 120),
             (self.AMOUNT, 100),
             (self.CURRENT, 100),
             (self.SAVINGS, 100),
@@ -80,21 +87,27 @@ class AllStatementsTab(Tab):
             )
 
         format_requests.append(self.group_rows_request(
-            self.info_range.i_first_row + 4,
-            self.info_range.i_first_row + 7
-            ))
+            self.info_range.i_first_row + self.INFO_CURRENT,
+            self.info_range.i_first_row + self.INFO_BBL
+        ))
+        format_requests.append(self.group_columns_request(
+            full_range.i_first_col + self.CURRENT,
+            full_range.i_first_col + self.BBL
+        ))
+        format_requests.append(self.freeze_rows_request(self.heading_range.i_first_row + 1))
         format_requests += [
 
             self.info_range[0, :].merge_columns_request(),
             self.info_range[0, :].center_text_request(),
-            self.info_range[1:].right_align_text_request(),
-            self.info_range[0:2, :].set_bold_text_request(),
+            self.info_range[self.INFO_ROW_2:].right_align_text_request(),
+            self.info_range[self.INFO_ROW_1:self.INFO_ROW_2 + 1, :].set_bold_text_request(),
             self.info_range[:, 0].set_bold_text_request(),
             self.info_range.outline_border_request(),
-            self.info_range[4, :].border_request(["top"]),
-            self.info_range[7, :].border_request(["bottom"]),
-            self.info_range[3:, 1:].set_currency_format_request(),
+            self.info_range[self.INFO_CURRENT, :].border_request(["top"]),
+            self.info_range[self.INFO_BBL, :].border_request(["bottom"]),
+            self.info_range[self.INFO_BALANCE:, 1:].set_currency_format_request(),
 
+            self.heading_range[0, self.PAYEE:self.PAYEE + 2].merge_columns_request(),
             self.heading_range.set_bold_text_request(),
             self.heading_range.left_align_text_request(),
             self.heading_range[0, self.DATE].right_align_text_request(),
@@ -102,10 +115,15 @@ class AllStatementsTab(Tab):
             self.heading_range.background_colour_request(LIGHT_GREEN),
 
             full_range.outline_border_request(),
-            full_range[:, :self.BALANCE].border_request(["right"], style="SOLID_MEDIUM"),
+            full_range[:, self.CURRENT].border_request(["left"]),
+            full_range[:, self.BBL].border_request(["right"]),
             full_range[:, self.BALANCE].left_align_text_request(),
             full_range[:, self.AMOUNT:self.BALANCE + 1].set_currency_format_request(),
         ]
+        for i_row in range(full_range.num_rows):
+            format_requests.append(
+                full_range[i_row, self.PAYEE:self.PAYEE + 2].merge_columns_request(),
+            )
 
         format_requests += [
             self.heading_range.offset(i, 0).background_colour_request(LIGHT_YELLOW)
@@ -129,9 +147,10 @@ class AllStatementsTab(Tab):
 
         for account in self.accounts:
             info_values.append(
-                [account.name, float(bank_activity.initial_balance(account)),
-                 float(bank_activity.terminal_balance(account))]
+                [account.name, float(bank_activity.initial_balance(account) or Decimal("0")),
+                 float(bank_activity.terminal_balance(account) or Decimal("0"))]
             )
+        info_values.append(["", "", ""])
         info_values.append(
             ["Uncategorized",
              "",
@@ -163,19 +182,17 @@ class AllStatementsTab(Tab):
             balances[t.account] += t.amount
             is_first_or_last_row = i_trans == len(transactions) - 1 or i_trans == 0
             balances_row = [
-                float(balances[acc]) if acc == t.account or is_first_or_last_row else ""
+                float(balances[acc] or Decimal("0")) if acc == t.account or is_first_or_last_row else ""
                 for acc in self.accounts
             ]
-            net_balance = sum(balances[acc] for acc in self.accounts)
+            net_balance = sum(balances[acc] or Decimal("0") for acc in self.accounts)
 
-            foo = category_cell_value(i_trans, t)
-            if foo == "":
-                print("here")
             transaction_values.append(
                 [
                     t.payment_date,
                     t.account.name,
                     t.payee,
+                    "",
                     category_cell_value(i_trans, t),
                     float(t.amount),
                 ] + balances_row +
@@ -209,8 +226,7 @@ class AllStatementsTab(Tab):
             payment_date = Day.parse(row[self.DATE])
             payee = row[self.PAYEE]
             amount = to_decimal(row[self.AMOUNT])
-            i_acc = next(i for i in range(4) if float(to_decimal(row[self.CURRENT + i])) != 0)
-            account = self.accounts[i_acc]
+            account = BankAccount.from_name(row[self.ACCOUNT])
             category = to_payee_category(row[self.CATEGORY])
             transaction = Transaction(
                 account=account,
@@ -224,6 +240,16 @@ class AllStatementsTab(Tab):
     @staticmethod
     def sheet_id_for_month(month: AccountingMonth) -> str:
         year = month.year.y
+        if year == 2020:
+            return CURRENT_ACCOUNT_2020_STATEMENTS_ID
+        if year == 2021:
+            return CURRENT_ACCOUNT_2021_STATEMENTS_ID
+        if year == 2022:
+            return CURRENT_ACCOUNT_2022_STATEMENTS_ID
+        if year == 2023:
+            return CURRENT_ACCOUNT_2023_STATEMENTS_ID
+        elif year == 2024:
+            return CURRENT_ACCOUNT_2024_STATEMENTS_ID
         if year == 2025:
-            return ALL_ACCOUNTS_2025_STATEMENTS_ID
+            return CURRENT_ACCOUNT_2025_STATEMENTS_ID
         raise ValueError(f"Unsupported month {month} for all statements tab")

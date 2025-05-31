@@ -52,7 +52,7 @@ class Tab:
                 ["userEnteredValue", "userEnteredFormat"]
             ),
             self.unmerge_all_request(),
-        ] + self.delete_all_groups_requests()
+        ] + self.delete_all_groups_requests() + [self.freeze_rows_request(i_frozen_row=0)]
 
     def group_rows_request(self, i_first_row, i_last_row):
         return {
@@ -78,6 +78,19 @@ class Tab:
             }
         }
 
+    def freeze_rows_request(self, i_frozen_row):
+        return {
+            'updateSheetProperties': {
+                'properties': {
+                    'sheetId': self.tab_id,
+                    'gridProperties': {
+                        'frozenRowCount': i_frozen_row
+                    }
+                },
+                'fields': 'gridProperties.frozenRowCount'
+            }
+        }
+
     def collapse_all_groups_requests(self):
         def collapse_request(start_index, end_index, depth, dimension):
             return {
@@ -95,6 +108,7 @@ class Tab:
                     "fields": "collapsed"
                 }
             }
+
         collapse_rows_requests = [
             collapse_request(start_index, end_index, depth, "ROWS")
             for (start_index, end_index, depth) in self.row_groups()
@@ -123,6 +137,7 @@ class Tab:
                     }
                 }
             }
+
         row_deletions = [
             deletion_request(start_index, end_index, "ROWS")
             for (start_index, end_index, _) in self.row_groups()
@@ -151,6 +166,7 @@ class Tab:
                 },
             }
         }
+
     def unhide_rows_request(self):
         return self._unhide_rows_or_columns_request("ROWS")
 

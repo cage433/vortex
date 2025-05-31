@@ -114,7 +114,6 @@ class StatementsReader:
     @staticmethod
     def read_statements(force: bool) -> list[Statement]:
         balances_by_account = StatementsReader.read_published_balances(STATEMENTS_DIR, force)
-        current_account_balances = balances_by_account[CURRENT_ACCOUNT]
         transactions_by_account = StatementsReader.read_transactions(STATEMENTS_DIR, force)
         assert set(balances_by_account.keys()) == set(transactions_by_account.keys()), \
             "Expected balances and transactions to have the same accounts"

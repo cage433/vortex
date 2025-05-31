@@ -1,7 +1,7 @@
 import shelve
 from decimal import Decimal
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from bank_statements import Statement, Transaction
 
@@ -48,7 +48,7 @@ class BankActivity:
             [s.last_date for s in self.statements.values() if s.last_date is not None]
         )
 
-    def initial_balance(self, account: BankAccount) -> Decimal:
+    def initial_balance(self, account: BankAccount) -> Optional[Decimal]:
         return self.statements[account].earliest_balance
 
     @property
@@ -59,8 +59,8 @@ class BankActivity:
         return self.statements[account].latest_balance
 
     @property
-    def terminal_balance_across_accounts(self) -> Decimal:
-        return sum([self.terminal_balance(acc) for acc in self.accounts]) or Decimal("0")
+    def terminal_balance_across_accounts(self) -> Optional[Decimal]:
+        return sum([self.terminal_balance(acc) for acc in self.accounts])
 
     def restrict_to_period(self, period: DateRange) -> 'BankActivity':
         return BankActivity([stmt.filter_on_period(period) for stmt in self.statements.values()])

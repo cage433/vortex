@@ -29,12 +29,16 @@ class Statement:
             assert tr.account == account, \
                 f"Transaction {tr} has account {tr.account} but statement has account {account}"
         self.balance_dates = sorted(self.published_balances.keys())
-        assert len(self.balance_dates) > 0, f"Statement for account {account} must have at least one balance"
-        self.initial_balance_date = self.balance_dates[0]
         if len(self.transactions) > 0:
+            assert len(self.balance_dates) > 0, f"Statement for account {account} must have at least one balance"
+            self.initial_balance_date = self.balance_dates[0]
             assert self.initial_balance_date <= self.transactions[
                 0].payment_date, f"First balance must be on or before first transaction"
-        self.transactions_by_date: dict[Day, list[Transaction]] = group_into_dict(self.transactions, lambda t: t.payment_date)
+        else:
+            self.initial_balance_date = None
+
+        self.transactions_by_date: dict[Day, list[Transaction]] = group_into_dict(self.transactions,
+                                                                                  lambda t: t.payment_date)
         self.payment_dates: list[Day] = sorted(self.transactions_by_date.keys())
         self.check_consistency()
 
@@ -55,7 +59,8 @@ class Statement:
                     for tr in self.transactions_by_date[d]:
                         print(tr)
                 print("\n\n")
-            assert abs(error) < 0.01, f"Inconsistent balance {error} between {d1} and {d2}, sum trans {transaction_sum}, balance1 {balance1}, balance2 {balance2}"
+            assert abs(
+                error) < 0.01, f"Inconsistent balance {error} between {d1} and {d2}, sum trans {transaction_sum}, balance1 {balance1}, balance2 {balance2}"
 
     def balance_at_eod(self, date: Day) -> Decimal:
         if self.initial_balance_date > date:
@@ -80,7 +85,7 @@ class Statement:
     def filter_on_period(self, period: DateRange) -> 'Statement':
         d1 = period.first_day
         d2 = period.last_day
-        published_balances = {d:b for d, b in self.published_balances.items() if d1 <= d <= d2}
+        published_balances = {d: b for d, b in self.published_balances.items() if d1 <= d <= d2}
         if d1 not in published_balances and d1 >= self.initial_balance_date:
             bal1 = self.balance_at_eod(d1)
             published_balances[d1] = bal1
