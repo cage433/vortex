@@ -47,6 +47,7 @@ class NominalLedgerItemType(Enum):
     OUTPUT_VAT = "Output VAT"
     PIANO_TUNING = "Piano Tuning"
     PROJECTS = "Projects"
+    PRS_REBATE = "PRS Rebate"
     RATES = "Rates"
     RENT = "Rent & Service Charge"
     SECURITY = "Door Security"
