@@ -1,7 +1,8 @@
 from decimal import Decimal
-from typing import List
+from typing import List, Any, Optional
 
 from bank_statements import BankActivity, Transaction
+from bank_statements.bank_account import CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT, BankAccount
 from bank_statements.categorized_transaction import CategorizedTransaction
 from bank_statements.payee_categories import category_for_transaction, PayeeCategory
 from date_range import Day, DateRange
@@ -13,8 +14,9 @@ from google_sheets.tab_range import TabRange
 
 
 class AllStatementsTab(Tab):
-    HEADINGS = ["Date", "Payee", "Amount", "Category", "Current", "Savings", "Charitable", "BBL", "Total"]
-    (DATE, PAYEE, AMOUNT, CATEGORY, CURRENT, SAVINGS, CHARITABLE, BBL, TOTAL) = range(len(HEADINGS))
+    accounts = [CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT]
+    HEADINGS = ["Date", "Account", "Payee", "Category", "Amount", "Current", "Savings", "Charitable", "BBL", "Balance"]
+    (DATE, ACCOUNT, PAYEE, CATEGORY, AMOUNT, CURRENT, SAVINGS, CHARITABLE, BBL, BALANCE) = range(len(HEADINGS))
 
     def __init__(
             self,
@@ -24,15 +26,33 @@ class AllStatementsTab(Tab):
     ):
         super().__init__(workbook, tab_name=title)
         self.info_range = TabRange(self.cell("B2"), num_rows=9, num_cols=3)
-        self.heading_range = TabRange(self.info_range.bottom_left_cell.offset(2, 0), num_rows=2,
+        self.heading_range = TabRange(self.info_range.bottom_left_cell.offset(2, 0), num_rows=1,
                                       num_cols=len(self.HEADINGS))
         self.period: DateRange = period
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
 
-    def update(self, bank_activity: BankActivity):
-        tab_categorised_transactions = self.categorised_transactions_from_tab()
+    def update(self, bank_activity: BankActivity, old_current_account_infos: List[CategorizedTransaction]):
+        categories_by_date_and_payee = {
+            (t.payment_date, t.payee): t.category
+            for t in old_current_account_infos
+        }
 
+        def update_transaction_category(transaction: CategorizedTransaction) -> CategorizedTransaction:
+            if transaction.account == CURRENT_ACCOUNT:
+                key = (transaction.payment_date, transaction.payee)
+                if key in categories_by_date_and_payee:
+                    return transaction.with_category(categories_by_date_and_payee[key])
+                print("here")
+            return transaction
+
+        tab_categorised_transactions = [
+            update_transaction_category(t) for t in self.categorised_transactions_from_tab()
+        ]
+
+        for t in tab_categorised_transactions:
+            if t.category == PayeeCategory.UNCATEGORISED or t.category is None:
+                print("here")
         if bank_activity.non_empty:
             if bank_activity.first_date < self.period.first_day or bank_activity.last_date > self.period.last_day:
                 raise ValueError(f"Bank activity is not within the period {self.period}")
@@ -45,20 +65,24 @@ class AllStatementsTab(Tab):
         ]
         for col, width in [
             (self.DATE, 100),
-            (self.PAYEE, 400),
+            (self.ACCOUNT, 100),
+            (self.PAYEE, 200),
+            (self.CATEGORY, 100),
             (self.AMOUNT, 100),
-            (self.CATEGORY, 150),
             (self.CURRENT, 100),
             (self.SAVINGS, 100),
             (self.CHARITABLE, 100),
             (self.BBL, 100),
-            (self.TOTAL, 100),
+            (self.BALANCE, 100),
         ]:
             format_requests.append(
                 self.set_column_width_request(full_range.i_first_col + col, width=width)
             )
 
-
+        format_requests.append(self.group_rows_request(
+            self.info_range.i_first_row + 4,
+            self.info_range.i_first_row + 7
+            ))
         format_requests += [
 
             self.info_range[0, :].merge_columns_request(),
@@ -67,18 +91,20 @@ class AllStatementsTab(Tab):
             self.info_range[0:2, :].set_bold_text_request(),
             self.info_range[:, 0].set_bold_text_request(),
             self.info_range.outline_border_request(),
+            self.info_range[4, :].border_request(["top"]),
+            self.info_range[7, :].border_request(["bottom"]),
             self.info_range[3:, 1:].set_currency_format_request(),
 
             self.heading_range.set_bold_text_request(),
             self.heading_range.left_align_text_request(),
             self.heading_range[0, self.DATE].right_align_text_request(),
-            self.heading_range[0, self.AMOUNT:self.TOTAL + 1].right_align_text_request(),
+            self.heading_range[0, self.AMOUNT:self.BALANCE + 1].right_align_text_request(),
             self.heading_range.background_colour_request(LIGHT_GREEN),
 
             full_range.outline_border_request(),
-            full_range[:, :self.TOTAL].border_request(["right"], style="SOLID_MEDIUM"),
-            full_range[:, self.TOTAL].left_align_text_request(),
-            full_range[:, self.AMOUNT:self.TOTAL + 1].set_currency_format_request(),
+            full_range[:, :self.BALANCE].border_request(["right"], style="SOLID_MEDIUM"),
+            full_range[:, self.BALANCE].left_align_text_request(),
+            full_range[:, self.AMOUNT:self.BALANCE + 1].set_currency_format_request(),
         ]
 
         format_requests += [
@@ -87,19 +113,39 @@ class AllStatementsTab(Tab):
         ]
         self.workbook.batch_update(format_requests)
 
+        self.workbook.batch_update([self.collapse_all_groups_requests()])
+
         info_values = [
-            [f"transactions for {self.period}"],
+            [f"Transactions for {self.period}"],
             ["", "Start", "End"],
-            ["Date", self.period.first_day, self.period.last_day],
-            ["Balance", float(bank_activity.initial_balance), float(bank_activity.terminal_balance)],
+            ["Date", self.period.first_day, self.period.last_day]
+        ]
+        net_formulae = [
+            "Balance",
+            f"=SUM({self.info_range[4:8, 1].in_a1_notation})",
+            f"=SUM({self.info_range[4:8, 2].in_a1_notation})",
+        ]
+        info_values.append(net_formulae)
+
+        for account in self.accounts:
+            info_values.append(
+                [account.name, float(bank_activity.initial_balance(account)),
+                 float(bank_activity.terminal_balance(account))]
+            )
+        info_values.append(
             ["Uncategorized",
              "",
-             f"=SUMIFS({full_range[:, self.AMOUNT].in_a1_notation}, {full_range[:, self.CATEGORY].in_a1_notation}, \"=\")"],
-        ]
+             f"=SUMIFS({full_range[:, self.AMOUNT].in_a1_notation}, {full_range[:, self.CATEGORY].in_a1_notation}, \"=\")"]
+        )
 
-        transaction_values = [self.HEADINGS]
+        transaction_values: List[List[Any]] = [self.HEADINGS]
 
         def category_cell_value(i_transaction, bank_transaction):
+            key = (bank_transaction.payment_date, bank_transaction.payee)
+            if key in categories_by_date_and_payee:
+                category = categories_by_date_and_payee[key]
+                if category != PayeeCategory.UNCATEGORISED:
+                    return category
             cell_category = ""
             if len(tab_categorised_transactions) == len(transactions):
                 categorised_transaction = tab_categorised_transactions[i_transaction]
@@ -112,18 +158,28 @@ class AllStatementsTab(Tab):
                 return ""
             return cell_category
 
-        balance = bank_activity.initial_balance
+        balances = {acc: bank_activity.initial_balance(acc) for acc in self.accounts}
         for i_trans, t in enumerate(transactions):
-            balance += t.amount
+            balances[t.account] += t.amount
+            is_first_or_last_row = i_trans == len(transactions) - 1 or i_trans == 0
+            balances_row = [
+                float(balances[acc]) if acc == t.account or is_first_or_last_row else ""
+                for acc in self.accounts
+            ]
+            net_balance = sum(balances[acc] for acc in self.accounts)
+
+            foo = category_cell_value(i_trans, t)
+            if foo == "":
+                print("here")
             transaction_values.append(
                 [
                     t.payment_date,
+                    t.account.name,
                     t.payee,
-                    float(t.amount),
-                    float(balance),
                     category_cell_value(i_trans, t),
-                    t.transaction_type,
-                ]
+                    float(t.amount),
+                ] + balances_row +
+                [float(net_balance)]
             )
 
         transaction_range = TabRange(self.heading_range.top_left_cell, num_rows=1 + len(transactions),
@@ -134,44 +190,10 @@ class AllStatementsTab(Tab):
         ])
 
     def categorised_transactions_from_tab(self) -> List[CategorizedTransaction]:
-        # The Kashflow categories differ slightly from Tim's payee categories.
-        # For now we'll map them, but eventually we can probably just use the Kashflow categories.
-        # We also use this to repair categories, as they get redefined
-        def to_payee_category(payee: str, cell_value: str) -> PayeeCategory:
+
+        def to_payee_category(cell_value: str) -> PayeeCategory:
             if isinstance(cell_value, str) and cell_value.strip() == "":
                 return PayeeCategory.UNCATEGORISED
-            if cell_value == "Administration":
-                return PayeeCategory.ACCOUNTANT
-            if cell_value == "Bar Purchases":
-                return PayeeCategory.BAR_STOCK
-            if cell_value == "Toilet Tissues":
-                return PayeeCategory.OPERATIONAL_COSTS
-            if cell_value == "Tickets":
-                return PayeeCategory.MEMBERSHIPS
-            if cell_value.startswith("Marketing"):
-                return PayeeCategory.MARKETING
-            if cell_value.startswith("Licensing"):
-                return PayeeCategory.LICENSING
-            if payee.startswith("Denise Williams"):
-                return PayeeCategory.GIG_SECURITY
-            if cell_value == "Security":
-                return PayeeCategory.BUILDING_SECURITY
-            if cell_value == "Copyright Infringement":
-                return PayeeCategory.OPERATIONAL_COSTS
-            if cell_value == "Rehearsal":
-                return PayeeCategory.SPACE_HIRE
-            if cell_value == "Equipment Rental":
-                return PayeeCategory.EQUIPMENT_HIRE
-            if cell_value == "Staff Costs":
-                return PayeeCategory.SALARIES
-            if cell_value == "Musicians Costs":
-                return PayeeCategory.MUSICIAN_COSTS
-            if cell_value == "Petty cash":
-                return PayeeCategory.PETTY_CASH
-            if cell_value == "Ticket sales":
-                return PayeeCategory.TICKET_SALES
-            if cell_value == "Zettle Credits":
-                return PayeeCategory.CARD_SALES
             return PayeeCategory(cell_value)
 
         def to_decimal(cell_value):
@@ -187,20 +209,20 @@ class AllStatementsTab(Tab):
             payment_date = Day.parse(row[self.DATE])
             payee = row[self.PAYEE]
             amount = to_decimal(row[self.AMOUNT])
-            transaction_type = row[self.TYPE]
-            category = to_payee_category(payee, row[self.CATEGORY])
+            i_acc = next(i for i in range(4) if float(to_decimal(row[self.CURRENT + i])) != 0)
+            account = self.accounts[i_acc]
+            category = to_payee_category(row[self.CATEGORY])
             transaction = Transaction(
-                account=self.bank_account,
+                account=account,
                 payment_date=payment_date,
                 payee=payee,
                 amount=amount,
-                transaction_type=transaction_type,
             )
             infos.append(CategorizedTransaction(transaction, category))
         return infos
 
     @staticmethod
-    def sheet_id_for_account(month: AccountingMonth) -> str:
+    def sheet_id_for_month(month: AccountingMonth) -> str:
         year = month.year.y
         if year == 2025:
             return ALL_ACCOUNTS_2025_STATEMENTS_ID

@@ -1,7 +1,7 @@
 import shelve
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional, List
+from typing import List
 
 from bank_statements import Statement, Transaction
 
@@ -9,10 +9,9 @@ __all__ = ["BankActivity"]
 
 from bank_statements.bank_account import BankAccount
 
-from date_range import Day, DateRange
+from date_range import DateRange
 
-from utils import checked_list_type, checked_type
-from utils.collection_utils import group_into_dict
+from utils import checked_list_type
 
 
 class BankActivity:
@@ -28,10 +27,6 @@ class BankActivity:
             [t for s in self.statements.values() for t in s.transactions],
             key=lambda t: (t.payment_date, t.payee),
         )
-
-    @property
-    def num_payment_dates(self):
-        return len(set([t.payment_date for t in self.sorted_transactions]))
 
     @property
     def num_transactions(self):
@@ -53,41 +48,28 @@ class BankActivity:
             [s.last_date for s in self.statements.values() if s.last_date is not None]
         )
 
-    @property
-    def initial_balance(self) -> Decimal:
-        return sum([statement.earliest_balance for statement in self.statements.values()])
+    def initial_balance(self, account: BankAccount) -> Decimal:
+        return self.statements[account].earliest_balance
 
     @property
-    def terminal_balance(self) -> Decimal:
-        return sum([statement.latest_balance for statement in self.statements.values()])
+    def initial_balance_across_accounts(self) -> Decimal:
+        return sum([self.initial_balance(acc) for acc in self.accounts]) or Decimal("0")
+
+    def terminal_balance(self, account: BankAccount) -> Decimal:
+        return self.statements[account].latest_balance
+
+    @property
+    def terminal_balance_across_accounts(self) -> Decimal:
+        return sum([self.terminal_balance(acc) for acc in self.accounts]) or Decimal("0")
 
     def restrict_to_period(self, period: DateRange) -> 'BankActivity':
         return BankActivity([stmt.filter_on_period(period) for stmt in self.statements.values()])
-
-    def balance_at_eod(self, date: Day) -> Decimal:
-        return sum([s.balance_at_eod(date) for s in self.statements.values()])
-
-    def balance_at_sod(self, date: Day) -> Decimal:
-        return sum([s.balance_at_sod(date) for s in self.statements.values()])
-
-    def payees(self) -> list[str]:
-        return sorted(list(set([t.payee for t in self.sorted_transactions])))
-
-
-    @property
-    def transaction_by_category(self):
-        return group_into_dict(self.sorted_transactions, lambda t: t.category)
 
     def restrict_to_accounts(self, *accounts) -> 'BankActivity':
         merged_statements = []
         for account in accounts:
             merged_statements.append(self.statements[account])
         return BankActivity(merged_statements)
-
-    @property
-    def total_vat_payments(self):
-        # relying on the payee name sucks. Best we can do for now
-        return sum([t.amount for t in self.sorted_transactions if "HMRC VAT" in t.payee.upper()])
 
     SHELF = Path(__file__).parent / "_bank_activity.shelf"
 

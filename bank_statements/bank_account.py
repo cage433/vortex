@@ -31,10 +31,29 @@ class BankAccount:
                 return acc
         raise ValueError(f"Unrecognized account id {id}")
 
+    @staticmethod
+    def from_name(name: str) -> 'BankAccount':
+        for acc in [
+            CURRENT_ACCOUNT,
+            SAVINGS_ACCOUNT,
+            BBL_ACCOUNT,
+            CHARITABLE_ACCOUNT,
+        ]:
+            if acc.name.lower() == name.lower():
+                return acc
+        raise ValueError(f"Unrecognized account name {name}")
+
 CURRENT_ACCOUNT = BankAccount("Current", CURRENT_ACCOUNT_ID)
 SAVINGS_ACCOUNT = BankAccount("Savings", SAVINGS_ACCOUNT_ID)
 BBL_ACCOUNT = BankAccount("BBL", BBL_ACCOUNT_ID)
 CHARITABLE_ACCOUNT = BankAccount("Charitable", CHARITABLE_ACCOUNT_ID)
+
+ALL_BANK_ACCOUNTS = [
+    CURRENT_ACCOUNT,
+    SAVINGS_ACCOUNT,
+    BBL_ACCOUNT,
+    CHARITABLE_ACCOUNT,
+]
 
 
 

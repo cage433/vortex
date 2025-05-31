@@ -64,7 +64,6 @@ class StatementsReader:
                         rows = read_csv_file(file)[1:]
                         for row in rows:
                             day = Day.parse(row[0])
-                            tr_type = row[1]
                             payee = row[2]
                             paid_out = Decimal(row[3]) if row[3] != "" else Decimal(0)
                             paid_in = Decimal(row[4]) if row[4] != "" else Decimal(0)
@@ -74,7 +73,6 @@ class StatementsReader:
                                 day,
                                 payee,
                                 amount,
-                                tr_type,
                             )
                             transactions_for_account.append(trans)
                     transactions_by_account[account] = transactions_for_account

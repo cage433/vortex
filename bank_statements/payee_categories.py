@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from bank_statements import Transaction
+from bank_statements.bank_account import ALL_BANK_ACCOUNTS
 from date_range import Day
 from utils import checked_type
 
@@ -215,10 +216,9 @@ def _maybe_insurance(transaction: Transaction) -> Optional[PayeeCategory]:
 
 
 def _maybe_internal_transfer(transaction: Transaction) -> Optional[PayeeCategory]:
-    if matches_anywhere(transaction, "61414380 internet transfer"):
-        return PayeeCategory.INTERNAL_TRANSFER
-    if matches_anywhere(transaction, "71655949 internet transfer"):
-        return PayeeCategory.INTERNAL_TRANSFER
+    for acc in ALL_BANK_ACCOUNTS:
+        if matches_anywhere(transaction, f"{acc.id} internet transfer"):
+            return PayeeCategory.INTERNAL_TRANSFER
 
 
 def _maybe_kashflow(transaction: Transaction) -> Optional[PayeeCategory]:

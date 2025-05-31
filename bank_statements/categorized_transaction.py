@@ -22,6 +22,9 @@ class CategorizedTransaction:
         self.transaction: Transaction = checked_type(transaction, Transaction)
         self.category: PayeeCategory = checked_type(category, PayeeCategory)
 
+    def with_category(self, category: PayeeCategory) -> 'CategorizedTransaction':
+        return CategorizedTransaction(self.transaction, category)
+
     @property
     def payment_date(self) -> Day:
         return self.transaction.payment_date
@@ -44,6 +47,7 @@ class CategorizedTransaction:
             transaction,
             category_for_transaction(transaction),
         )
+
 
 
 class CategorizedTransactions:
