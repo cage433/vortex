@@ -94,7 +94,7 @@ def compare_uncategorized_with_kashflow(account: BankAccount, month: AccountingM
 
 
 if __name__ == '__main__':
-    acc_month = AccountingMonth.from_calendar_month(Month(2019, 12))
+    acc_month = AccountingMonth.from_calendar_month(Month(2020, 8))
     for i in range(1):
         print(f"Refreshing {acc_month}")
         ensure_tab_consistent_with_account(CURRENT_ACCOUNT, acc_month, refresh_bank_activity=False, refresh_sheet=True)

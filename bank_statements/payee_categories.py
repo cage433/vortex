@@ -35,6 +35,7 @@ class PayeeCategory(StrEnum):
     CASH_SALES = "Cash Sales"
     CLEANING = "Cleaning"
     CREDIT_CARD_FEES = "Credit Card Fees"
+    DIRECTORS_LOAN = "Directors Loan"
     DONATION = "Donation"
     ELECTRICITY = "Electricity"
     EQUIPMENT_HIRE = "Equipment Hire"
@@ -296,9 +297,11 @@ def _maybe_card_sales(transaction: Transaction) -> Optional[PayeeCategory]:
     if matches_anywhere(transaction, "rails ltd butlr"):
         return PayeeCategory.CARD_SALES
 
+
 def _maybe_cash_sales(transaction: Transaction) -> Optional[PayeeCategory]:
     if matches_anywhere(transaction, "cash in p.o."):
         return PayeeCategory.CASH_SALES
+
 
 def _maybe_ticketweb_credits(transaction: Transaction) -> Optional[PayeeCategory]:
     if transaction.amount > 0 and matches_start(transaction, ["ticketweb uk", "ticketco uk", "tw client gbp"]):
@@ -347,13 +350,14 @@ def _maybe_cleaning(transaction: Transaction) -> Optional[PayeeCategory]:
     if matches_start(transaction, "direct 365"):
         return PayeeCategory.CLEANING
 
+
 def _maybe_donation(transaction: Transaction) -> Optional[PayeeCategory]:
     if matches_anywhere(transaction, "crowdfunder"):
         return PayeeCategory.DONATION
 
 
 def _maybe_piano_tuner(transaction: Transaction) -> Optional[PayeeCategory]:
-    if matches_start(transaction, ["b sharp pianos", "dafydd james"]):
+    if matches_start(transaction, ["b sharp pianos", "dafydd james", "d r james"]):
         return PayeeCategory.PIANO_TUNER
 
 
@@ -454,7 +458,7 @@ def _maybe_tissues(tr: Transaction) -> Optional[PayeeCategory]:
         return PayeeCategory.OPERATIONAL_COSTS
     if matches_start(tr, ["amznmktplace", "argos ltd", "krys-"]) and 0 > tr.amount > -200:
         return PayeeCategory.OPERATIONAL_COSTS
-    if matches_anywhere(tr, ["www.amazon", "marks & spencer", "canva* i"]) and 0 > tr.amount > -200:
+    if matches_anywhere(tr, ["www.amazon", "marks & spencer", "canva* "]) and 0 > tr.amount > -200:
         return PayeeCategory.OPERATIONAL_COSTS
 
 
@@ -485,6 +489,7 @@ def _maybe_musician_costs(tr: Transaction) -> Optional[PayeeCategory]:
         "staycity group",
         "avo hotel",
         "global lodge",
+        "premier inn",
     ]):
         return PayeeCategory.MUSICIAN_COSTS
     if matches_start(tr, "eurostar"):
@@ -530,6 +535,7 @@ def _maybe_space_hire(tr: Transaction) -> Optional[PayeeCategory]:
             "allsopp j",
             "arisema tekle",
             "berahab",
+            "blow the fuse",
             "c sansom",
             "chalk oliver",
             "cheng xie",
@@ -559,6 +565,7 @@ def _maybe_space_hire(tr: Transaction) -> Optional[PayeeCategory]:
             "state of tru",
             "tots tunes",
             "vice uk",
+            "vortex jazz jazz connect",
             "w g b marrows",
             "yazz ahmed",
         ]

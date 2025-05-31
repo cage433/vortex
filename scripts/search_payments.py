@@ -1,3 +1,4 @@
+from time import sleep
 from typing import Optional
 
 from bank_statements.categorized_transaction import CategorizedTransaction
@@ -9,7 +10,7 @@ from google_sheets.statements.categorised_transactions import current_account_tr
 
 
 def report_matching_transactions(name: str, last_month: AccountingMonth, force_from: Optional[AccountingMonth]):
-    first_month = AccountingMonth.from_calendar_month(Month(2021, 9))
+    first_month = AccountingMonth.from_calendar_month(Month(2019, 9))
     m = first_month
     force = False
     while m <= last_month:
@@ -23,7 +24,7 @@ def report_matching_transactions(name: str, last_month: AccountingMonth, force_f
 
 
 if __name__ == '__main__':
-    name = "direct"
+    name = "maggie"
     report_matching_transactions(
         name,
         last_month=AccountingMonth.from_calendar_month(Month(2025, 5)),

@@ -7,7 +7,7 @@ from bank_statements import Statement, Transaction
 
 __all__ = ["BankActivity"]
 
-from bank_statements.bank_account import BankAccount, CURRENT_ACCOUNT
+from bank_statements.bank_account import BankAccount
 
 from date_range import Day, DateRange
 
@@ -40,9 +40,6 @@ class BankActivity:
     @property
     def non_empty(self):
         return self.num_transactions > 0
-
-    def net_flow(self, first_day: Optional[Day] = None, last_day: Optional[Day] = None):
-        return sum(s.net_flow(first_day, last_day) for s in self.statements.values())
 
     @property
     def first_date(self):
@@ -80,10 +77,6 @@ class BankActivity:
     @property
     def transaction_by_category(self):
         return group_into_dict(self.sorted_transactions, lambda t: t.category)
-
-    @property
-    def current_account_statement(self):
-        return self.statements[CURRENT_ACCOUNT]
 
     def restrict_to_accounts(self, *accounts) -> 'BankActivity':
         merged_statements = []
