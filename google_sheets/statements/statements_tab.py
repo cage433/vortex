@@ -241,7 +241,8 @@ class StatementsTab(Tab):
 
     @staticmethod
     def categorized_transactions_for_month(acc_month: AccountingMonth, force: bool) -> CategorizedTransactions:
-        key = f"current_account_transactions {acc_month}"
+        key = f"current_account_transactions Acc Month {acc_month}"
+        print(key)
         with shelve.open(str(SHELF)) as shelf:
             if key not in shelf or force:
                 print(f"Processing {acc_month}")
@@ -256,14 +257,20 @@ class StatementsTab(Tab):
 
     @staticmethod
     def categorized_transactions(period: DateRange, force: bool) -> CategorizedTransactions:
-        key = f"current_account_transactions {period}"
+        key = f"current_account_transactions Period {period}"
+        print(key)
         with shelve.open(str(SHELF)) as shelf:
-            if key not in shelf or force:
-                acc_month = AccountingMonth.containing(period.first_day)
-                last_acc_month = AccountingMonth.containing(period.last_day)
-                transactions = CategorizedTransactions([])
-                while acc_month <= last_acc_month:
-                    transactions += StatementsTab.categorized_transactions_for_month(acc_month, force)
-                    acc_month += 1
-                shelf[key] = transactions.restrict_to_period(period)
+            has_value = key in shelf
+            if has_value and not force:
+                return shelf[key]
+        acc_month = AccountingMonth.containing(period.first_day)
+        last_acc_month = AccountingMonth.containing(period.last_day)
+        transactions = CategorizedTransactions([])
+        while acc_month <= last_acc_month:
+            print(acc_month)
+            print(force)
+            transactions += StatementsTab.categorized_transactions_for_month(acc_month, force)
+            acc_month += 1
+        with shelve.open(str(SHELF)) as shelf:
+            shelf[key] = transactions.restrict_to_period(period)
             return shelf[key]

@@ -106,6 +106,8 @@ class GigNumbersRange(MonthAnalysisRange):
         super().__init__(top_left_cell, period, gigs_info)
 
     def month_value(self, month: Month) -> Number:
+        if month not in self.gigs_by_month:
+            return 0
         return self.gigs_by_month[month].number_of_gigs
 
     @property
@@ -127,6 +129,8 @@ class AirtableTicketSalesRange(MonthAnalysisRange):
         return "Ticket Sales (Airtable)"
 
     def month_value(self, month: Month) -> Number:
+        if month not in self.gigs_by_month:
+            return 0
         return self.gigs_by_month[month].total_ticket_sales
 
 class AirtableNumTicketsSoldRange(MonthAnalysisRange):
@@ -143,6 +147,8 @@ class AirtableNumTicketsSoldRange(MonthAnalysisRange):
         return "Number of Tickets Sold (Airtable)"
 
     def month_value(self, month: Month) -> Number:
+        if month not in self.gigs_by_month:
+            return 0
         return self.gigs_by_month[month].total_tickets
 
 class BankTicketSalesRange(MonthAnalysisRange):
@@ -186,6 +192,8 @@ class AirtableDrinkSalesRange(MonthAnalysisRange):
         return "Drink Sales (Airtable)"
 
     def month_value(self, month: Month) -> Number:
+        if month not in self.gigs_by_month:
+            return 0
         return self.gigs_by_month[month].bar_takings
 
 class BankDrinkSalesRange(MonthAnalysisRange):
@@ -298,4 +306,6 @@ class BankDrinkSalesPerCustomerRange(MonthAnalysisRange):
         zettle = self.categorised_transactions_by_month[month].total_for(PayeeCategory.CARD_SALES)
         sales = zettle - Decimal(walk_ins)
         num_tickets = self.gigs_by_month[month].total_tickets
+        if num_tickets == 0:
+            return 0
         return sales / Decimal(num_tickets)
