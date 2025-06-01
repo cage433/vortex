@@ -87,12 +87,12 @@ class PaymentsRangeForCategorySansVAT(PaymentsRangeForCategory):
             top_left_cell,
             transactions,
             category,
-            num_cols=3
+            num_cols=7
         )
 
     @property
     def values(self) -> RangesAndValues:
-        summing_cols = range(1, 1 + 1)
+        summing_cols = range(1, 3)
         category_total_formulae = [
             "=" + "+".join(month_total_row[0, i_col].in_a1_notation for month_total_row in self.month_total_rows)
             for i_col in summing_cols
@@ -110,7 +110,8 @@ class PaymentsRangeForCategorySansVAT(PaymentsRangeForCategory):
             row = [m.month_name] + month_total_formulae
             values.append(row)
             for i_trans, t in enumerate(self.by_month[m]):
-                row = [t.payment_date, t.amount, t.transaction.payee]
+                amount_cells = [0.00, t.amount] if t.amount < 0 else [t.amount, 0.00]
+                row = [t.payment_date] + amount_cells + ["", "", "", t.transaction.payee]
                 values.append(row)
             i_row += 1 + len(trans_for_month)
         return RangesAndValues([(self, values)])
