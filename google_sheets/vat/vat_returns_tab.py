@@ -693,10 +693,18 @@ class VatReclaimFractionRange(TabRange):
             categorised_transactions,
         )
 
+        self.membership_range = PaymentsRangeForCategoriesSansVat(
+            self.space_hires_range.bottom_left_cell.offset(num_rows=1),
+            "Membership",
+            [PayeeCategory.MEMBERSHIPS],
+            categorised_transactions,
+        )
         self.child_ranges = [
             self.total_ticket_sales_range,
             self.total_bar_sales_range,
-            self.space_hires_range]
+            self.space_hires_range,
+            self.membership_range,
+        ]
         super().__init__(top_left_cell, num_rows=1 + sum(r.num_rows for r in self.child_ranges), num_cols=3)
         self.reclaim_percentage_cell = self.top_left_cell.offset(0, 1)
 
@@ -717,12 +725,12 @@ class VatReclaimFractionRange(TabRange):
 
     @property
     def values(self) -> RangesAndValues:
-        ticket, bar, space = [r.top_left_cell.offset(0, 1).in_a1_notation for r in self.child_ranges]
+        ticket, bar, space, membership = [r.top_left_cell.offset(0, 1).in_a1_notation for r in self.child_ranges]
         vs = RangesAndValues(
             [
                 (
                     self[0],
-                    [["VAT Reclaim Fraction", f"=({bar} + {space}) / ({ticket} + {bar} + {space})"]]
+                    [["VAT Reclaim Fraction", f"=({bar} + {space}) / ({ticket} + {bar} + {space} + {membership})"]]
                 ),
             ]
         )
@@ -836,6 +844,8 @@ class VATReturnsTab(Tab):
         format_requests = self.delete_all_groups_requests() + self.clear_values_and_formats_requests() + [
             self.set_column_width_request(0, width=30)
         ]
+        if self.num_rows() < 2000:
+            format_requests.append(self.set_num_rows_request(2000))
         for col, width in [
             (self.OUTPUTS, 200),
             (self.MONTH_1, 150),

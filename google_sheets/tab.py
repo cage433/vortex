@@ -39,6 +39,13 @@ class Tab:
             }
         }
 
+    def num_rows(self) -> int:
+        return self.workbook._resource.get(
+            spreadsheetId=self.workbook.sheet_id,
+            ranges=[f"{self.tab_name}!A:A"],
+            includeGridData=False
+        ).execute().get("sheets", [])[0].get("properties", {}).get("gridProperties", {}).get("rowCount", 0)
+
     def read_values_for_columns(self, column_range: str) -> list[list[any]]:
         values = self.workbook._resource.values().get(
             spreadsheetId=self.workbook.sheet_id,
@@ -88,6 +95,19 @@ class Tab:
                     }
                 },
                 'fields': 'gridProperties.frozenRowCount'
+            }
+        }
+
+    def set_num_rows_request(self, row_count: int):
+        return {
+            'updateSheetProperties': {
+                'properties': {
+                    'sheetId': self.tab_id,
+                    'gridProperties': {
+                        'rowCount': row_count
+                    }
+                },
+                'fields': 'gridProperties.rowCount'
             }
         }
 
