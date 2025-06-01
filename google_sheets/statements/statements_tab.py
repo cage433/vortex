@@ -9,9 +9,9 @@ from bank_statements.categorized_transaction import CategorizedTransaction, Cate
 from bank_statements.payee_categories import category_for_transaction, PayeeCategory
 from date_range import Day, DateRange
 from date_range.accounting_month import AccountingMonth
-from env import CURRENT_ACCOUNT_2025_STATEMENTS_ID, CURRENT_ACCOUNT_2024_STATEMENTS_ID, \
-    CURRENT_ACCOUNT_2023_STATEMENTS_ID, CURRENT_ACCOUNT_2022_STATEMENTS_ID, CURRENT_ACCOUNT_2021_STATEMENTS_ID, \
-    CURRENT_ACCOUNT_2020_STATEMENTS_ID
+from env import BANK_TRANSACTIONS_2025_ID, BANK_TRANSACTIONS_2024_ID, \
+    BANK_TRANSACTIONS_2023_ID, BANK_TRANSACTIONS_2022_ID, BANK_TRANSACTIONS_2021_ID, \
+    BANK_TRANSACTIONS_2020_ID
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
 from google_sheets.tab_range import TabRange
@@ -226,17 +226,17 @@ class StatementsTab(Tab):
     def sheet_id_for_month(month: AccountingMonth) -> str:
         year = month.year.y
         if year == 2020:
-            return CURRENT_ACCOUNT_2020_STATEMENTS_ID
+            return BANK_TRANSACTIONS_2020_ID
         if year == 2021:
-            return CURRENT_ACCOUNT_2021_STATEMENTS_ID
+            return BANK_TRANSACTIONS_2021_ID
         if year == 2022:
-            return CURRENT_ACCOUNT_2022_STATEMENTS_ID
+            return BANK_TRANSACTIONS_2022_ID
         if year == 2023:
-            return CURRENT_ACCOUNT_2023_STATEMENTS_ID
+            return BANK_TRANSACTIONS_2023_ID
         elif year == 2024:
-            return CURRENT_ACCOUNT_2024_STATEMENTS_ID
+            return BANK_TRANSACTIONS_2024_ID
         if year == 2025:
-            return CURRENT_ACCOUNT_2025_STATEMENTS_ID
+            return BANK_TRANSACTIONS_2025_ID
         raise ValueError(f"Unsupported month {month} for all statements tab")
 
     @staticmethod
