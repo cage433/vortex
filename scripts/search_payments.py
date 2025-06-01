@@ -3,6 +3,7 @@ from typing import Optional
 from pyasn1.type.univ import Boolean
 
 from bank_statements.categorized_transaction import CategorizedTransactions
+from bank_statements.payee_categories import PayeeCategory
 from date_range import Day
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
@@ -19,5 +20,10 @@ def all_transactions_from_tabs(force: Boolean) -> CategorizedTransactions:
 
 if __name__ == '__main__':
     trans = all_transactions_from_tabs(force=False)
-    for c in trans.categories:
-        print(c.name)
+    # trans = trans.restrict_to_period(SimpleDateRange(Day(2023, 1, 1), Day(2023, 12, 31)))
+    trans = trans.restrict_to_category(PayeeCategory.MEMBERSHIPS)
+    # trans = trans.restrict_to_user("1994")
+    ts = sorted(trans.transactions, key=lambda t: t.transaction.payment_date)
+    for t in ts:
+        print(t)
+

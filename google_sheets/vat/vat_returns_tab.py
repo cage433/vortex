@@ -296,7 +296,7 @@ class TotalBarSalesWithVATRange(TotalBarSalesRange):
         zettle_cell, walk_in_cell = [r.top_left_cell.offset(0, 1).cell_coordinates.text for r in
                                      [self.zettle_credit_range, self.walk_in_sales_range]]
         bar_sales_cell = self.top_left_cell.offset(0, 1).cell_coordinates.text
-        top_row = ["Total Bar Sales", f"={zettle_cell} - {walk_in_cell}", "", f"={bar_sales_cell} / 6"]
+        top_row = ["Bar Sales", f"={zettle_cell} - {walk_in_cell}", "", f"={bar_sales_cell} / 6"]
         return (RangesAndValues([(self[0, :], [top_row])]) +
                 self.zettle_credit_range.values + self.walk_in_sales_range.values)
 
@@ -310,7 +310,7 @@ class TotalBarSalesSansVATRange(TotalBarSalesRange):
     def values(self) -> RangesAndValues:
         zettle_cell, walk_in_cell = [r.top_left_cell.offset(0, 1).cell_coordinates.text for r in
                                      [self.zettle_credit_range, self.walk_in_sales_range]]
-        top_row = ["Total Bar Sales", f"={zettle_cell} - {walk_in_cell}"]
+        top_row = ["Bar Sales", f"={zettle_cell} - {walk_in_cell}"]
         return (RangesAndValues([(self[0, :], [top_row])]) +
                 self.zettle_credit_range.values + self.walk_in_sales_range.values)
 
@@ -337,7 +337,7 @@ class TotalBareSalesExVATRange(TabRange):
 
     @property
     def values(self) -> RangesAndValues:
-        top_row = ["Total Bar Sales (ex VAT)", f"={self.bar_sales_range[0, 1].in_a1_notation} * 5 / 6"]
+        top_row = ["Bar Sales (ex VAT)", f"={self.bar_sales_range[0, 1].in_a1_notation} * 5 / 6"]
         return (
                 RangesAndValues([(self[0, :], [top_row])]) +
                 self.bar_sales_range.values
@@ -408,7 +408,7 @@ class TotalTicketSalesRange(TabRange):
     def values(self) -> RangesAndValues:
         ticket_web_cell, walk_in_cell = [r.top_left_cell.offset(0, 1).cell_coordinates.text for r in
                                          [self.ticket_web_credits_range, self.walk_in_sales_range]]
-        top_row = ["Total Ticket Sales", f"={ticket_web_cell} + {walk_in_cell}"]
+        top_row = ["Ticket Sales", f"={ticket_web_cell} + {walk_in_cell}"]
         return (RangesAndValues([(self[0, :], [top_row])]) +
                 self.ticket_web_credits_range.values + self.walk_in_sales_range.values)
 
@@ -645,12 +645,17 @@ class CashFlowsRange(TabRange):
         formats = [
             self.outline_border_request(),
             self[0].merge_columns_request(),
+            self[1, 0:3].merge_columns_request(),
             self[1, 3:6].merge_columns_request(),
             self[0:2].center_text_request(),
             self[2].right_align_text_request(),
             self[0:3].set_bold_text_request(),
+            self[3, 0].set_bold_text_request(),
             self.tab.group_rows_request(self.i_first_row + 4, self.i_first_row + self.num_rows - 1),
             self[0].offset(self.num_rows).border_request(["top"], style="SOLID_MEDIUM"),
+            self[1:, 3].border_request(["left"]),
+            self[1:, 6].border_request(["left"]),
+            self[1, :].border_request(["bottom"]),
         ]
         for r in self.child_ranges:
             formats += r.format_requests
@@ -663,10 +668,10 @@ class CashFlowsRange(TabRange):
             return f"={' + '.join(cells)}"
 
         headings = [
-            ["Cash Flows"],
-            ["", "", "", "VAT"],
+            ["VAT Breakdown"],
+            ["Transactions", "", "", "VAT", "", "", "Payee"],
             ["", "Receipts", "Payments", "Credit", "Debit", "Reclaimable", ""],
-            [""] + [sum_cell(i_col) for i_col in range(1, 6)],
+            ["Total"] + [sum_cell(i_col) for i_col in range(1, 6)],
         ]
         vs = RangesAndValues([(self[0:4], headings)])
         for r in self.child_ranges:
