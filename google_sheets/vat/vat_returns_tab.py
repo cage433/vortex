@@ -7,6 +7,8 @@ from bank_statements.categorized_transaction import CategorizedTransaction
 from bank_statements.payee_categories import PayeeCategory
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
+from env import VAT_RETURNS_2020_ID, VAT_RETURNS_2021_ID, VAT_RETURNS_2022_ID, VAT_RETURNS_2023_ID, VAT_RETURNS_2024_ID, \
+    VAT_RETURNS_2025_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
 from utils import checked_list_type, checked_type, checked_optional_type
@@ -93,10 +95,16 @@ class PaymentsRangeForCategorySansVAT(PaymentsRangeForCategory):
     @property
     def values(self) -> RangesAndValues:
         summing_cols = range(1, 3)
-        category_total_formulae = [
-            "=" + "+".join(month_total_row[0, i_col].in_a1_notation for month_total_row in self.month_total_rows)
-            for i_col in summing_cols
-        ]
+        if len(self.transactions) == 0:
+            category_total_formulae = [
+                0.0
+                for _ in summing_cols
+            ]
+        else:
+            category_total_formulae = [
+                "=" + "+".join(month_total_row[0, i_col].in_a1_notation for month_total_row in self.month_total_rows)
+                for i_col in summing_cols
+            ]
         values = [
             [self.category] + category_total_formulae
         ]
@@ -170,7 +178,7 @@ class PaymentsRangeForCategoryWithVAT(PaymentsRangeForCategory):
 
                 if self.include_vat_columns:
                     if self.category == PayeeCategory.RENT:
-                        vat_formula = f"=({amount_cell.in_a1_notation} - {self.service_charge_cell.in_a1_notation}) / 6.0"
+                        vat_formula = f"=({amount_cell.in_a1_notation} + {self.service_charge_cell.in_a1_notation}) / 6.0"
                     else:
                         vat_formula = f"={amount_cell.in_a1_notation} / 6.0"
                     is_credit = PayeeCategory.is_credit(self.category)
@@ -205,8 +213,12 @@ class WalkInSalesRange(TabRange):
         self.by_month = {m: self.gigs_info.restrict_to_period(m) for m in self.accounting_months}
         super().__init__(top_left_cell, num_rows=1 + self.gigs_info.number_of_gigs + len(self.accounting_months),
                          num_cols=3)
+        self.is_empty = len(self.accounting_months) == 0
 
-        self.month_total_cells = [self[1, 1]]
+        if self.is_empty:
+            self.month_total_cells = []
+        else:
+            self.month_total_cells = [self[1, 1]]
         for m in self.accounting_months[:-1]:
             last_total_cell = self.month_total_cells[-1]
             self.month_total_cells.append(last_total_cell.offset(rows=len(self.by_month[m].contracts_and_events) + 1))
@@ -235,7 +247,10 @@ class WalkInSalesRange(TabRange):
 
     @property
     def values(self) -> RangesAndValues:
-        total_formula = "=" + "+".join(c.in_a1_notation for c in self.month_total_cells)
+        if self.is_empty:
+            total_formula = 0.0
+        else:
+            total_formula = "=" + "+".join(c.in_a1_notation for c in self.month_total_cells)
         values = [
             ["Walk in sales", total_formula]
         ]
@@ -540,6 +555,7 @@ class PaymentsRangeForCategoriesSansVat(PaymentsRangeForCategories):
 
 class ServiceChargeRange(TabRange):
     SERVICE_CHARGE = 594.72
+
     def __init__(self, top_left_cell: TabCell):
         super().__init__(
             top_left_cell,
@@ -680,8 +696,14 @@ class CashFlowsRange(TabRange):
 
 
 class VatReclaimFractionRange(TabRange):
+    OVERRIDE_RATE = {
+        Month(2020, 8): 1.0
+    }
+
     def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
-                 gigs_info: GigsInfo):
+                 gigs_info: GigsInfo,
+                 months: List[Month]
+                 ):
         self.total_ticket_sales_range = TotalTicketSalesRange(top_left_cell.offset(1), categorised_transactions,
                                                               gigs_info)
         self.total_bar_sales_range = TotalBareSalesExVATRange(
@@ -706,16 +728,16 @@ class VatReclaimFractionRange(TabRange):
             self.membership_range,
         ]
         super().__init__(top_left_cell, num_rows=1 + sum(r.num_rows for r in self.child_ranges), num_cols=3)
-        self.reclaim_percentage_cell = self.top_left_cell.offset(0, 1)
+        self.reclaim_percentage_cell = self.top_left_cell.offset(0, 2)
+        self.override_rate = self.OVERRIDE_RATE.get(months[-1])
 
     @property
     def format_requests(self):
         formats = [
             self.outline_border_request(),
-            self[0, 1:3].merge_columns_request(),
             self.tab.group_rows_request(self.i_first_row + 1, self.i_first_row + self.num_rows - 1),
-            self[0, 1].right_align_text_request(),
-            self[0, 1].percentage_format_request(),
+            self[0, 1:].right_align_text_request(),
+            self[0, 2].percentage_format_request(),
             self[0, 0].set_bold_text_request(),
             self[0].offset(self.num_rows).border_request(["top"], style="SOLID_MEDIUM"),
         ]
@@ -726,14 +748,11 @@ class VatReclaimFractionRange(TabRange):
     @property
     def values(self) -> RangesAndValues:
         ticket, bar, space, membership = [r.top_left_cell.offset(0, 1).in_a1_notation for r in self.child_ranges]
-        vs = RangesAndValues(
-            [
-                (
-                    self[0],
-                    [["VAT Reclaim Fraction", f"=({bar} + {space}) / ({ticket} + {bar} + {space} + {membership})"]]
-                ),
-            ]
-        )
+        if self.override_rate is not None:
+            reclaim_row = [["VAT Reclaim Fraction", "Override", self.override_rate]]
+        else:
+            reclaim_row = [["VAT Reclaim Fraction", "", f"=({bar} + {space}) / ({ticket} + {bar} + {space} + {membership})"]]
+        vs = RangesAndValues([(self[0], reclaim_row),])
 
         for r in self.child_ranges:
             vs += r.values
@@ -869,7 +888,10 @@ class VATReturnsTab(Tab):
 
         vat_reclaim_fraction_range = VatReclaimFractionRange(
             self.cell("B2"),
-            categorised_transactions, gigs_info)
+            categorised_transactions,
+            gigs_info,
+            self.months
+        )
 
         service_charge_range = ServiceChargeRange(
             vat_reclaim_fraction_range.bottom_left_cell.offset(3),
@@ -917,3 +939,20 @@ class VATReturnsTab(Tab):
                   + vat_submission_range.values)
 
         self.workbook.batch_update_values(values.ranges_and_values)
+
+    @staticmethod
+    def sheet_id_for_month(month: AccountingMonth) -> str:
+        year = month.year.y
+        if year == 2020:
+            return VAT_RETURNS_2020_ID
+        if year == 2021:
+            return VAT_RETURNS_2021_ID
+        if year == 2022:
+            return VAT_RETURNS_2022_ID
+        if year == 2023:
+            return VAT_RETURNS_2023_ID
+        elif year == 2024:
+            return VAT_RETURNS_2024_ID
+        if year == 2025:
+            return VAT_RETURNS_2025_ID
+        raise ValueError(f"Unsupported month {month} for all statements tab")

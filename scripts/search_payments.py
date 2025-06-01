@@ -20,10 +20,11 @@ def all_transactions_from_tabs(force: Boolean) -> CategorizedTransactions:
 
 if __name__ == '__main__':
     trans = all_transactions_from_tabs(force=False)
+    for c in trans.categories:
+        print(c)
     # trans = trans.restrict_to_period(SimpleDateRange(Day(2023, 1, 1), Day(2023, 12, 31)))
-    trans = trans.restrict_to_category(PayeeCategory.MEMBERSHIPS)
+    trans = trans.restrict_to_category(PayeeCategory.RENT)
     # trans = trans.restrict_to_user("1994")
-    ts = sorted(trans.transactions, key=lambda t: t.transaction.payment_date)
-    for t in ts:
+    for t in trans.transactions:
         print(t)
 

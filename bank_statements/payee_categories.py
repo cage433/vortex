@@ -86,6 +86,7 @@ class PayeeCategory(StrEnum):
             PayeeCategory.BB_LOAN, PayeeCategory.BANK_INTEREST, PayeeCategory.CREDIT_CARD_FEES,
             PayeeCategory.DONATION,
             PayeeCategory.GIG_SECURITY,
+            PayeeCategory.GRANT,
             PayeeCategory.INTERNAL_TRANSFER,
             PayeeCategory.MEMBERSHIPS,
             PayeeCategory.MUSIC_VENUE_TRUST, PayeeCategory.MUSICIAN_PAYMENTS, PayeeCategory.PETTY_CASH,
@@ -94,7 +95,9 @@ class PayeeCategory(StrEnum):
             PayeeCategory.TICKET_SALES,
             PayeeCategory.TICKETWEB_CREDITS,
             PayeeCategory.UNCATEGORISED,
-            PayeeCategory.VAT, PayeeCategory.WORK_PERMITS
+            PayeeCategory.VAT,
+            PayeeCategory.VORTEX_MERCH,
+            PayeeCategory.WORK_PERMITS
         ]:
             return False
 
