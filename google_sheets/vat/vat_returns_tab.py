@@ -8,7 +8,6 @@ from bank_statements.payee_categories import PayeeCategory
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from google_sheets import Tab, Workbook
-from google_sheets.accounts.constants import SERVICE_CHARGE
 from google_sheets.tab_range import TabRange, TabCell
 from utils import checked_list_type, checked_type, checked_optional_type
 from utils.collection_utils import group_into_dict
@@ -539,6 +538,7 @@ class PaymentsRangeForCategoriesSansVat(PaymentsRangeForCategories):
 
 
 class ServiceChargeRange(TabRange):
+    SERVICE_CHARGE = 594.72
     def __init__(self, top_left_cell: TabCell):
         super().__init__(
             top_left_cell,
@@ -558,7 +558,7 @@ class ServiceChargeRange(TabRange):
     @property
     def values(self) -> RangesAndValues:
         return RangesAndValues(
-            [(self[0], [["Service Charge", SERVICE_CHARGE]])]
+            [(self[0], [["Service Charge", self.SERVICE_CHARGE]])]
         )
 
     @property
@@ -757,8 +757,8 @@ class BankCheckRange(TabRange):
         pnl_balance_cell = self[3, 1].in_a1_notation
         return RangesAndValues([(self, [
             ["Bank Check"],
-            ["Initial Balance", float(self.bank_activity.initial_balance)],
-            ["Terminal Balance", float(self.bank_activity.terminal_balance)],
+            ["Initial Balance", float(self.bank_activity.initial_balance_across_accounts)],
+            ["Terminal Balance", float(self.bank_activity.terminal_balance_across_accounts)],
             ["P/L", f"={terminal_balance_cell} - {initial_balance_cell}"],
             ["Difference",
              f"={pnl_balance_cell} - {self.net_cash_flow_cell.cell_coordinates.text} - {self.net_payments_cell.cell_coordinates.text}"],
