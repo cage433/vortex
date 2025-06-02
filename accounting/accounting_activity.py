@@ -1,4 +1,4 @@
-from airtable_db import VortexDB
+from airtable_db import VortexAirtableDB
 from airtable_db.gigs_info import GigsInfo
 from bank_statements import BankActivity
 from bank_statements.categorized_transaction import CategorizedTransactions
@@ -28,7 +28,7 @@ class AccountingActivity:
     def gig_info_for_period(period: DateRange, force: bool) -> GigsInfo:
         gigs_info_list = []
         for month in period.split_into(Month, SplitType.EXACT):
-            month_info = VortexDB().gigs_info_for_period(month, force)
+            month_info = VortexAirtableDB().gigs_info_for_period(month, force)
             gigs_info_list += month_info.contracts_and_events
         return GigsInfo(gigs_info_list)
 

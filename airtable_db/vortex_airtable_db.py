@@ -11,13 +11,13 @@ from date_range.month import Month
 from utils.collection_utils import group_into_dict, flatten
 
 __all__ = [
-    "VortexDB",
+    "VortexAirtableDB",
 ]
 
 from utils.logging import log_message
 
 
-class VortexDB:
+class VortexAirtableDB:
     def __init__(self):
         self.contracts_table = ContractsTable()
         self.events_table = EventsTable()
@@ -26,7 +26,7 @@ class VortexDB:
 
     def gigs_info_for_period(self, period: DateRange, force: bool) -> GigsInfo:
         key = f"gig_info_{period}"
-        with shelve.open(str(VortexDB.SHELF)) as shelf:
+        with shelve.open(str(VortexAirtableDB.SHELF)) as shelf:
             if key not in shelf or force:
                 contracts_columns = [
                     ContractsColumns.ticket_price_column(level)
@@ -81,7 +81,7 @@ class VortexDB:
 
 
 if __name__ == '__main__':
-    db = VortexDB()
+    db = VortexAirtableDB()
     month = Month(2023, 6)
     m = AccountingMonth.from_calendar_month(month)
     log_message(f"Getting gigs info for {m}")
