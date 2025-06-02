@@ -1,15 +1,12 @@
 from decimal import Decimal
-from time import sleep
 
 from bank_statements import BankActivity
-from bank_statements.bank_account import CURRENT_ACCOUNT, BankAccount
 from bank_statements.payee_categories import PayeeCategory
 from date_range import Day
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange
 from google_sheets import Workbook
-from google_sheets.statements.statements_tab import StatementsTab
 from google_sheets.statements.statements_tab import StatementsTab
 from kashflow.nominal_ledger import NominalLedgerItemType, NominalLedger
 

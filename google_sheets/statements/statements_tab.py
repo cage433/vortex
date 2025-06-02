@@ -1,7 +1,7 @@
 import shelve
 from decimal import Decimal
 from pathlib import Path
-from typing import List, Any, Optional
+from typing import List, Any
 
 from bank_statements import BankActivity, Transaction
 from bank_statements.bank_account import CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT, BankAccount

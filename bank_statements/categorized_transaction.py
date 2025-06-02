@@ -1,10 +1,11 @@
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 
 from bank_statements import Transaction
 from bank_statements.bank_account import BankAccount
 from bank_statements.payee_categories import category_for_transaction, PayeeCategory
 from date_range import Day, DateRange
+from date_range.simple_date_range import SimpleDateRange
 from utils import checked_type, checked_list_type
 
 
@@ -107,3 +108,11 @@ class CategorizedTransactions:
     @property
     def net_ticket_sales(self) -> Decimal:
         return self.restrict_to_category(PayeeCategory.TICKET_SALES).total_amount
+
+    @property
+    def period(self) -> Optional[DateRange]:
+        if self.is_empty:
+            return None
+        first_day = min(t.payment_date for t in self.transactions)
+        last_day = max(t.payment_date for t in self.transactions)
+        return SimpleDateRange(first_day, last_day)
