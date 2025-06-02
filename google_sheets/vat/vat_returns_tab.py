@@ -394,18 +394,18 @@ class SpaceHireExVATRange(TabRange):
 class TotalTicketSalesRange(TabRange):
     def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
                  gigs_info: GigsInfo):
-        self.ticket_web_credits_range = PaymentsRangeForCategorySansVAT(
+        self.online_ticket_sales_range = PaymentsRangeForCategorySansVAT(
             top_left_cell.offset(1),
             categorised_transactions,
-            category=PayeeCategory.TICKETWEB_CREDITS,
+            category=PayeeCategory.TICKET_SALES,
         )
         self.walk_in_sales_range = WalkInSalesRange(
-            self.ticket_web_credits_range.bottom_left_cell.offset(num_rows=1),
+            self.online_ticket_sales_range.bottom_left_cell.offset(num_rows=1),
             gigs_info,
             right_align_title=True,
         )
         super().__init__(top_left_cell,
-                         1 + self.ticket_web_credits_range.num_rows + self.walk_in_sales_range.num_rows,
+                         1 + self.online_ticket_sales_range.num_rows + self.walk_in_sales_range.num_rows,
                          6)
 
     @property
@@ -415,17 +415,17 @@ class TotalTicketSalesRange(TabRange):
             self[0, 1:].set_currency_format_request(),
             self.tab.group_rows_request(self.i_first_row + 1, self.i_first_row + self.num_rows - 1),
         ]
-        requests += self.ticket_web_credits_range.format_requests
+        requests += self.online_ticket_sales_range.format_requests
         requests += self.walk_in_sales_range.format_requests
         return requests
 
     @property
     def values(self) -> RangesAndValues:
         ticket_web_cell, walk_in_cell = [r.top_left_cell.offset(0, 1).cell_coordinates.text for r in
-                                         [self.ticket_web_credits_range, self.walk_in_sales_range]]
+                                         [self.online_ticket_sales_range, self.walk_in_sales_range]]
         top_row = ["Ticket Sales", f"={ticket_web_cell} + {walk_in_cell}"]
         return (RangesAndValues([(self[0, :], [top_row])]) +
-                self.ticket_web_credits_range.values + self.walk_in_sales_range.values)
+                self.online_ticket_sales_range.values + self.walk_in_sales_range.values)
 
 
 class PaymentsRangeForCategories(TabRange):

@@ -21,7 +21,7 @@ class Workbook:
 
     def retry_on_http_error(self, resource_func):
         num_tries = 0
-        sleep_seconds = 5
+        sleep_seconds = 10
         while num_tries < 5:
             try:
                 return resource_func()
@@ -30,7 +30,7 @@ class Workbook:
                     num_tries += 1
                     print(f"Retrying after error {e.resp.status} ({num_tries}/5)")
                     sleep(sleep_seconds)
-                    sleep_seconds *= 2
+                    sleep_seconds += 10
                 else:
                     raise e
         raise ValueError("Failed to get result after 5 retries due to HTTP")

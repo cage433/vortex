@@ -4,6 +4,7 @@ from time import sleep
 from bank_statements import BankActivity
 from bank_statements.bank_account import CURRENT_ACCOUNT, BankAccount
 from bank_statements.payee_categories import PayeeCategory
+from date_range import Day
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange
@@ -97,9 +98,8 @@ def compare_uncategorized_with_kashflow(month: AccountingMonth):
 
 if __name__ == '__main__':
     acc_month = AccountingMonth.from_calendar_month(Month(2019, 9))
-    for i in range(12):
+    while acc_month <= AccountingMonth.containing(Day.today()):
         print(f"Refreshing {acc_month}")
         ensure_tab_consistent(acc_month, refresh_bank_activity=False, refresh_sheet=True)
         compare_uncategorized_with_kashflow(acc_month)
         acc_month = acc_month + 1
-        sleep(10)

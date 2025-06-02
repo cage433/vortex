@@ -40,17 +40,20 @@ class Tab:
         }
 
     def num_rows(self) -> int:
-        return self.workbook._resource.get(
-            spreadsheetId=self.workbook.sheet_id,
-            ranges=[f"{self.tab_name}!A:A"],
-            includeGridData=False
-        ).execute().get("sheets", [])[0].get("properties", {}).get("gridProperties", {}).get("rowCount", 0)
+        return self.workbook.retry_on_http_error(
+            lambda: self.workbook._resource.get(
+                spreadsheetId=self.workbook.sheet_id,
+                ranges=[f"{self.tab_name}!A:A"],
+                includeGridData=False
+            ).execute().get("sheets", [])[0].get("properties", {}).get("gridProperties", {}).get("rowCount", 0)
+        )
 
     def read_values_for_columns(self, column_range: str) -> list[list[any]]:
-        values = self.workbook._resource.values().get(
-            spreadsheetId=self.workbook.sheet_id,
-            range=f"{self.tab_name}!{column_range}",
-        ).execute()
+        values = self.workbook.retry_on_http_error(
+            lambda: self.workbook._resource.values().get(
+                spreadsheetId=self.workbook.sheet_id,
+                range=f"{self.tab_name}!{column_range}",
+            ).execute())
         return values.get("values") or []
 
     def clear_values_and_formats_requests(self) -> list[dict]:

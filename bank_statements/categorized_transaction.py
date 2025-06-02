@@ -101,5 +101,4 @@ class CategorizedTransactions:
 
     @property
     def net_ticket_sales(self) -> Decimal:
-        return self.restrict_to_category(PayeeCategory.TICKET_SALES).total_amount + self.restrict_to_category(
-            PayeeCategory.TICKETWEB_CREDITS).total_amount
+        return self.restrict_to_category(PayeeCategory.TICKET_SALES).total_amount

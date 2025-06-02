@@ -32,6 +32,7 @@ class PayeeCategory(StrEnum):
     BT = "BT"
     BUILDING_MAINTENANCE = "Building Maintenance"
     BUILDING_SECURITY = "Building Security"
+    BUILDING_WORKS = "Building Works"
     CARD_SALES = "Card Sales"
     CASH_SALES = "Cash Sales"
     CLEANING = "Cleaning"
@@ -47,6 +48,7 @@ class PayeeCategory(StrEnum):
     GIG_SECURITY = "Gig Security"
     GRANT = "Grant"
     INSURANCE = "Insurance"
+    INSURANCE_PAYOUT = "Insurance Payout"
     INTERNAL_TRANSFER = "Internal Transfer"
     KASHFLOW = "Kashflow"
     MAILCHIMP = "Mailchimp"
@@ -63,15 +65,13 @@ class PayeeCategory(StrEnum):
     RATES = "Rates"
     RENT = "Rent"
     SALARIES = "Salaries"
-    SERVICES = "Services"
     SLACK = "Slack"
     SOUND_ENGINEER = "Sound Engineer"
     SPACE_HIRE = "Space Hire"
     SUBSCRIPTIONS = "Subscriptions"
     TELEPHONE = "Telephone"
     THAMES_WATER = "Thames Water"
-    TICKETWEB_CREDITS = "Ticketweb Credits"
-    TICKET_SALES = "Ticket Sales"
+    TICKET_SALES = "Ticketweb Credits"
     UNCATEGORISED = "Uncategorised"
     UTILITIES = "Utilities"
     VAT = "VAT"
@@ -83,17 +83,23 @@ class PayeeCategory(StrEnum):
     def is_subject_to_vat(category: 'PayeeCategory') -> bool:
         if category in [
             PayeeCategory.BANK_FEES,
-            PayeeCategory.BB_LOAN, PayeeCategory.BANK_INTEREST, PayeeCategory.CREDIT_CARD_FEES,
+            PayeeCategory.BB_LOAN,
+            PayeeCategory.BANK_INTEREST,
+            PayeeCategory.CREDIT_CARD_FEES,
             PayeeCategory.DONATION,
             PayeeCategory.GIG_SECURITY,
             PayeeCategory.GRANT,
+            PayeeCategory.INSURANCE_PAYOUT,
             PayeeCategory.INTERNAL_TRANSFER,
             PayeeCategory.MEMBERSHIPS,
-            PayeeCategory.MUSIC_VENUE_TRUST, PayeeCategory.MUSICIAN_PAYMENTS, PayeeCategory.PETTY_CASH,
+            PayeeCategory.MUSIC_VENUE_TRUST,
+            PayeeCategory.MUSICIAN_PAYMENTS,
+            PayeeCategory.PETTY_CASH,
             PayeeCategory.PIANO_TUNER,
-            PayeeCategory.RATES, PayeeCategory.SALARIES, PayeeCategory.SOUND_ENGINEER,
+            PayeeCategory.RATES,
+            PayeeCategory.SALARIES,
+            PayeeCategory.SOUND_ENGINEER,
             PayeeCategory.TICKET_SALES,
-            PayeeCategory.TICKETWEB_CREDITS,
             PayeeCategory.UNCATEGORISED,
             PayeeCategory.VAT,
             PayeeCategory.VORTEX_MERCH,
@@ -103,21 +109,35 @@ class PayeeCategory(StrEnum):
 
         if category in [
             PayeeCategory.ACCOUNTANT,
-            PayeeCategory.AIRTABLE, PayeeCategory.BAR_SNACKS,
-            PayeeCategory.BAR_STOCK, PayeeCategory.BT, PayeeCategory.BUILDING_MAINTENANCE,
+            PayeeCategory.AIRTABLE,
+            PayeeCategory.BAR_SNACKS,
+            PayeeCategory.BAR_STOCK,
+            PayeeCategory.BT,
+            PayeeCategory.BUILDING_MAINTENANCE,
             PayeeCategory.BUILDING_SECURITY,
+            PayeeCategory.BUILDING_WORKS,
             PayeeCategory.CARD_SALES,
-            PayeeCategory.CLEANING, PayeeCategory.ELECTRICITY,
-            PayeeCategory.EQUIPMENT_HIRE, PayeeCategory.EQUIPMENT_MAINTENANCE, PayeeCategory.EQUIPMENT_PURCHASE,
-            PayeeCategory.FIRE_ALARM, PayeeCategory.FLOOD,
-            PayeeCategory.INSURANCE, PayeeCategory.KASHFLOW,
+            PayeeCategory.CLEANING,
+            PayeeCategory.ELECTRICITY,
+            PayeeCategory.EQUIPMENT_HIRE,
+            PayeeCategory.EQUIPMENT_MAINTENANCE,
+            PayeeCategory.EQUIPMENT_PURCHASE,
+            PayeeCategory.FIRE_ALARM,
+            PayeeCategory.FLOOD,
+            PayeeCategory.INSURANCE,
+            PayeeCategory.KASHFLOW,
             PayeeCategory.LICENSING,
-            PayeeCategory.MAILCHIMP, PayeeCategory.MARKETING,
-            PayeeCategory.MUSICIAN_COSTS, PayeeCategory.OPERATIONAL_COSTS,
+            PayeeCategory.MAILCHIMP,
+            PayeeCategory.MARKETING,
+            PayeeCategory.MUSICIAN_COSTS,
+            PayeeCategory.OPERATIONAL_COSTS,
             PayeeCategory.PRS,
             PayeeCategory.RENT,
-            PayeeCategory.SERVICES, PayeeCategory.SLACK, PayeeCategory.SPACE_HIRE, PayeeCategory.SUBSCRIPTIONS,
-            PayeeCategory.TELEPHONE, PayeeCategory.THAMES_WATER,
+            PayeeCategory.SLACK,
+            PayeeCategory.SPACE_HIRE,
+            PayeeCategory.SUBSCRIPTIONS,
+            PayeeCategory.TELEPHONE,
+            PayeeCategory.THAMES_WATER,
             PayeeCategory.UTILITIES,
             PayeeCategory.WEB_HOST,
         ]:
@@ -128,8 +148,14 @@ class PayeeCategory(StrEnum):
     @staticmethod
     def is_credit(category: 'PayeeCategory') -> bool:
         checked_type(category, PayeeCategory)
-        return category in [PayeeCategory.CARD_SALES, PayeeCategory.TICKETWEB_CREDITS, PayeeCategory.SPACE_HIRE,
-                            PayeeCategory.MEMBERSHIPS]
+        return category in [
+            PayeeCategory.CARD_SALES,
+            PayeeCategory.CASH_SALES,
+            PayeeCategory.TICKET_SALES,
+            PayeeCategory.SPACE_HIRE,
+            PayeeCategory.MEMBERSHIPS,
+            PayeeCategory.INSURANCE_PAYOUT
+        ]
 
     @staticmethod
     def is_debit(category: 'PayeeCategory') -> bool:
@@ -307,9 +333,9 @@ def _maybe_cash_sales(transaction: Transaction) -> Optional[PayeeCategory]:
         return PayeeCategory.CASH_SALES
 
 
-def _maybe_ticketweb_credits(transaction: Transaction) -> Optional[PayeeCategory]:
+def _maybe_ticket_sales(transaction: Transaction) -> Optional[PayeeCategory]:
     if transaction.amount > 0 and matches_start(transaction, ["ticketweb uk", "ticketco uk", "tw client gbp"]):
-        return PayeeCategory.TICKETWEB_CREDITS
+        return PayeeCategory.TICKET_SALES
 
 
 def _maybe_bar_purchases(transaction: Transaction) -> Optional[PayeeCategory]:
@@ -631,7 +657,7 @@ def category_for_transaction(transaction: Transaction) -> PayeeCategory:
             _maybe_space_hire(transaction) or
             _maybe_subscriptions(transaction) or
             _maybe_telephone(transaction) or
-            _maybe_ticketweb_credits(transaction) or
+            _maybe_ticket_sales(transaction) or
             _maybe_tissues(transaction) or
             _maybe_vat(transaction) or
             _maybe_work_permit(transaction) or

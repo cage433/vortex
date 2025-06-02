@@ -23,8 +23,18 @@ if __name__ == '__main__':
     for c in trans.categories:
         print(c)
     # trans = trans.restrict_to_period(SimpleDateRange(Day(2023, 1, 1), Day(2023, 12, 31)))
-    trans = trans.restrict_to_category(PayeeCategory.RENT)
-    # trans = trans.restrict_to_user("1994")
+    trans = trans.restrict_to_category(PayeeCategory.WORK_PERMITS)
+    # trans = trans.restrict_to_user("lb hackney genfund")
     for t in trans.transactions:
-        print(t)
+        # if abs(t.amount) > 200:
+            print(t)
+    total = sum(t.amount for t in trans.transactions)
+    abs_total = sum(abs(t.amount) for t in trans.transactions)
+    min_amount = min(t.amount for t in trans.transactions)
+    max_amount = max(t.amount for t in trans.transactions)
+    sorted_trans = sorted(trans.transactions, key=lambda t: t.amount)
+    print(f"Total: {total}, {abs_total}")
+    print(sorted_trans[0])
+    print(sorted_trans[-1])
+
 
