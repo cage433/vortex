@@ -25,6 +25,11 @@ class CategorizedTransaction:
     def with_category(self, category: PayeeCategory) -> 'CategorizedTransaction':
         return CategorizedTransaction(self.transaction, category)
 
+    def __eq__(self, other):
+        if not isinstance(other, CategorizedTransaction):
+            return False
+        return self.transaction == other.transaction and self.category == other.category
+
     def __str__(self):
         return f"{self.category}: {self.transaction}"
     @property
