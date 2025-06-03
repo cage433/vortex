@@ -1,4 +1,7 @@
-from bank_statements.categorized_transaction import CategorizedTransactions
+from typing import List
+
+from bank_statements import Transaction
+from bank_statements.Transactions import Transactions
 from bank_statements.payee_categories import PayeeCategory
 from date_range.quarter import Quarter
 from google_sheets import Tab, Workbook
@@ -12,7 +15,7 @@ class AnalysisRange(TabRange):
     (QUARTER, PNL_START, PNL_END, GIGS, BAR, BUILDING, SALARIES, VAT, GRANTS, OPERATIONAL, EXCEPTIONAL) = range(len(HEADINGS))
 
 
-    def __init__(self, top_left_cell: TabCell, categorised_transactions: CategorizedTransactions):
+    def __init__(self, top_left_cell: TabCell, transactions: List[Transaction]):
         period = categorised_transactions.period
         q1 = Quarter.containing(period.first_day)
         q2 = Quarter.containing(period.last_day)
@@ -28,7 +31,7 @@ class AnalysisRange(TabRange):
             PayeeCategory.ACCOUNTANT
         ]:
             return None
-        
+
     @property
     def values(self):
         rows = [self.HEADINGS]
@@ -48,10 +51,10 @@ class AccountsAnalysisTab(Tab):
 
     def update(
         self,
-        categorised_transactions: CategorizedTransactions,
+        transactions: Transactions,
     ):
         analysis_range = AnalysisRange(
             self.cell("B2"),
-            categorised_transactions,
+            transactions,
 
         )

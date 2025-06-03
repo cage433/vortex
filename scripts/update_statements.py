@@ -21,7 +21,7 @@ def statements_tab_for_month(month: AccountingMonth) -> StatementsTab:
 
 
 def statements_consistent(tab: StatementsTab, activity: BankActivity, fail_on_inconsistency: bool) -> bool:
-    tab_transactions = [t.transaction for t in tab.categorised_transactions_from_tab()]
+    tab_transactions = [t.transaction for t in tab.transactions_from_tab()]
     activity_transactions = activity.sorted_transactions
     if len(tab_transactions) != len(activity_transactions):
         if fail_on_inconsistency:
@@ -49,7 +49,7 @@ def ensure_tab_consistent(month: AccountingMonth, refresh_bank_activity: bool, r
 def compare_uncategorized_with_kashflow(month: AccountingMonth):
     sheet_id = StatementsTab.sheet_id_for_month(month)
     tab = StatementsTab(Workbook(sheet_id), month.month_name, month)
-    transaction_infos = tab.categorised_transactions_from_tab()
+    transaction_infos = tab.transactions_from_tab()
     uncategorized = [t for t in transaction_infos if t.category == PayeeCategory.UNCATEGORISED]
     kashflow_period = SimpleDateRange(month.first_day - 30, month.last_day + 30)
     ledger_items = NominalLedger.from_latest_csv_file(force=False).restrict_to_period(kashflow_period).ledger_items

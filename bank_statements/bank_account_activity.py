@@ -7,12 +7,12 @@ from bank_statements.bank_account import BankAccount
 from date_range import Day, DateRange
 from utils import checked_list_type, checked_type, checked_dict_type
 
-__all__ = ["Statement"]
+__all__ = ["BankAccountActivity"]
 
 from utils.collection_utils import group_into_dict
 
 
-class Statement:
+class BankAccountActivity:
     def __init__(
             self,
             account: BankAccount,
@@ -82,7 +82,7 @@ class Statement:
         )
         return eod_balance - day_payments
 
-    def filter_on_period(self, period: DateRange) -> 'Statement':
+    def filter_on_period(self, period: DateRange) -> 'BankAccountActivity':
         d1 = period.first_day
         d2 = period.last_day
         published_balances = {d: b for d, b in self.published_balances.items() if d1 <= d <= d2}
@@ -92,7 +92,7 @@ class Statement:
         if d2 not in published_balances and d2 >= self.initial_balance_date:
             bal2 = self.balance_at_eod(d2)
             published_balances[d2] = bal2
-        return Statement(
+        return BankAccountActivity(
             self.account,
             [t for t in self.transactions if d1 <= t.payment_date <= d2],
             published_balances

@@ -1,7 +1,8 @@
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List
 
 from bank_statements.bank_account import BankAccount
+from bank_statements.payee_categories import PayeeCategory
 from date_range import Day
 from utils import checked_type
 
@@ -12,11 +13,13 @@ class Transaction:
     def __init__(
             self,
             account: BankAccount,
+            category: PayeeCategory,
             payment_date: Day,
             payee: str,
             amount: Decimal,
     ):
         self.account: BankAccount = checked_type(account, BankAccount)
+        self.category: PayeeCategory = checked_type(category, PayeeCategory)
         self.payment_date: Day = checked_type(payment_date, Day)
         self.payee: str = checked_type(payee, str)
         self.amount: Decimal = checked_type(amount, Decimal)
@@ -25,18 +28,24 @@ class Transaction:
         return self.__dict__ == other.__dict__
 
     def __str__(self):
-        return f"{self.account.id}: {self.payment_date}, {self.payee}, {self.amount}"
+        return f"{self.account.id}: {self.category} {self.payment_date}, {self.payee}, {self.amount}"
+
+    def __hash__(self):
+        return hash((self.account, self.category, self.payment_date, self.payee, self.amount))
 
     def clone(
             self,
             account: Optional[BankAccount] = None,
+            category: Optional[PayeeCategory] = None,
             payment_date: Optional[Day] = None,
             payee: Optional[str] = None,
             amount: Optional[float] = None,
     ):
         return Transaction(
             account=account or self.account,
+            category=category or self.category,
             payment_date=payment_date or self.payment_date,
             payee=payee or self.payee,
             amount=amount or self.amount,
         )
+

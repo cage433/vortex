@@ -6,8 +6,9 @@ from pathlib import Path
 from ofxparse import OfxParser
 
 import env
-from bank_statements import Statement, Transaction
+from bank_statements import BankAccountActivity, Transaction
 from bank_statements.bank_account import BankAccount, CURRENT_ACCOUNT
+from bank_statements.payee_categories import PayeeCategory
 from date_range import Day
 from date_range.month import Month
 from env import STATEMENTS_DIR
@@ -70,6 +71,7 @@ class StatementsReader:
                             amount = paid_in - paid_out
                             trans = Transaction(
                                 account,
+                                PayeeCategory.UNCATEGORISED,
                                 day,
                                 payee,
                                 amount,
@@ -81,44 +83,13 @@ class StatementsReader:
         pass
 
     @staticmethod
-    def read_transactions_ofx(statements_dir: Path, force: bool) -> dict[BankAccount, list[Transaction]]:
-        key = f"uncategorised_transactions"
-        with shelve.open(str(StatementsReader.SHELF)) as shelf:
-            if key not in shelf or force:
-                transactions_by_account = {}
-                for directory in (statements_dir / "ofx").glob("*"):
-                    if directory.name == ".DS_Store":
-                        continue
-                    assert directory.is_dir(), f"Expected {directory} to be a directory"
-                    account_id = int(directory.name)
-                    account = BankAccount.account_for_id(account_id)
-                    ofx_files = list(directory.glob("*.ofx"))
-                    transactions_for_account = []
-                    for file in ofx_files:
-                        with codecs.open(file) as fileobj:
-                            ofx = OfxParser.parse(fileobj)
-                        for tr in ofx.account.statement.transactions:
-                            trans = Transaction(
-                                account,
-                                Day.from_date(tr.date),
-                                tr.payee,
-                                Decimal(tr.amount),
-                                tr.type,
-                            )
-                            transactions_for_account.append(trans)
-                    transactions_by_account[account] = transactions_for_account
-                shelf[key] = transactions_by_account
-            return shelf[key]
-        pass
-
-    @staticmethod
-    def read_statements(force: bool) -> list[Statement]:
+    def read_statements(force: bool) -> list[BankAccountActivity]:
         balances_by_account = StatementsReader.read_published_balances(STATEMENTS_DIR, force)
         transactions_by_account = StatementsReader.read_transactions(STATEMENTS_DIR, force)
         assert set(balances_by_account.keys()) == set(transactions_by_account.keys()), \
             "Expected balances and transactions to have the same accounts"
         return [
-            Statement(
+            BankAccountActivity(
                 account,
                 transactions_by_account[account],
                 balances_by_account[account]

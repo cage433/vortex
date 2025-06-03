@@ -5,7 +5,7 @@ from typing import List
 
 from airtable_db.gigs_info import GigsInfo
 from airtable_db.table_columns import TicketPriceLevel, TicketCategory
-from bank_statements.categorized_transaction import CategorizedTransactions
+from bank_statements.Transactions import Transactions
 from bank_statements.payee_categories import PayeeCategory
 from date_range import DateRange
 from date_range.date_range import SplitType
@@ -66,7 +66,7 @@ class MonthAnalysisRange(TabRange):
         values = []
         # To date totals
         for i_row in range(2, self.num_rows):
-            month_range = self[i_row, 4:self.TO_DATE]
+            month_range = self[i_row, 1:self.TO_DATE]
             values.append(
                 (self[i_row, self.TO_DATE], f"=Sum({month_range.in_a1_notation})")
             )
@@ -156,12 +156,12 @@ class BankTicketSalesRange(MonthAnalysisRange):
             self,
             top_left_cell: TabCell,
             period: DateRange,
-            categorizedTransactions: CategorizedTransactions,
+            transactions: Transactions,
             gigs_info: GigsInfo,
     ):
         super().__init__(top_left_cell, period, gigs_info)
-        self.categorised_transactions_by_month: dict[Month, CategorizedTransactions] = {
-            month: categorizedTransactions.restrict_to_period(month)
+        self.transactions_by_month: dict[Month, Transactions] = {
+            month: transactions.restrict_to_period(month)
             for month in self.months
         }
 
@@ -173,8 +173,7 @@ class BankTicketSalesRange(MonthAnalysisRange):
         if month not in self.gigs_by_month:
             return 0
         walk_ins = self.gigs_by_month[month].total_walk_in_sales
-        online = self.categorised_transactions_by_month[month].total_for(PayeeCategory.TICKETWEB_CREDITS,
-                                                                         PayeeCategory.TICKET_SALES)
+        online = self.transactions_by_month[month].total_for(PayeeCategory.TICKET_SALES)
         return online + Decimal(walk_ins)
 
 
@@ -201,12 +200,12 @@ class BankDrinkSalesRange(MonthAnalysisRange):
             self,
             top_left_cell: TabCell,
             period: DateRange,
-            categorizedTransactions: CategorizedTransactions,
+            transactions: Transactions,
             gigs_info: GigsInfo,
     ):
         super().__init__(top_left_cell, period, gigs_info)
-        self.categorised_transactions_by_month: dict[Month, CategorizedTransactions] = {
-            month: categorizedTransactions.restrict_to_period(month)
+        self.transactions_by_month: dict[Month, Transactions] = {
+            month: transactions.restrict_to_period(month)
             for month in self.months
         }
 
@@ -218,7 +217,7 @@ class BankDrinkSalesRange(MonthAnalysisRange):
         if month not in self.gigs_by_month:
             return 0
         walk_ins = self.gigs_by_month[month].total_walk_in_sales
-        zettle = self.categorised_transactions_by_month[month].total_for(PayeeCategory.CARD_SALES)
+        zettle = self.transactions_by_month[month].total_for(PayeeCategory.CARD_SALES)
         return zettle - Decimal(walk_ins)
 
 class AirtableDrinkSalesPerCustomerRange(MonthAnalysisRange):
@@ -267,12 +266,12 @@ class BankDrinkSalesPerCustomerRange(MonthAnalysisRange):
             self,
             top_left_cell: TabCell,
             period: DateRange,
-            categorizedTransactions: CategorizedTransactions,
+            transactions: Transactions,
             gigs_info: GigsInfo,
     ):
         super().__init__(top_left_cell, period, gigs_info)
-        self.categorised_transactions_by_month: dict[Month, CategorizedTransactions] = {
-            month: categorizedTransactions.restrict_to_period(month)
+        self.transactions_by_month: dict[Month, Transactions] = {
+            month: transactions.restrict_to_period(month)
             for month in self.months
         }
 
@@ -303,7 +302,7 @@ class BankDrinkSalesPerCustomerRange(MonthAnalysisRange):
         if month not in self.gigs_by_month:
             return 0
         walk_ins = self.gigs_by_month[month].total_walk_in_sales
-        zettle = self.categorised_transactions_by_month[month].total_for(PayeeCategory.CARD_SALES)
+        zettle = self.transactions_by_month[month].total_for(PayeeCategory.CARD_SALES)
         sales = zettle - Decimal(walk_ins)
         num_tickets = self.gigs_by_month[month].total_tickets
         if num_tickets == 0:

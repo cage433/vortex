@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Dict
 
 from airtable_db.gigs_info import GigsInfo
 from bank_statements import BankActivity, Transaction
-from bank_statements.categorized_transaction import CategorizedTransaction
+from bank_statements.Transactions import Transactions
 from bank_statements.payee_categories import PayeeCategory
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
@@ -34,24 +34,26 @@ class PaymentsRangeForCategory(TabRange):
     def __init__(
             self,
             top_left_cell: TabCell,
-            transactions: List[CategorizedTransaction],
+            transactions: Transactions,
             category: PayeeCategory,
             num_cols: int
     ):
         self.category: PayeeCategory = checked_type(category, PayeeCategory)
-        self.transactions = [t for t in transactions if t.category == category]
-        self.by_month: Dict[AccountingMonth, List[CategorizedTransaction]] = group_into_dict(
-            self.transactions,
-            lambda t: AccountingMonth.containing(t.payment_date)
-        )
+        self.transactions: Transactions = transactions.restrict_to_category(self.category)
+        self.by_month: Dict[AccountingMonth, Transactions] = {
+            k: Transactions(v) for k, v in
+            group_into_dict(
+                self.transactions.transactions,
+                lambda t: AccountingMonth.containing(t.payment_date)
+            ).items()}
         self.accounting_months = sorted(self.by_month.keys())
-        super().__init__(top_left_cell, num_rows=1 + len(self.transactions) + len(self.accounting_months),
+        super().__init__(top_left_cell, num_rows=1 + self.transactions.num_transactions + len(self.accounting_months),
                          num_cols=num_cols)
 
         self.month_total_rows = [self[1, :]]
         for m in self.accounting_months[:-1]:
             last_total_row = self.month_total_rows[-1]
-            self.month_total_rows.append(last_total_row.offset(rows=len(self.by_month[m]) + 1))
+            self.month_total_rows.append(last_total_row.offset(rows=self.by_month[m].num_transactions + 1))
 
     @property
     def format_requests(self):
@@ -63,7 +65,7 @@ class PaymentsRangeForCategory(TabRange):
         ]
         for i_month, m in enumerate(self.accounting_months):
             month_total_row = self.month_total_rows[i_month]
-            num_in_month = len(self.by_month[m])
+            num_in_month = self.by_month[m].num_transactions
             requests.append(
                 self.tab.group_rows_request(
                     month_total_row.i_first_row + 1,
@@ -82,7 +84,7 @@ class PaymentsRangeForCategorySansVAT(PaymentsRangeForCategory):
     def __init__(
             self,
             top_left_cell: TabCell,
-            transactions: List[CategorizedTransaction],
+            transactions: Transactions,
             category: PayeeCategory,
     ):
         super().__init__(
@@ -95,7 +97,7 @@ class PaymentsRangeForCategorySansVAT(PaymentsRangeForCategory):
     @property
     def values(self) -> RangesAndValues:
         summing_cols = range(1, 3)
-        if len(self.transactions) == 0:
+        if self.transactions.is_empty:
             category_total_formulae = [
                 0.0
                 for _ in summing_cols
@@ -110,16 +112,16 @@ class PaymentsRangeForCategorySansVAT(PaymentsRangeForCategory):
         ]
         i_row = 1
         for m in self.accounting_months:
-            trans_for_month = sorted(self.by_month[m], key=lambda t: (t.payment_date, t.payee))
+            trans_for_month = sorted(self.by_month[m].transactions, key=lambda t: (t.payment_date, t.payee))
             month_total_formulae = [
                 f"=SUM({self[i_row + 1:i_row + 1 + len(trans_for_month), i_col].in_a1_notation})"
                 for i_col in summing_cols
             ]
             row = [m.month_name] + month_total_formulae
             values.append(row)
-            for i_trans, t in enumerate(self.by_month[m]):
+            for i_trans, t in enumerate(self.by_month[m].transactions):
                 amount_cells = [0.00, t.amount] if t.amount < 0 else [t.amount, 0.00]
-                row = [t.payment_date] + amount_cells + ["", "", "", t.transaction.payee]
+                row = [t.payment_date] + amount_cells + ["", "", "", t.payee]
                 values.append(row)
             i_row += 1 + len(trans_for_month)
         return RangesAndValues([(self, values)])
@@ -130,7 +132,7 @@ class PaymentsRangeForCategoryWithVAT(PaymentsRangeForCategory):
     def __init__(
             self,
             top_left_cell: TabCell,
-            transactions: List[CategorizedTransaction],
+            transactions: Transactions,
             service_charge_cell: TabCell,
             category: PayeeCategory,
             reclaimable_vat_fraction_cell: TabCell,
@@ -160,14 +162,14 @@ class PaymentsRangeForCategoryWithVAT(PaymentsRangeForCategory):
         ]
         i_row = 1
         for m in self.accounting_months:
-            trans_for_month = sorted(self.by_month[m], key=lambda t: (t.payment_date, t.payee))
+            trans_for_month = sorted(self.by_month[m].transactions, key=lambda t: (t.payment_date, t.payee))
             month_total_formulae = [
                 f"=SUM({self[i_row + 1:i_row + 1 + len(trans_for_month), i_col].in_a1_notation})"
                 for i_col in summing_cols
             ]
             row = [m.month_name] + month_total_formulae
             values.append(row)
-            for i_trans, t in enumerate(self.by_month[m]):
+            for i_trans, t in enumerate(self.by_month[m].transactions):
                 amount_cell = self[i_row + 1 + i_trans, 1]
                 row = [t.payment_date]
                 if PayeeCategory.is_credit(self.category):
@@ -192,7 +194,7 @@ class PaymentsRangeForCategoryWithVAT(PaymentsRangeForCategory):
                             reclaimable_vat_formula = f"={full_vat_cell.in_a1_notation} * {self.reclaimable_vat_fraction_cell.cell_coordinates.text}"
                         row += ["", vat_formula, reclaimable_vat_formula]
 
-                row.append(t.transaction.payee)
+                row.append(t.payee)
                 values.append(row)
             i_row += 1 + len(trans_for_month)
         return RangesAndValues([(self, values)])
@@ -271,11 +273,11 @@ class WalkInSalesRange(TabRange):
 
 
 class TotalBarSalesRange(TabRange):
-    def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
+    def __init__(self, top_left_cell: TabCell, transactions: Transactions,
                  gigs_info: GigsInfo, num_cols: int):
         self.zettle_credit_range = PaymentsRangeForCategorySansVAT(
             top_left_cell.offset(1),
-            categorised_transactions,
+            transactions,
             category=PayeeCategory.CARD_SALES,
         )
         self.walk_in_sales_range = WalkInSalesRange(
@@ -302,9 +304,9 @@ class TotalBarSalesRange(TabRange):
 
 
 class TotalBarSalesWithVATRange(TotalBarSalesRange):
-    def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
+    def __init__(self, top_left_cell: TabCell, transactions: Transactions,
                  gigs_info: GigsInfo):
-        super().__init__(top_left_cell, categorised_transactions, gigs_info, num_cols=6)
+        super().__init__(top_left_cell, transactions, gigs_info, num_cols=6)
 
     @property
     def values(self) -> RangesAndValues:
@@ -317,9 +319,9 @@ class TotalBarSalesWithVATRange(TotalBarSalesRange):
 
 
 class TotalBarSalesSansVATRange(TotalBarSalesRange):
-    def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
+    def __init__(self, top_left_cell: TabCell, transactions: Transactions,
                  gigs_info: GigsInfo):
-        super().__init__(top_left_cell, categorised_transactions, gigs_info, num_cols=3)
+        super().__init__(top_left_cell, transactions, gigs_info, num_cols=3)
 
     @property
     def values(self) -> RangesAndValues:
@@ -331,9 +333,9 @@ class TotalBarSalesSansVATRange(TotalBarSalesRange):
 
 
 class TotalBareSalesExVATRange(TabRange):
-    def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
+    def __init__(self, top_left_cell: TabCell, transactions: Transactions,
                  gigs_info: GigsInfo):
-        self.bar_sales_range = TotalBarSalesSansVATRange(top_left_cell.offset(1), categorised_transactions, gigs_info)
+        self.bar_sales_range = TotalBarSalesSansVATRange(top_left_cell.offset(1), transactions, gigs_info)
         super().__init__(
             top_left_cell,
             1 + self.bar_sales_range.num_rows,
@@ -360,10 +362,10 @@ class TotalBareSalesExVATRange(TabRange):
 
 
 class SpaceHireExVATRange(TabRange):
-    def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction]):
+    def __init__(self, top_left_cell: TabCell, transactions: Transactions):
         self.space_hires_range = PaymentsRangeForCategorySansVAT(
             top_left_cell.offset(num_rows=1),
-            categorised_transactions,
+            transactions,
             category=PayeeCategory.SPACE_HIRE,
         )
         super().__init__(
@@ -392,11 +394,13 @@ class SpaceHireExVATRange(TabRange):
 
 
 class TotalTicketSalesRange(TabRange):
-    def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
+    def __init__(self,
+                 top_left_cell: TabCell,
+                 transactions: Transactions,
                  gigs_info: GigsInfo):
         self.online_ticket_sales_range = PaymentsRangeForCategorySansVAT(
             top_left_cell.offset(1),
-            categorised_transactions,
+            transactions,
             category=PayeeCategory.TICKET_SALES,
         )
         self.walk_in_sales_range = WalkInSalesRange(
@@ -434,13 +438,12 @@ class PaymentsRangeForCategories(TabRange):
             top_left_cell: TabCell,
             name: str,
             categories: List[PayeeCategory],
-            categorised_transactions: List[CategorizedTransaction],
+            transactions: Transactions,
     ):
         self.name = checked_type(name, str)
         self.categories = checked_type(categories, list)
-        self.categorised_transactions: List[CategorizedTransaction] = checked_list_type(categorised_transactions,
-                                                                                        CategorizedTransaction)
-        self.trans_categories = set(t.category for t in categorised_transactions)
+        self.transactions: Transactions = checked_type(transactions, Transactions)
+        self.trans_categories = transactions.categories
         self.categories_to_display = [c for c in self.categories if c in self.trans_categories]
 
         self.category_ranges = [
@@ -498,7 +501,7 @@ class PaymentsRangeForCategoriesWithVAT(PaymentsRangeForCategories):
             name: str,
             service_charge_cell: TabCell,
             categories: List[PayeeCategory],
-            categorised_transactions: List[CategorizedTransaction],
+            transactions: Transactions,
             reclaimable_vat_cell: TabCell
     ):
         self.service_charge_cell: TabCell = checked_type(service_charge_cell, TabCell)
@@ -507,7 +510,7 @@ class PaymentsRangeForCategoriesWithVAT(PaymentsRangeForCategories):
             top_left_cell,
             name,
             categories,
-            categorised_transactions,
+            transactions,
         )
 
     @property
@@ -518,7 +521,7 @@ class PaymentsRangeForCategoriesWithVAT(PaymentsRangeForCategories):
     def payments_range(self, top_left: TabCell, category: PayeeCategory):
         return PaymentsRangeForCategoryWithVAT(
             top_left,
-            self.categorised_transactions,
+            self.transactions,
             self.service_charge_cell,
             category,
             self.reclaimable_vat_cell
@@ -531,19 +534,19 @@ class PaymentsRangeForCategoriesSansVat(PaymentsRangeForCategories):
             top_left_cell: TabCell,
             name: str,
             categories: List[PayeeCategory],
-            categorised_transactions: List[CategorizedTransaction],
+            transactions: Transactions,
     ):
         super().__init__(
             top_left_cell,
             name,
             categories,
-            categorised_transactions,
+            transactions,
         )
 
     def payments_range(self, top_left: TabCell, category: PayeeCategory):
         return PaymentsRangeForCategorySansVAT(
             top_left,
-            self.categorised_transactions,
+            self.transactions,
             category,
         )
 
@@ -588,11 +591,11 @@ class CashFlowsRange(TabRange):
             self,
             top_left_cell: TabCell,
             service_charge_cell: TabCell,
-            categorised_transactions: List[CategorizedTransaction],
+            transactions: Transactions,
             gigs_info: GigsInfo,
             reclaimable_vat_cell: TabCell):
         self.service_charge_cell: TabCell = checked_type(service_charge_cell, TabCell)
-        self.trans_categories = set(t.category for t in categorised_transactions)
+        self.trans_categories = transactions.categories
 
         debit_vat_categories = sorted(
             [c for c in PayeeCategory if
@@ -609,7 +612,7 @@ class CashFlowsRange(TabRange):
             [c for c in self.trans_categories if
              c not in debit_vat_categories and c not in credit_vat_categories and c is not PayeeCategory.CARD_SALES]
         )
-        self.bar_sales_range = TotalBarSalesWithVATRange(top_left_cell.offset(4), categorised_transactions, gigs_info)
+        self.bar_sales_range = TotalBarSalesWithVATRange(top_left_cell.offset(4), transactions, gigs_info)
         self.walk_in_sales_range = WalkInSalesRange(
             self.bar_sales_range.bottom_left_cell.offset(num_rows=1),
             gigs_info,
@@ -620,7 +623,7 @@ class CashFlowsRange(TabRange):
             "Other Receipts",
             self.service_charge_cell,
             credit_vat_categories,
-            categorised_transactions,
+            transactions,
             reclaimable_vat_cell
         )
 
@@ -629,14 +632,14 @@ class CashFlowsRange(TabRange):
             "VATable Payments",
             self.service_charge_cell,
             debit_vat_categories,
-            categorised_transactions,
+            transactions,
             reclaimable_vat_cell
         )
         self.non_vatable_range = PaymentsRangeForCategoriesSansVat(
             self.vatable_payments_range.bottom_left_cell.offset(num_rows=1),
             "Not VATable",
             non_vat_categories,
-            categorised_transactions,
+            transactions,
         )
         self.child_ranges = [
             self.bar_sales_range,
@@ -700,26 +703,26 @@ class VatReclaimFractionRange(TabRange):
         Month(2020, 8): 1.0
     }
 
-    def __init__(self, top_left_cell: TabCell, categorised_transactions: List[CategorizedTransaction],
+    def __init__(self, top_left_cell: TabCell, transactions: Transactions,
                  gigs_info: GigsInfo,
                  months: List[Month]
                  ):
-        self.total_ticket_sales_range = TotalTicketSalesRange(top_left_cell.offset(1), categorised_transactions,
+        self.total_ticket_sales_range = TotalTicketSalesRange(top_left_cell.offset(1), transactions,
                                                               gigs_info)
         self.total_bar_sales_range = TotalBareSalesExVATRange(
             self.total_ticket_sales_range.bottom_left_cell.offset(1),
-            categorised_transactions,
+            transactions,
             gigs_info)
         self.space_hires_range = SpaceHireExVATRange(
             self.total_bar_sales_range.bottom_left_cell.offset(num_rows=1),
-            categorised_transactions,
+            transactions,
         )
 
         self.membership_range = PaymentsRangeForCategoriesSansVat(
             self.space_hires_range.bottom_left_cell.offset(num_rows=1),
             "Membership",
             [PayeeCategory.MEMBERSHIPS],
-            categorised_transactions,
+            transactions,
         )
         self.child_ranges = [
             self.total_ticket_sales_range,
@@ -751,8 +754,9 @@ class VatReclaimFractionRange(TabRange):
         if self.override_rate is not None:
             reclaim_row = [["VAT Reclaim Fraction", "Override", self.override_rate]]
         else:
-            reclaim_row = [["VAT Reclaim Fraction", "", f"=({bar} + {space}) / ({ticket} + {bar} + {space} + {membership})"]]
-        vs = RangesAndValues([(self[0], reclaim_row),])
+            reclaim_row = [
+                ["VAT Reclaim Fraction", "", f"=({bar} + {space}) / ({ticket} + {bar} + {space} + {membership})"]]
+        vs = RangesAndValues([(self[0], reclaim_row), ])
 
         for r in self.child_ranges:
             vs += r.values
@@ -881,14 +885,14 @@ class VATReturnsTab(Tab):
 
     def update(
             self,
-            categorised_transactions: List[CategorizedTransaction],
+            transactions: Transactions,
             gigs_info: GigsInfo,
             bank_activity: BankActivity
     ):
 
         vat_reclaim_fraction_range = VatReclaimFractionRange(
             self.cell("B2"),
-            categorised_transactions,
+            transactions,
             gigs_info,
             self.months
         )
@@ -899,7 +903,7 @@ class VATReturnsTab(Tab):
         cash_flows_range = CashFlowsRange(
             service_charge_range.bottom_left_cell.offset(3),
             service_charge_range.service_charge_cell,
-            categorised_transactions,
+            transactions,
             gigs_info,
             vat_reclaim_fraction_range.reclaim_percentage_cell
         )

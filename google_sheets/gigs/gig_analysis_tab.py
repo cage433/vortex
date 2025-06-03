@@ -1,6 +1,6 @@
 from accounting.accounting_activity import AccountingActivity
 from airtable_db.gigs_info import GigsInfo
-from bank_statements.categorized_transaction import CategorizedTransactions
+from bank_statements.Transactions import Transactions
 from date_range import DateRange, Day
 from date_range.simple_date_range import SimpleDateRange
 from env import GIG_ANALYSIS_ID
@@ -18,7 +18,7 @@ class GigAnalysisTab(Tab):
             period: DateRange,
             short_period: DateRange,
             gigs_info: GigsInfo,
-            categorised_transactions: CategorizedTransactions
+            transactions: Transactions
     ):
         super().__init__(workbook, tab_name="Gig Analysis")
         self.gig_numbers_range = GigNumbersRange(
@@ -50,19 +50,19 @@ class GigAnalysisTab(Tab):
         self.bank_ticket_sales = BankTicketSalesRange(
             self.airtable_drink_sales_per_customer.bottom_left_cell.offset(num_rows=5),
             short_period,
-            categorised_transactions,
+            transactions,
             gigs_info,
         )
         self.bank_drink_sales = BankDrinkSalesRange(
             self.bank_ticket_sales.bottom_left_cell.offset(num_rows=2),
             short_period,
-            categorised_transactions,
+            transactions,
             gigs_info,
         )
         self.bank_drink_sales_per_customer = BankDrinkSalesPerCustomerRange(
             self.bank_drink_sales.bottom_left_cell.offset(num_rows=2),
             short_period,
-            categorised_transactions,
+            transactions,
             gigs_info,
         )
         self.ranges = [
@@ -110,7 +110,7 @@ if __name__ == '__main__':
         Day(2019, 9, 2),
         Day.today()
     )
-    categorised_transactions = StatementsTab.categorized_transactions(trans_period, force=force)
+    categorised_transactions = StatementsTab.transactions(trans_period, force=force)
     tab = GigAnalysisTab(workbook, period, trans_period, gig_info, categorised_transactions)
 
     tab.update()

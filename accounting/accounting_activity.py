@@ -1,13 +1,14 @@
+from typing import List
+
 from airtable_db import VortexAirtableDB
 from airtable_db.gigs_info import GigsInfo
-from bank_statements import BankActivity
-from bank_statements.categorized_transaction import CategorizedTransactions
+from bank_statements import BankActivity, Transaction
 from date_range import DateRange
 from date_range.date_range import SplitType
 from date_range.month import Month
 from google_sheets.statements.statements_tab import StatementsTab
 from kashflow.nominal_ledger import NominalLedger
-from utils import checked_type
+from utils import checked_type, checked_list_type
 
 
 class AccountingActivity:
@@ -16,13 +17,13 @@ class AccountingActivity:
             gigs_info: GigsInfo,
             nominal_ledger: NominalLedger,
             bank_activity: BankActivity,
-            current_account_transactions: CategorizedTransactions
+            transactions: List[Transaction]
     ):
         self.gigs_info: GigsInfo = checked_type(gigs_info, GigsInfo)
         self.nominal_ledger: NominalLedger = checked_type(nominal_ledger, NominalLedger)
         self.bank_activity: BankActivity = checked_type(bank_activity, BankActivity)
-        self.current_account_transactions: CategorizedTransactions = checked_type(current_account_transactions,
-                                                                                  CategorizedTransactions)
+        self.transactions: List[Transaction] = checked_list_type(transactions,
+                                                                 Transaction)
 
     @staticmethod
     def gig_info_for_period(period: DateRange, force: bool) -> GigsInfo:
@@ -41,9 +42,8 @@ class AccountingActivity:
             force_airtable: bool = False,
             force_transactions: bool = False
     ) -> 'AccountingActivity':
-
         gigs_info = AccountingActivity.gig_info_for_period(period, force or force_airtable)
         nominal_ledger = NominalLedger.from_latest_csv_file(force or force_nominal_ledger).restrict_to_period(period)
         bank_activity = BankActivity.build(force or force_bank).restrict_to_period(period)
-        current_account_transactions = StatementsTab.categorized_transactions(period, force or force_transactions)
-        return AccountingActivity(gigs_info, nominal_ledger, bank_activity, current_account_transactions)
+        transactions = StatementsTab.transactions(period, force or force_transactions)
+        return AccountingActivity(gigs_info, nominal_ledger, bank_activity, transactions)

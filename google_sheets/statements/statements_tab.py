@@ -4,9 +4,10 @@ from pathlib import Path
 from typing import List, Any
 
 from bank_statements import BankActivity, Transaction
+from bank_statements.Transactions import Transactions
 from bank_statements.bank_account import CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT, BankAccount
-from bank_statements.categorized_transaction import CategorizedTransaction, CategorizedTransactions
-from bank_statements.payee_categories import category_for_transaction, PayeeCategory
+from bank_statements.categorize import category_for_transaction
+from bank_statements.payee_categories import PayeeCategory
 from date_range import Day, DateRange
 from date_range.accounting_month import AccountingMonth
 from env import BANK_TRANSACTIONS_2025_ID, BANK_TRANSACTIONS_2024_ID, \
@@ -47,7 +48,7 @@ class StatementsTab(Tab):
 
     def update(self, bank_activity: BankActivity):
 
-        tab_categorised_transactions = self.categorised_transactions_from_tab()
+        tab_categorised_transactions = self.transactions_from_tab()
 
         if bank_activity.non_empty:
             if bank_activity.first_date < self.period.first_day or bank_activity.last_date > self.period.last_day:
@@ -191,7 +192,7 @@ class StatementsTab(Tab):
             (transaction_range, transaction_values),
         ])
 
-    def categorised_transactions_from_tab(self) -> List[CategorizedTransaction]:
+    def transactions_from_tab(self) -> Transactions:
 
         def to_payee_category(cell_value: str) -> PayeeCategory:
             if isinstance(cell_value, str) and cell_value.strip() == "":
@@ -205,7 +206,7 @@ class StatementsTab(Tab):
                 return Decimal(cell_value.replace(",", ""))
             return Decimal(cell_value)
 
-        infos = []
+        trans = []
         values = self.read_values_for_columns(self.heading_range.columns_in_a1_notation)
         for row in values[self.heading_range.i_first_row + 1:]:
             payment_date = Day.parse(row[self.DATE])
@@ -215,12 +216,13 @@ class StatementsTab(Tab):
             category = to_payee_category(row[self.CATEGORY])
             transaction = Transaction(
                 account=account,
+                category=category,
                 payment_date=payment_date,
                 payee=payee,
                 amount=amount,
             )
-            infos.append(CategorizedTransaction(transaction, category))
-        return infos
+            trans.append(transaction)
+        return Transactions(trans)
 
     @staticmethod
     def sheet_id_for_month(month: AccountingMonth) -> str:
@@ -240,7 +242,7 @@ class StatementsTab(Tab):
         raise ValueError(f"Unsupported month {month} for all statements tab")
 
     @staticmethod
-    def categorized_transactions_for_month(acc_month: AccountingMonth, force: bool) -> CategorizedTransactions:
+    def transactions_for_month(acc_month: AccountingMonth, force: bool) -> Transactions:
         key = f"current_account_transactions Acc Month {acc_month}"
         with shelve.open(str(SHELF)) as shelf:
             if key not in shelf or force:
@@ -249,13 +251,13 @@ class StatementsTab(Tab):
                     Workbook(StatementsTab.sheet_id_for_month(acc_month)),
                     acc_month.month_name,
                     acc_month
-                ).categorised_transactions_from_tab()
-                shelf[key] = CategorizedTransactions(transactions)
+                ).transactions_from_tab()
+                shelf[key] = transactions
             return shelf[key]
 
 
     @staticmethod
-    def categorized_transactions(period: DateRange, force: bool) -> CategorizedTransactions:
+    def transactions(period: DateRange, force: bool) -> Transactions:
         key = f"current_account_transactions Period {period}"
         with shelve.open(str(SHELF)) as shelf:
             has_value = key in shelf
@@ -263,9 +265,9 @@ class StatementsTab(Tab):
                 return shelf[key]
         acc_month = AccountingMonth.containing(period.first_day)
         last_acc_month = AccountingMonth.containing(period.last_day)
-        transactions = CategorizedTransactions([])
+        transactions = Transactions([])
         while acc_month <= last_acc_month:
-            transactions += StatementsTab.categorized_transactions_for_month(acc_month, force)
+            transactions += StatementsTab.transactions_for_month(acc_month, force)
             acc_month += 1
         with shelve.open(str(SHELF)) as shelf:
             shelf[key] = transactions.restrict_to_period(period)

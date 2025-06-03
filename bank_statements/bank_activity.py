@@ -3,7 +3,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import List, Optional
 
-from bank_statements import Statement, Transaction
+from bank_statements import BankAccountActivity, Transaction
 
 __all__ = ["BankActivity"]
 
@@ -15,11 +15,11 @@ from utils import checked_list_type
 
 
 class BankActivity:
-    def __init__(self, statements: List[Statement]):
-        checked_list_type(statements, Statement)
+    def __init__(self, statements: List[BankAccountActivity]):
+        checked_list_type(statements, BankAccountActivity)
         self.accounts: List[BankAccount] = sorted(list(set([s.account for s in statements])), key=lambda a: a.name)
         assert len(statements) == len(self.accounts), "Duplicate accounts"
-        self.statements: dict[BankAccount, Statement] = {
+        self.statements: dict[BankAccount, BankAccountActivity] = {
             statement.account: statement
             for statement in statements
         }
