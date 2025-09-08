@@ -11,6 +11,13 @@ class Transactions:
     def __init__(self, transactions: List[Transaction]):
         self.transactions: List[Transaction] = checked_list_type(transactions, Transaction)
 
+    def __eq__(self, other):
+        if not isinstance(other, Transactions):
+            return False
+        if len(self.transactions) != len(other.transactions):
+            return False
+        return all(t1 == t2 for t1, t2 in zip(self.transactions, other.transactions))
+
     @property
     def num_transactions(self) -> int:
         return len(self.transactions)

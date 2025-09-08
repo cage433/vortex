@@ -50,6 +50,7 @@ class StatementsTab(Tab):
 
         tab_categorised_transactions = self.transactions_from_tab()
 
+        print("here")
         if bank_activity.non_empty:
             if bank_activity.first_date < self.period.first_day or bank_activity.last_date > self.period.last_day:
                 raise ValueError(f"Bank activity is not within the period {self.period}")
@@ -152,10 +153,10 @@ class StatementsTab(Tab):
 
         def category_cell_value(i_transaction, bank_transaction):
             cell_category = ""
-            if len(tab_categorised_transactions) == len(transactions):
+            if len(tab_categorised_transactions.transactions) == len(transactions):
                 categorised_transaction = tab_categorised_transactions[i_transaction]
                 sheet_category = categorised_transaction.category
-                if categorised_transaction.transaction == bank_transaction:
+                if categorised_transaction.transaction.same_except_for_category(bank_transaction):
                     cell_category = sheet_category
             if cell_category == "" or cell_category == PayeeCategory.UNCATEGORISED:
                 cell_category = category_for_transaction(bank_transaction)

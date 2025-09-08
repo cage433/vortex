@@ -21,14 +21,14 @@ def statements_tab_for_month(month: AccountingMonth) -> StatementsTab:
 
 
 def statements_consistent(tab: StatementsTab, activity: BankActivity, fail_on_inconsistency: bool) -> bool:
-    tab_transactions = [t.transaction for t in tab.transactions_from_tab()]
+    tab_transactions = tab.transactions_from_tab().transactions
     activity_transactions = activity.sorted_transactions
     if len(tab_transactions) != len(activity_transactions):
         if fail_on_inconsistency:
             raise ValueError("Error: number of transactions mismatch")
         return False
     for l, r in zip(tab_transactions, activity_transactions):
-        if l != r:
+        if not l.same_except_for_category(r):
             if fail_on_inconsistency:
                 raise ValueError(f"Error: transactions mismatch: {l} != {r}")
             return False
@@ -94,9 +94,9 @@ def compare_uncategorized_with_kashflow(month: AccountingMonth):
 
 
 if __name__ == '__main__':
-    acc_month = AccountingMonth.from_calendar_month(Month(2019, 9))
-    while acc_month <= AccountingMonth.containing(Day.today()):
-        print(f"Refreshing {acc_month}")
-        ensure_tab_consistent(acc_month, refresh_bank_activity=False, refresh_sheet=True)
-        compare_uncategorized_with_kashflow(acc_month)
-        acc_month = acc_month + 1
+    acc_month = AccountingMonth.from_calendar_month(Month(2025, 8))
+    # while acc_month < AccountingMonth.containing(Day.today()):
+    print(f"Refreshing {acc_month}")
+    ensure_tab_consistent(acc_month, refresh_bank_activity=False, refresh_sheet=False)
+    # compare_uncategorized_with_kashflow(acc_month)
+    acc_month = acc_month + 1

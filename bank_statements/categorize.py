@@ -1,7 +1,9 @@
 from typing import Optional
 
 from bank_statements import Transaction
-from bank_statements.payee_categories import PayeeCategory
+from bank_statements.bank_account import ALL_BANK_ACCOUNTS
+from bank_statements.payee_categories import PayeeCategory, MUSICIANS
+from date_range import Day
 
 
 def matches_start(transaction, matches: any) -> bool:
@@ -148,6 +150,8 @@ def _maybe_salaries(transaction: Transaction) -> Optional[PayeeCategory]:
                 "tea earle",
                 "ted mitchell",
                 "k hingwan vortex",
+                "chloe xiao",
+                "hector tejero"
             ]
 
     ):

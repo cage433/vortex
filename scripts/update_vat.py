@@ -19,8 +19,8 @@ def update_tab_for_month(month: Month, force: bool):
     tab.update(transactions, gigs_info, bank_activity)
 
 if __name__ == '__main__':
-    m = Month(2020, 8)
-    while m <= Month(2025, 5):
+    m = Month(2025, 8)
+    while m <= Month(2025, 8):
         print(f"Updating VAT return for {m.month_name}")
         update_tab_for_month(m, force=False)
         m += 3

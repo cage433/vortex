@@ -1,11 +1,7 @@
-import codecs
 import shelve
 from decimal import Decimal
 from pathlib import Path
 
-from ofxparse import OfxParser
-
-import env
 from bank_statements import BankAccountActivity, Transaction
 from bank_statements.bank_account import BankAccount, CURRENT_ACCOUNT
 from bank_statements.payee_categories import PayeeCategory
@@ -80,7 +76,6 @@ class StatementsReader:
                     transactions_by_account[account] = transactions_for_account
                 shelf[key] = transactions_by_account
             return shelf[key]
-        pass
 
     @staticmethod
     def read_statements(force: bool) -> list[BankAccountActivity]:

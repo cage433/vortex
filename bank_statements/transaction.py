@@ -33,6 +33,9 @@ class Transaction:
     def __hash__(self):
         return hash((self.account, self.category, self.payment_date, self.payee, self.amount))
 
+    def same_except_for_category(self, rhs: 'Transaction'):
+        return self.clone(category= PayeeCategory.UNCATEGORISED) == rhs.clone(category= PayeeCategory.UNCATEGORISED)
+
     def clone(
             self,
             account: Optional[BankAccount] = None,
