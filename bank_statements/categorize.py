@@ -257,6 +257,7 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[PayeeCategory]:
         "joe mashiter",
         "jorge martinez",
         "kinga ilyes",
+        "lauren shapiro",
         "laura kazaroff",  # On behalf of Mike O'Malley
         "louis huddle",
         "mike omalley",

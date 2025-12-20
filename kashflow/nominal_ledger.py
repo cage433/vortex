@@ -181,9 +181,9 @@ class NominalLedger:
         def ignore_row(row: List[any]):
             if len(row) <= 6:
                 return True
-            if row[0] == "" and row[4] == "TOTALS":
+            if row[0] == "" and str(row[4]).startswith("TOTALS"):
                 return True
-            if row[0] == "" and row[4] == "BALANCE":
+            if row[0] == "" and str(row[4]).startswith("BALANCE"):
                 return True
             if all([r == "" for r in row]):
                 return True
@@ -194,7 +194,7 @@ class NominalLedger:
             return Decimal(text.replace(",", ""))
 
         rows = read_csv_file(file)
-        while rows[0][0] != "CODE":
+        while len(rows[0]) == 0 or str(rows[0][0]).lower() != "code":
             rows.pop(0)
         rows.pop(0)
         ledger_items = []

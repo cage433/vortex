@@ -36,7 +36,7 @@ class VortexAirtableDB:
                     ContractsColumns.RECORD_ID,
                     ContractsColumns.EVENTS_LINK,
                     ContractsColumns.MUSICIANS_FEE,
-                    ContractsColumns.PRS_FEE_EX_VAT,
+                    # ContractsColumns.PRS_FEE_EX_VAT,
                     ContractsColumns.TRANSPORT_COST,
                     ContractsColumns.HOTELS_COST,
                     ContractsColumns.FOOD_BUDGET,

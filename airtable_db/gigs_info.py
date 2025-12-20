@@ -112,9 +112,9 @@ class GigsInfo:
     def band_transport(self):
         return self._contract_column_sum(ContractsColumns.TRANSPORT_COST, allow_missing=True) or 0
 
-    @property
-    def prs_fee_ex_vat(self):
-        return self._contract_column_sum(ContractsColumns.PRS_FEE_EX_VAT, allow_missing=True) or 0
+    # @property
+    # def prs_fee_ex_vat(self):
+    #     return self._contract_column_sum(ContractsColumns.PRS_FEE_EX_VAT, allow_missing=True) or 0
 
     @property
     def evening_purchases(self):

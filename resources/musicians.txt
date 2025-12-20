@@ -32,6 +32,7 @@ amy baldwin
 amy gadiaga
 ana silvera
 andrea di biase
+andrea rinciari
 andrew bain
 andrew linham
 andrew lisle
@@ -39,6 +40,7 @@ andrew woodhead
 andrew woolf
 andy watts
 anita wardell
+anna chandler
 annie whitehead
 ant law
 art themen
@@ -74,6 +76,7 @@ caroline kraabel
 carol grimes
 charlie nash
 charlotte keeffe
+cheng xie
 chiara spigariol
 chris batchelor
 chris maddock
@@ -87,12 +90,15 @@ clara green
 clare cope
 cleveland watkiss
 coco mbassi
+conor murray
 copasetic fndatn
 corrie dick
 craig taborn
 daisy george
 daniel cano-amaro
+danny piers
 dave manington
+dave morecroft
 dave storey
 david austin grey
 david bowden
@@ -107,6 +113,7 @@ devin gray
 diarra walcott
 django bates
 dolphin hyperspace
+dominic lash
 donovan haffner
 dornbusch
 dom pusey
@@ -121,10 +128,12 @@ eddie parker
 elchin shirinov
 eliot frost
 ella hohnen ford
+elliot frost
 elliot galvin
 emma johnson
 empirical
 emre ramazanoglu
+enji
 esben tjalve
 ethan iverson
 evan parker
@@ -137,6 +146,7 @@ emma rawicz
 evelyn hill
 faith brackenbury
 ferg ireland
+filippo ieraci
 filomena campus
 fini bearman
 finn carter
@@ -158,6 +168,7 @@ gilad hekselman
 graham costello
 greg sanders
 guido spannocchi
+gwilym jones
 hannes reipler
 hans riepler
 hans koller
@@ -179,6 +190,7 @@ huw v williams
 iain ballamy
 immy churchill
 imogen churchill
+ineza kerschkamp
 irini arabatzi
 ivo neame
 jack courtney
@@ -226,6 +238,7 @@ josephine davies
 joy ellis
 joyful noise
 julian siegel
+julian seigel
 julian woods
 julie sassoon
 julien durand
@@ -241,6 +254,7 @@ kristian borring
 kurtis li
 larry bartley
 larry stabbins
+laura cole
 laura jurd
 lauren kinsella
 lekan
@@ -251,6 +265,7 @@ lewis wright
 liam noble
 lily lyons
 linley hamilton
+lior solomons-wise
 liran donin
 lise rossi
 lorenzobellini
@@ -276,6 +291,7 @@ mark lockheart
 mark sanders
 marta gornitzka
 martin speake
+matthew field
 matthew sulzmann
 matthew jacobs
 matt anderson
@@ -303,6 +319,7 @@ mojo
 monica vasconcelos
 mopomoso
 moss freed
+myele manzanza
 myra brownbridge
 myra melford
 naomi wright
@@ -324,6 +341,7 @@ nye banfield
 o artetto
 olie brice
 olivia murphy
+ollie heron
 olly chalk
 oren marshall
 orlando le fleming
@@ -369,6 +387,7 @@ rory ingham
 rowland sutherland
 ruth goller
 russell brown
+sacha harlan
 sam braysher
 sam duffy
 sam hogarth
@@ -390,10 +409,12 @@ shane forbes
 sheila maurice
 sheldon agwu
 shirley smart
+silvan schmid
 silvia leonzio
 simeon may
 simon moullier
 simon purcell
+stan brunt
 stan sulzmann
 stefano ancora
 steven saunders
@@ -455,6 +476,7 @@ winston clifford
 world music band
 xhosa cole
 yazz ahmed
+zak scerri
 zhenya strigalev
 zenya strigalev
 zoe mullen

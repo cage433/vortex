@@ -41,7 +41,7 @@ def ensure_tab_consistent(month: AccountingMonth, refresh_bank_activity: bool, r
 
     bank_activity = BankActivity.build(force=refresh_bank_activity).restrict_to_period(month)
     if refresh_sheet or (not statements_consistent(tab, bank_activity, fail_on_inconsistency=False)):
-        tab.clear_all()
+        # tab.clear_all()
         tab.update(bank_activity)
     statements_consistent(tab, bank_activity, fail_on_inconsistency=True)
 
@@ -50,23 +50,23 @@ def compare_uncategorized_with_kashflow(month: AccountingMonth):
     sheet_id = StatementsTab.sheet_id_for_month(month)
     tab = StatementsTab(Workbook(sheet_id), month.month_name, month)
     transaction_infos = tab.transactions_from_tab()
-    uncategorized = [t for t in transaction_infos if t.category == PayeeCategory.UNCATEGORISED]
+    uncategorized = [t for t in transaction_infos.transactions if t.category == PayeeCategory.UNCATEGORISED]
     kashflow_period = SimpleDateRange(month.first_day - 30, month.last_day + 30)
     ledger_items = NominalLedger.from_latest_csv_file(force=False).restrict_to_period(kashflow_period).ledger_items
 
     for t in uncategorized:
         print()
-        print(f"Uncategorised transaction {t.transaction}")
-        amount = t.transaction.amount
-        ex_vat_amount = t.transaction.amount / Decimal(1.2)
+        print(f"Uncategorised transaction {t}")
+        amount = t.amount
+        ex_vat_amount = t.amount / Decimal(1.2)
         near_ledger_items = [
             l for l in ledger_items
-            if abs(l.date.days_since(t.transaction.payment_date)) < 60
+            if abs(l.date.days_since(t.payment_date)) < 60
                and l.item_type not in [NominalLedgerItemType.INPUT_VAT, NominalLedgerItemType.OUTPUT_VAT]
         ]
         sorted_items_1 = sorted(near_ledger_items, key=lambda i: abs(i.amount - amount))
         possibles1 = sorted_items_1[:20]
-        possibles1 = [p for p in possibles1 if abs(p.amount - t.transaction.amount) < 1]
+        possibles1 = [p for p in possibles1 if abs(p.amount - t.amount) < 1]
         if len(possibles1) > 0:
             print("Candidate ledger items inc VAT")
             for i in possibles1:
@@ -94,9 +94,9 @@ def compare_uncategorized_with_kashflow(month: AccountingMonth):
 
 
 if __name__ == '__main__':
-    acc_month = AccountingMonth.from_calendar_month(Month(2025, 8))
-    # while acc_month < AccountingMonth.containing(Day.today()):
-    print(f"Refreshing {acc_month}")
-    ensure_tab_consistent(acc_month, refresh_bank_activity=False, refresh_sheet=False)
-    # compare_uncategorized_with_kashflow(acc_month)
-    acc_month = acc_month + 1
+    acc_month = AccountingMonth.from_calendar_month(Month(2025, 11))
+    while acc_month < AccountingMonth.from_calendar_month(Month(2025, 12)):
+        print(f"Refreshing {acc_month}")
+        ensure_tab_consistent(acc_month, refresh_bank_activity=True, refresh_sheet=True)
+        # compare_uncategorized_with_kashflow(acc_month)
+        acc_month = acc_month + 1

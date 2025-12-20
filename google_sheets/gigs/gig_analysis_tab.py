@@ -108,7 +108,8 @@ if __name__ == '__main__':
     gig_info = AccountingActivity.gig_info_for_period(period, force=force)
     trans_period = SimpleDateRange(
         Day(2019, 9, 2),
-        Day.today()
+        Day(2025, 8, 30)
+        # Day.today()
     )
     categorised_transactions = StatementsTab.transactions(trans_period, force=force)
     tab = GigAnalysisTab(workbook, period, trans_period, gig_info, categorised_transactions)

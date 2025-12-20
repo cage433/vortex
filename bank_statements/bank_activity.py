@@ -9,7 +9,10 @@ __all__ = ["BankActivity"]
 
 from bank_statements.bank_account import BankAccount
 
-from date_range import DateRange
+from date_range import DateRange, Day
+from date_range.accounting_month import AccountingMonth
+from date_range.month import Month
+from date_range.simple_date_range import SimpleDateRange
 
 from utils import checked_list_type
 
@@ -85,4 +88,7 @@ class BankActivity:
 
 
 if __name__ == '__main__':
-    acc = BankActivity.build(force=True)
+    acc = BankActivity.build(force=False)
+    acc_month = AccountingMonth.from_calendar_month(Month(2024, 9))
+    acc_at_end_of_month = acc.restrict_to_period(SimpleDateRange(Day(2000, 1, 1), acc_month.last_day))
+    print(f"Balance at {acc_month.last_day} = {acc_at_end_of_month.terminal_balance_across_accounts}")

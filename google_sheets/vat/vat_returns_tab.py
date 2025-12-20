@@ -8,7 +8,7 @@ from bank_statements.payee_categories import PayeeCategory
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from env import VAT_RETURNS_2020_ID, VAT_RETURNS_2021_ID, VAT_RETURNS_2022_ID, VAT_RETURNS_2023_ID, VAT_RETURNS_2024_ID, \
-    VAT_RETURNS_2025_ID
+    VAT_RETURNS_2025_ID, VAT_RETURNS_2026_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
 from utils import checked_list_type, checked_type, checked_optional_type
@@ -959,4 +959,6 @@ class VATReturnsTab(Tab):
             return VAT_RETURNS_2024_ID
         if year == 2025:
             return VAT_RETURNS_2025_ID
+        if year == 2026:
+            return VAT_RETURNS_2026_ID
         raise ValueError(f"Unsupported month {month} for all statements tab")

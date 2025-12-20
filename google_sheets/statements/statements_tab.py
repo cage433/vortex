@@ -12,12 +12,13 @@ from date_range import Day, DateRange
 from date_range.accounting_month import AccountingMonth
 from env import BANK_TRANSACTIONS_2025_ID, BANK_TRANSACTIONS_2024_ID, \
     BANK_TRANSACTIONS_2023_ID, BANK_TRANSACTIONS_2022_ID, BANK_TRANSACTIONS_2021_ID, \
-    BANK_TRANSACTIONS_2020_ID
+    BANK_TRANSACTIONS_2020_ID, BANK_TRANSACTIONS_2026_ID
 from google_sheets import Tab, Workbook
 from google_sheets.colors import LIGHT_GREEN, LIGHT_YELLOW
 from google_sheets.tab_range import TabRange
 
 SHELF = Path(__file__).parent / "_categorised_transactions.shelf"
+
 
 class StatementsTab(Tab):
     accounts = [CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT]
@@ -48,9 +49,9 @@ class StatementsTab(Tab):
 
     def update(self, bank_activity: BankActivity):
 
-        tab_categorised_transactions = self.transactions_from_tab()
+        tab_categorised_transactions = self.transactions_from_tab().transactions
+        self.clear_all()
 
-        print("here")
         if bank_activity.non_empty:
             if bank_activity.first_date < self.period.first_day or bank_activity.last_date > self.period.last_day:
                 raise ValueError(f"Bank activity is not within the period {self.period}")
@@ -153,11 +154,15 @@ class StatementsTab(Tab):
 
         def category_cell_value(i_transaction, bank_transaction):
             cell_category = ""
-            if len(tab_categorised_transactions.transactions) == len(transactions):
-                categorised_transaction = tab_categorised_transactions[i_transaction]
-                sheet_category = categorised_transaction.category
-                if categorised_transaction.transaction.same_except_for_category(bank_transaction):
-                    cell_category = sheet_category
+            # if len(tab_categorised_transactions) == len(transactions):
+            #     categorised_transaction = tab_categorised_transactions[i_transaction]
+            #     sheet_category = categorised_transaction.category
+            #     if categorised_transaction.same_except_for_category(bank_transaction):
+            #         cell_category = sheet_category
+            if cell_category == "":
+                matching = [t for t in tab_categorised_transactions if t.same_except_for_category(bank_transaction)]
+                if len(matching) == 1:
+                    cell_category = matching[0].category
             if cell_category == "" or cell_category == PayeeCategory.UNCATEGORISED:
                 cell_category = category_for_transaction(bank_transaction)
             if cell_category == PayeeCategory.UNCATEGORISED:
@@ -240,6 +245,8 @@ class StatementsTab(Tab):
             return BANK_TRANSACTIONS_2024_ID
         if year == 2025:
             return BANK_TRANSACTIONS_2025_ID
+        if year == 2026:
+            return BANK_TRANSACTIONS_2026_ID
         raise ValueError(f"Unsupported month {month} for all statements tab")
 
     @staticmethod
@@ -255,7 +262,6 @@ class StatementsTab(Tab):
                 ).transactions_from_tab()
                 shelf[key] = transactions
             return shelf[key]
-
 
     @staticmethod
     def transactions(period: DateRange, force: bool) -> Transactions:

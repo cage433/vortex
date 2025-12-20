@@ -105,7 +105,7 @@ class ContractsColumns:
     MEMBER_TICKET_PRICE = "Member ticket price"
     STUDENT_TICKET_PRICE = "Student ticket price"
     MUSICIANS_FEE = "Musicians fee"
-    PRS_FEE_EX_VAT = "PRS Fee Ex VAT"
+    # PRS_FEE_EX_VAT = "PRS Fee Ex VAT"
 
     DOOR_TIME_1ST_SHOW = "Door time 1st show"
     TYPE = "Type"
