@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Any
 
 from bank_statements import BankActivity, Transaction
-from bank_statements.Transactions import Transactions
+from bank_statements.transactions import Transactions
 from bank_statements.bank_account import CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT, BankAccount
 from bank_statements.categorize import category_for_transaction
 from bank_statements.payee_categories import PayeeCategory

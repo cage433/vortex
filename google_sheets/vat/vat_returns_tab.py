@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Dict
 
 from airtable_db.gigs_info import GigsInfo
 from bank_statements import BankActivity, Transaction
-from bank_statements.Transactions import Transactions
+from bank_statements.transactions import Transactions
 from bank_statements.payee_categories import PayeeCategory
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month

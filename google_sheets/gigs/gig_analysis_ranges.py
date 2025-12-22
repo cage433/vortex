@@ -5,7 +5,7 @@ from typing import List
 
 from airtable_db.gigs_info import GigsInfo
 from airtable_db.table_columns import TicketPriceLevel, TicketCategory
-from bank_statements.Transactions import Transactions
+from bank_statements.transactions import Transactions
 from bank_statements.payee_categories import PayeeCategory
 from date_range import DateRange
 from date_range.date_range import SplitType

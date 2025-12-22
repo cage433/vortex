@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from bank_statements import Transaction, StatementsReader
-from bank_statements.Transactions import Transactions
+from bank_statements.transactions import Transactions
 from bank_statements.bank_account import BankAccount
 from bank_statements.payee_categories import PayeeCategory
 from date_range import Day

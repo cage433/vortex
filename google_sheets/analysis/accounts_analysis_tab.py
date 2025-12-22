@@ -1,7 +1,7 @@
 from typing import List
 
 from bank_statements import Transaction
-from bank_statements.Transactions import Transactions
+from bank_statements.transactions import Transactions
 from bank_statements.payee_categories import PayeeCategory
 from date_range.quarter import Quarter
 from google_sheets import Tab, Workbook

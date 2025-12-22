@@ -77,7 +77,7 @@ class BankActivity:
     SHELF = Path(__file__).parent / "_bank_activity.shelf"
 
     @staticmethod
-    def build(force: bool):
+    def build(force: bool) -> 'BankActivity':
         key = f"bank_activity"
         with shelve.open(str(BankActivity.SHELF)) as shelf:
             if key not in shelf or force:
