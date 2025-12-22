@@ -2,7 +2,8 @@ from typing import List
 
 from airtable_db import VortexAirtableDB
 from airtable_db.gigs_info import GigsInfo
-from bank_statements import BankActivity, Transaction
+from banking import BankActivity
+from banking.transaction.transaction import Transaction
 from date_range import DateRange
 from date_range.date_range import SplitType
 from date_range.month import Month

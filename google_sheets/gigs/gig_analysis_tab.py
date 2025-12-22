@@ -1,6 +1,6 @@
 from accounting.accounting_activity import AccountingActivity
 from airtable_db.gigs_info import GigsInfo
-from bank_statements.transactions import Transactions
+from banking.transaction.transactions import Transactions
 from date_range import DateRange, Day
 from date_range.simple_date_range import SimpleDateRange
 from env import GIG_ANALYSIS_ID

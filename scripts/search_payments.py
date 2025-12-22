@@ -1,8 +1,8 @@
-from typing import Optional, List
+from typing import List
 
 
-from bank_statements import Transaction
-from bank_statements.payee_categories import PayeeCategory
+from banking import Transaction
+from banking.category.payee_categories import PayeeCategory
 from date_range import Day
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month

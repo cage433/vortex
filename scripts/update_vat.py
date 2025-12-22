@@ -1,5 +1,5 @@
 from airtable_db import VortexAirtableDB
-from bank_statements import BankActivity
+from banking import BankActivity
 from date_range import Day
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month

@@ -1,8 +1,8 @@
 from typing import Optional
 
-from bank_statements import Transaction
-from bank_statements.bank_account import ALL_BANK_ACCOUNTS
-from bank_statements.payee_categories import PayeeCategory, MUSICIANS
+from banking import Transaction
+from banking.bank_account import ALL_BANK_ACCOUNTS
+from banking.category.payee_categories import PayeeCategory, MUSICIANS
 from date_range import Day
 
 

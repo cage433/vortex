@@ -1,8 +1,8 @@
 from decimal import Decimal
 from typing import List
 
-from bank_statements import Transaction
-from bank_statements.payee_categories import PayeeCategory
+from banking.category.payee_categories import PayeeCategory
+from banking.transaction.transaction import Transaction
 from date_range import DateRange
 from utils import checked_list_type, checked_type
 

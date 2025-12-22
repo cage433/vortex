@@ -1,12 +1,10 @@
 from abc import abstractmethod
 from decimal import Decimal
 from numbers import Number
-from typing import List
 
 from airtable_db.gigs_info import GigsInfo
-from airtable_db.table_columns import TicketPriceLevel, TicketCategory
-from bank_statements.transactions import Transactions
-from bank_statements.payee_categories import PayeeCategory
+from banking.transaction.transactions import Transactions
+from banking.category.payee_categories import PayeeCategory
 from date_range import DateRange
 from date_range.date_range import SplitType
 from date_range.month import Month

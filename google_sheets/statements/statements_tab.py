@@ -3,11 +3,11 @@ from decimal import Decimal
 from pathlib import Path
 from typing import List, Any
 
-from bank_statements import BankActivity, Transaction
-from bank_statements.transactions import Transactions
-from bank_statements.bank_account import CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT, BankAccount
-from bank_statements.categorize import category_for_transaction
-from bank_statements.payee_categories import PayeeCategory
+from banking import BankActivity, Transaction
+from banking.transaction.transactions import Transactions
+from banking.bank_account import CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT, BankAccount
+from banking.category.categorize import category_for_transaction
+from banking.category.payee_categories import PayeeCategory
 from date_range import Day, DateRange
 from date_range.accounting_month import AccountingMonth
 from env import BANK_TRANSACTIONS_2025_ID, BANK_TRANSACTIONS_2024_ID, \

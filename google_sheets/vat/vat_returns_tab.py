@@ -1,17 +1,17 @@
 from abc import abstractmethod
-from typing import List, Optional, Tuple, Dict
+from typing import List, Tuple, Dict
 
 from airtable_db.gigs_info import GigsInfo
-from bank_statements import BankActivity, Transaction
-from bank_statements.transactions import Transactions
-from bank_statements.payee_categories import PayeeCategory
+from banking import BankActivity
+from banking.transaction.transactions import Transactions
+from banking.category.payee_categories import PayeeCategory
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from env import VAT_RETURNS_2020_ID, VAT_RETURNS_2021_ID, VAT_RETURNS_2022_ID, VAT_RETURNS_2023_ID, VAT_RETURNS_2024_ID, \
     VAT_RETURNS_2025_ID, VAT_RETURNS_2026_ID
 from google_sheets import Tab, Workbook
 from google_sheets.tab_range import TabRange, TabCell
-from utils import checked_list_type, checked_type, checked_optional_type
+from utils import checked_list_type, checked_type
 from utils.collection_utils import group_into_dict
 
 

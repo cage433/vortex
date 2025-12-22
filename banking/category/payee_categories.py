@@ -15,6 +15,14 @@ def _musicians():
 
 MUSICIANS = _musicians()
 
+class PayeeCategoryClass(StrEnum):
+    FINANCE = "Finance"
+    OPERATIONAL = "Operational"
+    UTILITIES = "Utilities"
+    TICKETS = "Tickets"
+    EQUIPMENT = "Equipment"
+    SOUND_ENGINEERS = "Sound Engineers"
+
 
 @verify(UNIQUE)
 class PayeeCategory(StrEnum):
@@ -141,20 +149,19 @@ class PayeeCategory(StrEnum):
 
         raise ValueError(f"Unknown category for VAT [{category}]")
 
-    @staticmethod
-    def is_credit(category: 'PayeeCategory') -> bool:
-        checked_type(category, PayeeCategory)
-        return category in [
-            PayeeCategory.CARD_SALES,
-            PayeeCategory.CASH_SALES,
-            PayeeCategory.TICKET_SALES,
-            PayeeCategory.SPACE_HIRE,
-            PayeeCategory.MEMBERSHIPS,
-            PayeeCategory.INSURANCE_PAYOUT
-        ]
+def is_credit(category: 'PayeeCategory') -> bool:
+    checked_type(category, PayeeCategory)
+    return category in [
+        PayeeCategory.CARD_SALES,
+        PayeeCategory.CASH_SALES,
+        PayeeCategory.TICKET_SALES,
+        PayeeCategory.SPACE_HIRE,
+        PayeeCategory.MEMBERSHIPS,
+        PayeeCategory.INSURANCE_PAYOUT
+    ]
 
-    @staticmethod
-    def is_debit(category: 'PayeeCategory') -> bool:
-        checked_type(category, PayeeCategory)
-        return not PayeeCategory.is_credit(category)
+@staticmethod
+def is_debit(category: 'PayeeCategory') -> bool:
+    checked_type(category, PayeeCategory)
+    return not PayeeCategory.is_credit(category)
 

@@ -1,9 +1,8 @@
 from decimal import Decimal
-from numbers import Number
 from typing import Optional
 
-from bank_statements import Transaction
-from bank_statements.bank_account import BankAccount
+from banking.bank_account import BankAccount
+from banking.transaction.transaction import Transaction
 from date_range import Day, DateRange
 from utils import checked_list_type, checked_type, checked_dict_type
 

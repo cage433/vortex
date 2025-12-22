@@ -1,8 +1,7 @@
 from decimal import Decimal
 
-from bank_statements import BankActivity
-from bank_statements.payee_categories import PayeeCategory
-from date_range import Day
+from banking import BankActivity
+from banking.category.payee_categories import PayeeCategory
 from date_range.accounting_month import AccountingMonth
 from date_range.month import Month
 from date_range.simple_date_range import SimpleDateRange

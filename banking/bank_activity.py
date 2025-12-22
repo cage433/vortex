@@ -3,11 +3,11 @@ from decimal import Decimal
 from pathlib import Path
 from typing import List, Optional
 
-from bank_statements import BankAccountActivity, Transaction
+from banking import BankAccountActivity, Transaction
 
 __all__ = ["BankActivity"]
 
-from bank_statements.bank_account import BankAccount
+from banking.bank_account import BankAccount
 
 from date_range import DateRange, Day
 from date_range.accounting_month import AccountingMonth
@@ -81,7 +81,7 @@ class BankActivity:
         key = f"bank_activity"
         with shelve.open(str(BankActivity.SHELF)) as shelf:
             if key not in shelf or force:
-                from bank_statements import StatementsReader
+                from banking import StatementsReader
                 statements = StatementsReader.read_statements(force)
                 shelf[key] = BankActivity(statements)
             return shelf[key]
