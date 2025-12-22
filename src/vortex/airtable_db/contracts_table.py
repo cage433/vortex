@@ -1,5 +1,5 @@
 from pyairtable import Table, Api
-from pyairtable.formulas import AND, FIELD
+from pyairtable.formulas import AND, Field
 
 from vortex.airtable_db.contract_record import ContractRecord
 from vortex.airtable_db.table_columns import ContractsColumns
@@ -21,8 +21,8 @@ class ContractsTable:
         fields = list(fields)
         if ContractsColumns.PERFORMANCE_DATE not in fields:
             fields += [ContractsColumns.PERFORMANCE_DATE]
-        first_date_constraint = f"{FIELD(ContractsColumns.PERFORMANCE_DATE)} >= '{(first_day - 1).iso_repr}'"
-        last_date_constraint = f"{FIELD(ContractsColumns.PERFORMANCE_DATE)} <= '{(last_day + 1).iso_repr}'"
+        first_date_constraint = f"{Field(ContractsColumns.PERFORMANCE_DATE)} >= '{(first_day - 1).iso_repr}'"
+        last_date_constraint = f"{Field(ContractsColumns.PERFORMANCE_DATE)} <= '{(last_day + 1).iso_repr}'"
         formula = AND(first_date_constraint, last_date_constraint)
         recs = [
             ContractRecord(rec)

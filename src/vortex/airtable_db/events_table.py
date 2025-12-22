@@ -1,7 +1,7 @@
 import itertools
 
 from pyairtable import Table
-from pyairtable.formulas import FIELD, OR
+from pyairtable.formulas import OR, Field
 
 from vortex.airtable_db.contracts_table import ContractsTable
 from vortex.airtable_db.event_record import EventRecord
@@ -19,7 +19,7 @@ class EventsTable:
 
     def records_for_contracts(self, contracts, *fields) -> list[EventRecord]:
         ids = list(itertools.chain(*[c.events_link for c in contracts]))
-        formula = OR(*[f"{FIELD(EventColumns.EVENT_ID)} = '{id}'" for id in ids])
+        formula = OR(*[f"{Field(EventColumns.EVENT_ID)} = '{id}'" for id in ids])
         return [
             EventRecord(rec)
             for rec in self.table.all(formula=formula, fields=fields)
