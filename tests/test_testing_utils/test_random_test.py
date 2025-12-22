@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from testing_utils import SeedGenerator, RandomisedTest
+from testing_utils import RandomisedTest, SeedGenerator
 
 
 class RandomisedTestCase(TestCase):

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from vortex.testing_utils import RandomisedTest
+from testing_utils import RandomisedTest
 from vortex.utils.collection_utils import group_into_dict, flatten
 
 
