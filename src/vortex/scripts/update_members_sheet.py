@@ -1,8 +1,8 @@
-from airtable_db.members_db import MembersTable
+from vortex.airtable_db.members_db import MembersTable
 from env import MEMBERS_SPREADSHEET_ID
-from google_sheets import Workbook
-from google_sheets.members.members_tab import MembersTab
-from utils.logging import log_message
+from vortex.google_sheets import Workbook
+from vortex.google_sheets.members.members_tab import MembersTab
+from vortex.utils.logging import log_message
 
 
 def update_sheet():

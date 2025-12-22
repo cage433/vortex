@@ -1,14 +1,14 @@
 from decimal import Decimal
 from typing import Optional
 
-from banking.bank_account import BankAccount
-from banking.transaction.transaction import Transaction
-from date_range import Day, DateRange
-from utils import checked_list_type, checked_type, checked_dict_type
+from vortex.banking.bank_account import BankAccount
+from vortex.banking.transaction.transaction import Transaction
+from vortex.date_range import Day, DateRange
+from vortex.utils import checked_list_type, checked_type, checked_dict_type
 
 __all__ = ["BankAccountActivity"]
 
-from utils.collection_utils import group_into_dict
+from vortex.utils.collection_utils import group_into_dict
 
 
 class BankAccountActivity:

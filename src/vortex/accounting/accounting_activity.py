@@ -1,15 +1,15 @@
 from typing import List
 
-from airtable_db import VortexAirtableDB
-from airtable_db.gigs_info import GigsInfo
-from banking import BankActivity
-from banking.transaction.transaction import Transaction
-from date_range import DateRange
-from date_range.date_range import SplitType
-from date_range.month import Month
-from google_sheets.statements.statements_tab import StatementsTab
-from kashflow.nominal_ledger import NominalLedger
-from utils import checked_type, checked_list_type
+from vortex.airtable_db import VortexAirtableDB
+from vortex.airtable_db.gigs_info import GigsInfo
+from vortex.banking import BankActivity
+from vortex.banking.transaction.transaction import Transaction
+from vortex.date_range import DateRange
+from vortex.date_range.date_range import SplitType
+from vortex.date_range.month import Month
+from vortex.google_sheets.statements.statements_tab import StatementsTab
+from vortex.kashflow.nominal_ledger import NominalLedger
+from vortex.utils import checked_type, checked_list_type
 
 
 class AccountingActivity:

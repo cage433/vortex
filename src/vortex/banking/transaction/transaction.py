@@ -1,10 +1,10 @@
 from decimal import Decimal
 from typing import Optional
 
-from banking.bank_account import BankAccount
-from banking.category.payee_categories import PayeeCategory
-from date_range import Day
-from utils import checked_type
+from vortex.banking.bank_account import BankAccount
+from vortex.banking.category.payee_categories import PayeeCategory
+from vortex.date_range import Day
+from vortex.utils import checked_type
 
 __all__ = ["Transaction"]
 

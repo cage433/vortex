@@ -1,14 +1,14 @@
-from accounting.accounting_activity import AccountingActivity
-from airtable_db.gigs_info import GigsInfo
-from banking.transaction.transactions import Transactions
-from date_range import DateRange, Day
-from date_range.simple_date_range import SimpleDateRange
+from vortex.accounting.accounting_activity import AccountingActivity
+from vortex.airtable_db.gigs_info import GigsInfo
+from vortex.banking.transaction.transactions import Transactions
+from vortex.date_range import DateRange, Day
+from vortex.date_range.simple_date_range import SimpleDateRange
 from env import GIG_ANALYSIS_ID
-from google_sheets import Tab, Workbook
-from google_sheets.gigs.gig_analysis_ranges import GigNumbersRange, AirtableTicketSalesRange, BankTicketSalesRange, \
+from vortex.google_sheets import Tab, Workbook
+from vortex.google_sheets.gigs.gig_analysis_ranges import GigNumbersRange, AirtableTicketSalesRange, BankTicketSalesRange, \
     BankDrinkSalesRange, BankDrinkSalesPerCustomerRange, AirtableDrinkSalesRange, AirtableDrinkSalesPerCustomerRange, \
     AirtableNumTicketsSoldRange
-from google_sheets.statements.statements_tab import StatementsTab
+from vortex.google_sheets.statements.statements_tab import StatementsTab
 
 
 class GigAnalysisTab(Tab):
@@ -98,7 +98,7 @@ class GigAnalysisTab(Tab):
 
 
 if __name__ == '__main__':
-    force = False
+    force = True
     workbook = Workbook(GIG_ANALYSIS_ID)
 
     period = SimpleDateRange(

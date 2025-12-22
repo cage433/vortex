@@ -1,8 +1,8 @@
 from numbers import Number
 from typing import Optional
 
-from google_sheets import Tab
-from utils import checked_type, checked_list_type
+from vortex.google_sheets import Tab
+from vortex.utils import checked_type, checked_list_type
 
 
 class CellCoordinates:

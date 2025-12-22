@@ -1,10 +1,10 @@
 from decimal import Decimal
 from typing import List
 
-from banking.category.payee_categories import PayeeCategory
-from banking.transaction.transaction import Transaction
-from date_range import DateRange
-from utils import checked_list_type, checked_type
+from vortex.banking.category.payee_categories import PayeeCategory
+from vortex.banking.transaction.transaction import Transaction
+from vortex.date_range import DateRange
+from vortex.utils import checked_list_type, checked_type
 
 
 class Transactions:

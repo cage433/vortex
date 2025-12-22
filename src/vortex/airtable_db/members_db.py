@@ -2,12 +2,12 @@ from typing import List
 
 from pyairtable import Table
 
-from airtable_db.airtable_record import AirtableRecord
-from airtable_db.table_columns import MembersColumns
-from data_objects.member import Member
-from date_range import Day
+from vortex.airtable_db.airtable_record import AirtableRecord
+from vortex.airtable_db.table_columns import MembersColumns
+from vortex.data_objects.member import Member
+from vortex.date_range import Day
 from env import AIRTABLE_TOKEN, MEMBERS_DB_ID
-from myopt.opt import Opt
+from vortex.myopt.opt import Opt
 
 
 class MembersRecord(AirtableRecord):

@@ -3,10 +3,10 @@ import itertools
 from pyairtable import Table
 from pyairtable.formulas import FIELD, OR
 
-from airtable_db.contracts_table import ContractsTable
-from airtable_db.event_record import EventRecord
-from airtable_db.table_columns import EventColumns, ContractsColumns
-from date_range.month import Month
+from vortex.airtable_db.contracts_table import ContractsTable
+from vortex.airtable_db.event_record import EventRecord
+from vortex.airtable_db.table_columns import EventColumns, ContractsColumns
+from vortex.date_range.month import Month
 from env import VORTEX_DATABASE_ID, AIRTABLE_TOKEN
 
 

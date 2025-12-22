@@ -6,7 +6,7 @@ __all__ = [
     "checked_opt_type",
 ]
 
-from myopt.opt import Opt
+from vortex.myopt.opt import Opt
 
 
 def checked_type(obj, expected_type):

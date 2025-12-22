@@ -35,7 +35,7 @@ class DateRange(ABC):
         return self.last_day.days_since(self.first_day) + 1
 
     def intersection(self, rhs: "DateRange") -> "Optional[DateRange]":
-        from date_range.simple_date_range import SimpleDateRange
+        from vortex.date_range.simple_date_range import SimpleDateRange
 
         first_day = max(self.first_day, rhs.first_day)
         last_day = min(self.last_day, rhs.last_day)

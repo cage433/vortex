@@ -10,3 +10,4 @@ __pycache__/
 *.shelf.db
 logs/
 .DS_Store
+poetry.lock

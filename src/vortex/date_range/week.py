@@ -1,8 +1,8 @@
 from functools import total_ordering
 
-from date_range import ContiguousDateRange, Day
-from date_range.accounting_year import AccountingYear
-from utils import checked_type
+from vortex.date_range import ContiguousDateRange, Day
+from vortex.date_range.accounting_year import AccountingYear
+from vortex.utils import checked_type
 
 
 @total_ordering

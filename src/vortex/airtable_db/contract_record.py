@@ -1,8 +1,8 @@
-from airtable_db.airtable_record import AirtableRecord
-from airtable_db.table_columns import ContractsColumns, TicketPriceLevel
-from date_range import Day
-from myopt.opt import Opt
-from myopt.something import Something
+from vortex.airtable_db.airtable_record import AirtableRecord
+from vortex.airtable_db.table_columns import ContractsColumns, TicketPriceLevel
+from vortex.date_range import Day
+from vortex.myopt.opt import Opt
+from vortex.myopt.something import Something
 
 
 

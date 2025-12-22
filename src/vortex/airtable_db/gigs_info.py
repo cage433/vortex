@@ -1,10 +1,10 @@
 from typing import Optional
 
-from airtable_db.contract_and_events import ContractAndEvents
-from airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
-from date_range import DateRange
-from myopt.something import Something
-from utils import checked_list_type
+from vortex.airtable_db.contract_and_events import ContractAndEvents
+from vortex.airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
+from vortex.date_range import DateRange
+from vortex.myopt.something import Something
+from vortex.utils import checked_list_type
 
 
 class GigsInfo:

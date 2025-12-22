@@ -1,7 +1,7 @@
 from abc import abstractmethod, ABCMeta
 from typing import Callable
 
-from utils.random_number_generator import RandomNumberGenerator
+from vortex.utils.random_number_generator import RandomNumberGenerator
 
 __all__ = [
     "UNSET",

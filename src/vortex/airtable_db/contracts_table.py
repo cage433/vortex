@@ -1,9 +1,9 @@
 from pyairtable import Table, Api
 from pyairtable.formulas import AND, FIELD
 
-from airtable_db.contract_record import ContractRecord
-from airtable_db.table_columns import ContractsColumns
-from date_range import DateRange
+from vortex.airtable_db.contract_record import ContractRecord
+from vortex.airtable_db.table_columns import ContractsColumns
+from vortex.date_range import DateRange
 from env import VORTEX_DATABASE_ID, AIRTABLE_TOKEN
 
 

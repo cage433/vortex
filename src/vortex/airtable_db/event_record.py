@@ -1,7 +1,7 @@
 from typing import Optional
 
-from airtable_db.airtable_record import AirtableRecord
-from airtable_db.table_columns import EventColumns, TicketCategory, TicketPriceLevel
+from vortex.airtable_db.airtable_record import AirtableRecord
+from vortex.airtable_db.table_columns import EventColumns, TicketCategory, TicketPriceLevel
 
 
 class EventRecord(AirtableRecord):

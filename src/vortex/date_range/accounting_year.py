@@ -1,7 +1,7 @@
 from functools import total_ordering
 
-from date_range import DateRange, Day, ContiguousDateRange
-from utils import checked_type
+from vortex.date_range import DateRange, Day, ContiguousDateRange
+from vortex.utils import checked_type
 
 TIMS_FIRST_MONDAYS_OF_ACCOUNTING_YEAR = {
     2013: Day(2012, 9, 3),
@@ -27,12 +27,12 @@ class AccountingYear(ContiguousDateRange):
 
     @property
     def first_accounting_month(self) -> 'AccountingMonth':
-        from date_range.accounting_month import AccountingMonth
+        from vortex.date_range.accounting_month import AccountingMonth
         return AccountingMonth(self, 1)
 
     @property
     def last_accounting_month(self) -> 'AccountingMonth':
-        from date_range.accounting_month import AccountingMonth
+        from vortex.date_range.accounting_month import AccountingMonth
         return AccountingMonth(self, 12)
 
     @property
@@ -45,7 +45,7 @@ class AccountingYear(ContiguousDateRange):
 
     @property
     def last_day(self) -> 'Day':
-        from date_range.accounting_month import AccountingMonth
+        from vortex.date_range.accounting_month import AccountingMonth
         return AccountingMonth(self, 12).last_day
 
     def __eq__(self, other):

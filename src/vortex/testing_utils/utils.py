@@ -6,7 +6,7 @@ from typing import Optional, Tuple, List
 
 import numpy as np
 
-from date_range import DateRange
+from vortex.date_range import DateRange
 
 
 

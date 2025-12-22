@@ -1,12 +1,12 @@
 from typing import Optional
 
-from date_range import Day, DateRange
-from date_range.accounting_month import AccountingMonth
-from date_range.accounting_year import AccountingYear
-from date_range.month import Month
-from date_range.quarter import Quarter
-from date_range.week import Week
-from utils import RandomNumberGenerator
+from vortex.date_range import Day, DateRange
+from vortex.date_range.accounting_month import AccountingMonth
+from vortex.date_range.accounting_year import AccountingYear
+from vortex.date_range.month import Month
+from vortex.date_range.quarter import Quarter
+from vortex.date_range.week import Week
+from vortex.utils import RandomNumberGenerator
 
 __all__ = [
     "random_day",

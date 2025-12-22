@@ -3,18 +3,19 @@ from decimal import Decimal
 from pathlib import Path
 from typing import List, Optional
 
-from banking import BankAccountActivity, Transaction
+from vortex.banking import BankAccountActivity
 
 __all__ = ["BankActivity"]
 
-from banking.bank_account import BankAccount
+from vortex.banking.bank_account import BankAccount
+from vortex.banking.transaction.transaction import Transaction
 
-from date_range import DateRange, Day
-from date_range.accounting_month import AccountingMonth
-from date_range.month import Month
-from date_range.simple_date_range import SimpleDateRange
+from vortex.date_range import DateRange, Day
+from vortex.date_range.accounting_month import AccountingMonth
+from vortex.date_range.month import Month
+from vortex.date_range.simple_date_range import SimpleDateRange
 
-from utils import checked_list_type
+from vortex.utils import checked_list_type
 
 
 class BankActivity:
@@ -81,7 +82,7 @@ class BankActivity:
         key = f"bank_activity"
         with shelve.open(str(BankActivity.SHELF)) as shelf:
             if key not in shelf or force:
-                from banking import StatementsReader
+                from vortex.banking import StatementsReader
                 statements = StatementsReader.read_statements(force)
                 shelf[key] = BankActivity(statements)
             return shelf[key]

@@ -1,5 +1,5 @@
-from date_range import DateRange, Day
-from utils import checked_type
+from vortex.date_range import DateRange, Day
+from vortex.utils import checked_type
 
 
 class SimpleDateRange(DateRange):

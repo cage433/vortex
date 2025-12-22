@@ -1,12 +1,12 @@
 from datetime import date, timedelta, datetime
 from functools import total_ordering
 
-from date_range import parse_date
-from date_range.date_range import ContiguousDateRange
+from vortex.date_range import parse_date
+from vortex.date_range.date_range import ContiguousDateRange
 
 __all__ = ["Day"]
 
-from utils import checked_type
+from vortex.utils import checked_type
 
 
 @total_ordering
@@ -73,5 +73,5 @@ class Day(ContiguousDateRange):
 
     @property
     def month(self) -> 'Month':
-        from date_range.month import Month
+        from vortex.date_range.month import Month
         return Month.containing(self)

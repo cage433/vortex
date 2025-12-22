@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from testing_utils import RandomisedTest
-from utils.collection_utils import group_into_dict, flatten
+from vortex.testing_utils import RandomisedTest
+from vortex.utils.collection_utils import group_into_dict, flatten
 
 
 class CollectionUtilsTestCase(TestCase):

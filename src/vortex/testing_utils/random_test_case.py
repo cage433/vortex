@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 
-from utils import RandomNumberGenerator
+from vortex.utils import RandomNumberGenerator
 
 __all__ = [
     "RandomisedTest",

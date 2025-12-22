@@ -1,12 +1,12 @@
 from typing import List
 
-from data_objects.member import Member
-from date_range import Day
-from google_sheets import Tab, Workbook
-from google_sheets.colors import LIGHT_YELLOW, LIGHT_GREEN
-from google_sheets.tab_range import TabRange
-from myopt.nothing import Nothing
-from myopt.opt import Opt
+from vortex.data_objects.member import Member
+from vortex.date_range import Day
+from vortex.google_sheets import Tab, Workbook
+from vortex.google_sheets.colors import LIGHT_YELLOW, LIGHT_GREEN
+from vortex.google_sheets.tab_range import TabRange
+from vortex.myopt.nothing import Nothing
+from vortex.myopt.opt import Opt
 
 
 class MembersTab(Tab):

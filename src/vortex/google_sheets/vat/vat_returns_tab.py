@@ -1,18 +1,18 @@
 from abc import abstractmethod
 from typing import List, Tuple, Dict
 
-from airtable_db.gigs_info import GigsInfo
-from banking import BankActivity
-from banking.transaction.transactions import Transactions
-from banking.category.payee_categories import PayeeCategory
-from date_range.accounting_month import AccountingMonth
-from date_range.month import Month
+from vortex.airtable_db.gigs_info import GigsInfo
+from vortex.banking import BankActivity
+from vortex.banking.transaction.transactions import Transactions
+from vortex.banking.category.payee_categories import PayeeCategory
+from vortex.date_range.accounting_month import AccountingMonth
+from vortex.date_range.month import Month
 from env import VAT_RETURNS_2020_ID, VAT_RETURNS_2021_ID, VAT_RETURNS_2022_ID, VAT_RETURNS_2023_ID, VAT_RETURNS_2024_ID, \
     VAT_RETURNS_2025_ID, VAT_RETURNS_2026_ID
-from google_sheets import Tab, Workbook
-from google_sheets.tab_range import TabRange, TabCell
-from utils import checked_list_type, checked_type
-from utils.collection_utils import group_into_dict
+from vortex.google_sheets import Tab, Workbook
+from vortex.google_sheets.tab_range import TabRange, TabCell
+from vortex.utils import checked_list_type, checked_type
+from vortex.utils.collection_utils import group_into_dict
 
 
 class RangesAndValues:

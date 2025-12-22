@@ -1,13 +1,13 @@
 from unittest import TestCase
 
-from date_range.accounting_month import AccountingMonth
-from date_range.accounting_year import AccountingYear
-from date_range.month import Month
-from date_range.quarter import Quarter
-from date_range.tests.fixtures import random_day, random_month, random_week, random_accounting_year, \
+from vortex.date_range.accounting_month import AccountingMonth
+from vortex.date_range.accounting_year import AccountingYear
+from vortex.date_range.month import Month
+from vortex.date_range.quarter import Quarter
+from vortex.date_range.tests.fixtures import random_day, random_month, random_week, random_accounting_year, \
     random_accounting_month, random_quarter
-from date_range.week import Week
-from testing_utils import RandomisedTest
+from vortex.date_range.week import Week
+from vortex.testing_utils import RandomisedTest
 
 
 class DateRangeTests(TestCase):

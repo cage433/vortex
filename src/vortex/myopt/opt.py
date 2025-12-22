@@ -8,8 +8,8 @@ class Opt(Generic[T]):
 
     @staticmethod
     def of(thing=Optional[T]) -> 'Opt[T]':
-        from myopt.nothing import Nothing
-        from myopt.something import Something
+        from vortex.myopt.nothing import Nothing
+        from vortex.myopt.something import Something
         return Nothing[T]() if thing is None else Something[T](thing)
 
     @property

@@ -1,5 +1,5 @@
 from env import CURRENT_ACCOUNT_ID, SAVINGS_ACCOUNT_ID, BBL_ACCOUNT_ID, CHARITABLE_ACCOUNT_ID
-from utils import checked_type
+from vortex.utils import checked_type
 
 
 class BankAccount:

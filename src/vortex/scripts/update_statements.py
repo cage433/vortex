@@ -1,13 +1,13 @@
 from decimal import Decimal
 
-from banking import BankActivity
-from banking.category.payee_categories import PayeeCategory
-from date_range.accounting_month import AccountingMonth
-from date_range.month import Month
-from date_range.simple_date_range import SimpleDateRange
-from google_sheets import Workbook
-from google_sheets.statements.statements_tab import StatementsTab
-from kashflow.nominal_ledger import NominalLedgerItemType, NominalLedger
+from vortex.banking import BankActivity
+from vortex.banking.category.payee_categories import PayeeCategory
+from vortex.date_range.accounting_month import AccountingMonth
+from vortex.date_range.month import Month
+from vortex.date_range.simple_date_range import SimpleDateRange
+from vortex.google_sheets import Workbook
+from vortex.google_sheets.statements.statements_tab import StatementsTab
+from vortex.kashflow.nominal_ledger import NominalLedgerItemType, NominalLedger
 
 
 def statements_tab_for_month(month: AccountingMonth) -> StatementsTab:

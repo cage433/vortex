@@ -1,20 +1,21 @@
 import shelve
 from pathlib import Path
 
-from airtable_db.gigs_info import GigsInfo, ContractAndEvents
-from airtable_db.contracts_table import ContractsTable
-from airtable_db.events_table import EventsTable
-from airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
-from date_range import DateRange
-from date_range.accounting_month import AccountingMonth
-from date_range.month import Month
-from utils.collection_utils import group_into_dict, flatten
+from vortex.airtable_db.contract_and_events import ContractAndEvents
+from vortex.airtable_db.gigs_info import GigsInfo
+from vortex.airtable_db.contracts_table import ContractsTable
+from vortex.airtable_db.events_table import EventsTable
+from vortex.airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
+from vortex.date_range import DateRange
+from vortex.date_range.accounting_month import AccountingMonth
+from vortex.date_range.month import Month
+from vortex.utils.collection_utils import group_into_dict, flatten
 
 __all__ = [
     "VortexAirtableDB",
 ]
 
-from utils.logging import log_message
+from vortex.utils.logging import log_message
 
 
 class VortexAirtableDB:

@@ -1,7 +1,7 @@
-from date_range import Day
-from myopt.opt import Opt
-from utils import checked_type
-from utils.type_checks import checked_opt_type
+from vortex.date_range import Day
+from vortex.myopt.opt import Opt
+from vortex.utils import checked_type
+from vortex.utils.type_checks import checked_opt_type
 
 
 class Member:

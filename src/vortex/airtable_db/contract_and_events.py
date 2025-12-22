@@ -1,7 +1,7 @@
-from airtable_db.contract_record import ContractRecord
-from airtable_db.event_record import EventRecord
-from airtable_db.table_columns import TicketCategory, TicketPriceLevel
-from utils import checked_type, checked_list_type
+from vortex.airtable_db.contract_record import ContractRecord
+from vortex.airtable_db.event_record import EventRecord
+from vortex.airtable_db.table_columns import TicketCategory, TicketPriceLevel
+from vortex.utils import checked_type, checked_list_type
 
 
 class ContractAndEvents:

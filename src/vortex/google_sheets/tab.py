@@ -1,5 +1,5 @@
-from google_sheets import Workbook
-from utils import checked_type
+from vortex.google_sheets import Workbook
+from vortex.utils import checked_type
 
 __all__ = ["Tab"]
 
@@ -17,7 +17,7 @@ class Tab:
         return self._tab_id
 
     def cell(self, coordinates):
-        from google_sheets.tab_range import CellCoordinates, TabCell
+        from vortex.google_sheets.tab_range import CellCoordinates, TabCell
         if isinstance(coordinates, str):
             coordinates = CellCoordinates(text=coordinates)
         return TabCell(tab=self, coordinates=coordinates)

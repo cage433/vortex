@@ -2,17 +2,17 @@ import shelve
 from decimal import Decimal
 from pathlib import Path
 
-from banking import BankAccountActivity
-from banking.bank_account import BankAccount, CURRENT_ACCOUNT
-from banking.category.payee_categories import PayeeCategory
-from banking.transaction.transaction import Transaction
-from date_range import Day
-from date_range.month import Month
+from vortex.banking import BankAccountActivity
+from vortex.banking.bank_account import BankAccount, CURRENT_ACCOUNT
+from vortex.banking.category.payee_categories import PayeeCategory
+from vortex.banking.transaction.transaction import Transaction
+from vortex.date_range import Day
+from vortex.date_range.month import Month
 from env import STATEMENTS_DIR
 
 __all__ = ["StatementsReader"]
 
-from utils.file_utils import read_csv_file
+from vortex.utils.file_utils import read_csv_file
 
 
 class StatementsReader:

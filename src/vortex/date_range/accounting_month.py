@@ -1,10 +1,10 @@
 from functools import total_ordering
 
-from date_range import ContiguousDateRange
-from date_range import Day
-from date_range.accounting_year import AccountingYear
-from date_range.month import Month
-from utils import checked_type
+from vortex.date_range import ContiguousDateRange
+from vortex.date_range import Day
+from vortex.date_range.accounting_year import AccountingYear
+from vortex.date_range.month import Month
+from vortex.utils import checked_type
 
 
 @total_ordering
@@ -76,7 +76,7 @@ class AccountingMonth(ContiguousDateRange):
 
     @property
     def weeks(self) -> list['Week']:
-        from date_range.week import Week
+        from vortex.date_range.week import Week
         ws = []
         w = Week.containing(self.first_day)
         while w.last_day <= self.last_day:

@@ -2,10 +2,10 @@ from datetime import date
 from functools import total_ordering
 from typing import List
 
-from date_range import Day
-from date_range.date_range import ContiguousDateRange
-from date_range.month import Month
-from utils import checked_type
+from vortex.date_range import Day
+from vortex.date_range.date_range import ContiguousDateRange
+from vortex.date_range.month import Month
+from vortex.utils import checked_type
 
 
 @total_ordering

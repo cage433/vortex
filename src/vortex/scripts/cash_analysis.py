@@ -1,7 +1,7 @@
 from tabulate import tabulate
 
-from banking import BankActivity
-from date_range.month import Month
+from vortex.banking import BankActivity
+from vortex.date_range.month import Month
 
 
 def do_analysis(force: bool):
@@ -21,5 +21,5 @@ def explain_dec():
         print(t)
 
 if __name__ == '__main__':
-    explain_dec()
-    # do_analysis(force=False)
+    # explain_dec()
+    do_analysis(force=False)

@@ -1,9 +1,9 @@
 from datetime import date
 from unittest import TestCase
 
-from date_range import Day
-from date_range.tests.fixtures import random_day
-from testing_utils import RandomisedTest
+from vortex.date_range import Day
+from vortex.date_range.tests.fixtures import random_day
+from vortex.testing_utils import RandomisedTest
 
 
 class RandomNumberGeneratorTestCase(TestCase):

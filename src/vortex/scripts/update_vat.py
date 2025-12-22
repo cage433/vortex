@@ -1,12 +1,12 @@
-from airtable_db import VortexAirtableDB
-from banking import BankActivity
-from date_range import Day
-from date_range.accounting_month import AccountingMonth
-from date_range.month import Month
-from date_range.simple_date_range import SimpleDateRange
-from google_sheets import Workbook
-from google_sheets.statements.statements_tab import StatementsTab
-from google_sheets.vat.vat_returns_tab import VATReturnsTab
+from vortex.airtable_db import VortexAirtableDB
+from vortex.banking import BankActivity
+from vortex.date_range import Day
+from vortex.date_range.accounting_month import AccountingMonth
+from vortex.date_range.month import Month
+from vortex.date_range.simple_date_range import SimpleDateRange
+from vortex.google_sheets import Workbook
+from vortex.google_sheets.statements.statements_tab import StatementsTab
+from vortex.google_sheets.vat.vat_returns_tab import VATReturnsTab
 
 
 def update_tab_for_month(month: Month, force: bool):
