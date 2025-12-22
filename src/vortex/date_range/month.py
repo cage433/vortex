@@ -42,7 +42,7 @@ class Month(ContiguousDateRange):
 
     @property
     def month_name(self):
-        return date(self.y, self.m, 1).strftime("%b %y")
+        return date(self.y, self.m, 1).strftime("%b %Y")
 
     def __hash__(self):
         return hash((self.y, self.m))

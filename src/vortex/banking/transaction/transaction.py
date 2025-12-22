@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Optional
 
-from vortex.banking.bank_account import BankAccount
+from vortex.banking.account.bank_account import BankAccount
 from vortex.banking.category.payee_categories import PayeeCategory
 from vortex.date_range import Day
 from vortex.utils import checked_type

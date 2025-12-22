@@ -29,6 +29,9 @@ class RangesAndValues:
     def __add__(self, rhs: 'RangesAndValues'):
         return RangesAndValues(self.ranges_and_values + rhs.ranges_and_values)
 
+    @staticmethod
+    def single_range(tab_range: TabRange, values: List[List[any]]):
+        return RangesAndValues([(tab_range, values)])
 
 class PaymentsRangeForCategory(TabRange):
     def __init__(

@@ -7,7 +7,7 @@ from vortex.banking import BankAccountActivity
 
 __all__ = ["BankActivity"]
 
-from vortex.banking.bank_account import BankAccount
+from vortex.banking.account.bank_account import BankAccount
 from vortex.banking.transaction.transaction import Transaction
 
 from vortex.date_range import DateRange, Day

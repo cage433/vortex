@@ -243,6 +243,9 @@ class TabRange:
     def set_currency_format_request(self):
         return self.set_decimal_format_request("#,##0.00")
 
+    def set_rounded_currency_format_request(self):
+        return self.set_decimal_format_request("#,##0")
+
     def date_format_request(self, format: str):
         return self.number_format_request({"type": "DATE", "pattern": format})
 

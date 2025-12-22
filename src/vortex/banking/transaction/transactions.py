@@ -29,6 +29,9 @@ class Transactions:
     def restrict_to_category(self, category: PayeeCategory) -> 'Transactions':
         return Transactions([t for t in self.transactions if t.category == category])
 
+    def restrict_to_categories(self, categories: List[PayeeCategory]) -> 'Transactions':
+        return Transactions([t for t in self.transactions if t.category in categories])
+
     def restrict_to_period(self, period: DateRange) -> 'Transactions':
         return Transactions([t for t in self.transactions if period.contains(t.payment_date)])
 

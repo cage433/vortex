@@ -1,6 +1,6 @@
 from typing import Optional
 
-from vortex.banking.bank_account import ALL_BANK_ACCOUNTS
+from vortex.banking.account.bank_account import ALL_BANK_ACCOUNTS
 from vortex.banking.category.payee_categories import PayeeCategory, MUSICIANS
 from vortex.banking.transaction.transaction import Transaction
 from vortex.date_range import Day

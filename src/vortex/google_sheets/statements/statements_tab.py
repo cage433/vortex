@@ -6,7 +6,7 @@ from typing import List, Any
 from vortex.banking import BankActivity
 from vortex.banking.transaction.transaction import Transaction
 from vortex.banking.transaction.transactions import Transactions
-from vortex.banking.bank_account import CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT, BankAccount
+from vortex.banking.account.bank_account import CURRENT_ACCOUNT, SAVINGS_ACCOUNT, CHARITABLE_ACCOUNT, BBL_ACCOUNT, BankAccount
 from vortex.banking.category.categorize import category_for_transaction
 from vortex.banking.category.payee_categories import PayeeCategory
 from vortex.date_range import Day, DateRange

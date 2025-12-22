@@ -3,7 +3,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from vortex.banking import BankAccountActivity
-from vortex.banking.bank_account import BankAccount, CURRENT_ACCOUNT
+from vortex.banking.account.bank_account import BankAccount, CURRENT_ACCOUNT
 from vortex.banking.category.payee_categories import PayeeCategory
 from vortex.banking.transaction.transaction import Transaction
 from vortex.date_range import Day
