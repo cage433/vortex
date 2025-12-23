@@ -21,6 +21,6 @@ def update_tab(first_day: Day, last_day: Day, force: bool):
     tab.update(transactions, gigs_info, bank_activity)
 
 if __name__ == '__main__':
-    first_day = Month(2022, 1).first_day
+    first_day = Month(2021, 10).first_day
     last_day = Month(2025, 11).last_day
     update_tab(first_day, last_day, force=False)
