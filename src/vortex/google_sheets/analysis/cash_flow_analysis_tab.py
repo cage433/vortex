@@ -6,7 +6,7 @@ from vortex.airtable_db.gigs_info import GigsInfo
 from vortex.banking import BankActivity
 from vortex.banking.category.payee_categories import PayeeCategory
 from vortex.banking.transaction.transactions import Transactions
-from vortex.date_range import DateRange
+from vortex.date_range import DateRange, ContiguousDateRange
 from vortex.date_range.month import Month
 from vortex.google_sheets import Tab, Workbook
 from vortex.google_sheets.tab_range import TabRange, TabCell
@@ -312,22 +312,22 @@ class OtherIncomeRange(CashFlowAnalysisRange):
         ]
 
 
-class MonthHeadingsRange(TabRange):
+class PeriodHeadingsRange(TabRange):
     def __init__(self, top_left_cell: TabCell,
-                 months: List[Month]
+                 periods: List[ContiguousDateRange]
                  ):
         super().__init__(
             top_left_cell,
-            num_rows=len(months) + 1,
+            num_rows=len(periods) + 1,
             num_cols=1,
         )
-        self.months: List[Month] = checked_list_type(months, Month)
+        self.periods: List[ContiguousDateRange] = checked_list_type(periods, ContiguousDateRange)
 
     @property
     def values(self) -> RangesAndValues:
         return RangesAndValues.single_range(
             self,
-            [["Month"]] + [[m.month_name] for m in self.months]
+            [["Period"]] + [[m.excel_format] for m in self.periods]
         )
 
     @property
@@ -342,27 +342,27 @@ class MonthHeadingsRange(TabRange):
 
 
 class CashFlowAnalysisTab(Tab):
-    def __init__(self, workbook: Workbook, months: List[Month]):
-        super().__init__(workbook, tab_name=months[-1].tab_name)
+    def __init__(self, workbook: Workbook, tab_name, periods: List[ContiguousDateRange]):
+        super().__init__(workbook, tab_name=tab_name)
         if not self.workbook.has_tab(self.tab_name):
             self.workbook.add_tab(self.tab_name)
-        self.months: List[Month] = checked_list_type(months, Month)
+        self.periods: List[ContiguousDateRange] = checked_list_type(periods, ContiguousDateRange)
 
     def update(self,
                transactions: Transactions,
                gigs_info: GigsInfo,
                bank_activity: BankActivity
                ):
-        month_headings_range = MonthHeadingsRange(self.cell("B10"), self.months)
+        month_headings_range = PeriodHeadingsRange(self.cell("B10"), self.periods)
         ticket_range = TicketSalesRange(month_headings_range.top_right_cell.offset(num_cols=1), transactions, gigs_info,
-                                        self.months)
-        other_income_range = OtherIncomeRange(ticket_range.top_right_cell.offset(num_cols=1), transactions, self.months)
-        music_range = MusicRange(other_income_range.top_right_cell.offset(num_cols=1), transactions, self.months)
-        drinks_range = DrinksRange(music_range.top_right_cell.offset(num_cols=1), transactions, gigs_info, self.months)
+                                        self.periods)
+        other_income_range = OtherIncomeRange(ticket_range.top_right_cell.offset(num_cols=1), transactions, self.periods)
+        music_range = MusicRange(other_income_range.top_right_cell.offset(num_cols=1), transactions, self.periods)
+        drinks_range = DrinksRange(music_range.top_right_cell.offset(num_cols=1), transactions, gigs_info, self.periods)
         regular_costs_range = RegularCostsRange(drinks_range.top_right_cell.offset(num_cols=1), transactions,
-                                                self.months)
+                                                self.periods)
         irregular_costs_range = IrregularCostsRange(regular_costs_range.top_right_cell.offset(num_cols=1), transactions,
-                                                    self.months)
+                                                    self.periods)
 
         format_requests = self.delete_all_groups_requests() + self.clear_values_and_formats_requests() + [
             self.set_column_width_request(0, width=30)

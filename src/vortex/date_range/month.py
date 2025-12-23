@@ -42,7 +42,7 @@ class Month(ContiguousDateRange):
 
     @property
     def month_name(self) -> str:
-        return date(self.y, self.m, 1).strftime("%b %Y")
+        return date(self.y, self.m, 1).strftime("%b %y")
 
     def __hash__(self):
         return hash((self.y, self.m))
@@ -53,7 +53,7 @@ class Month(ContiguousDateRange):
 
     @property
     def excel_format(self) -> str:
-        return self.month_name
+        return date(self.y, self.m, 1).strftime("%b %Y")
 
     @staticmethod
     def containing(day: Day) -> 'Month':
