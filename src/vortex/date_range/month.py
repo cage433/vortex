@@ -41,14 +41,18 @@ class Month(ContiguousDateRange):
         return f"Month({self.y}, {self.m})"
 
     @property
-    def month_name(self):
+    def month_name(self) -> str:
         return date(self.y, self.m, 1).strftime("%b %Y")
 
     def __hash__(self):
         return hash((self.y, self.m))
 
     @property
-    def tab_name(self):
+    def tab_name(self) -> str:
+        return self.month_name
+
+    @property
+    def excel_format(self) -> str:
         return self.month_name
 
     @staticmethod

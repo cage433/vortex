@@ -2,8 +2,6 @@ from env import CASHFLOW_ANALYSIS_ID
 from vortex.airtable_db import VortexAirtableDB
 from vortex.banking import BankActivity
 from vortex.date_range import Day
-from vortex.date_range.accounting_month import AccountingMonth
-from vortex.date_range.accounting_year import AccountingYear
 from vortex.date_range.date_range import SplitType
 from vortex.date_range.month import Month
 from vortex.date_range.simple_date_range import SimpleDateRange

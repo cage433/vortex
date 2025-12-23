@@ -38,6 +38,10 @@ class AccountingMonth(ContiguousDateRange):
     def __str__(self):
         return self.month_name
 
+    @property
+    def excel_format(self) -> str:
+        return self.month_name
+
     def months_since(self, other: 'AccountingMonth') -> int:
         return (self.year.y - other.year.y) * 12 + self.m - other.m
 

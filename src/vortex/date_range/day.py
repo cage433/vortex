@@ -75,3 +75,7 @@ class Day(ContiguousDateRange):
     def month(self) -> 'Month':
         from vortex.date_range.month import Month
         return Month.containing(self)
+
+    @property
+    def excel_format(self) -> str:
+        return date(self.y, self.m, self.d).strftime("%d-%b-%Y")

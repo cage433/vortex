@@ -63,6 +63,10 @@ class Quarter(ContiguousDateRange):
     def tab_name(self):
         return f"Q{self.q}-{self.y % 100}"
 
+    @property
+    def excel_format(self) -> str:
+        return self.tab_name
+
     @staticmethod
     def containing(day: Day) -> 'Quarter':
         m = Month.containing(day)

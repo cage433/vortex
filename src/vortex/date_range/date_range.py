@@ -76,3 +76,7 @@ class ContiguousDateRange(DateRange, ABC):
 
     def __sub__(self, n) -> "ContiguousDateRange":
         return self + (-n)
+
+    @abstractmethod
+    def excel_format(self) -> str:
+        raise NotImplementedError()

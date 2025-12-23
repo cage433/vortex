@@ -66,6 +66,10 @@ class AccountingYear(ContiguousDateRange):
     def __repr__(self):
         return str(self)
 
+    @property
+    def excel_format(self) -> str:
+        return f"AccYear {self.y}"
+
     @staticmethod
     def first_monday_of_accounting_year(y: int) -> Day:
         if y in TIMS_FIRST_MONDAYS_OF_ACCOUNTING_YEAR:

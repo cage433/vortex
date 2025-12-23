@@ -39,6 +39,10 @@ class Week(ContiguousDateRange):
         return str(self)
 
     @property
+    def excel_format(self) -> str:
+        return f"{self.year.y} W{self.week_no}"
+
+    @property
     def first_day(self):
         return self.year.first_day + (self.week_no - 1) * 7
 
