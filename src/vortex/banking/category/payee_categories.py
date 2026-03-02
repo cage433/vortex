@@ -27,6 +27,7 @@ class PayeeCategoryClass(StrEnum):
 @verify(UNIQUE)
 class PayeeCategory(StrEnum):
     ACCOUNTANT = "Accountant"
+    ADVERTISING = "Advertising"
     AIRTABLE = "Airtable"
     BANK_FEES = "Bank Fees"
     BANK_INTEREST = "Bank Interest"
@@ -37,8 +38,8 @@ class PayeeCategory(StrEnum):
     BUILDING_MAINTENANCE = "Building Maintenance"
     BUILDING_SECURITY = "Building Security"
     BUILDING_WORKS = "Building Works"
-    CARD_SALES = "Card Sales"
-    CASH_SALES = "Cash Sales"
+    CARD_SALES = "Card Sales"      # Note - not deprecated. Needed to
+    CASH_SALES = "Cash Sales"      # Deprecated - use Ticket Sales
     CLEANING = "Cleaning"
     CREDIT_CARD_FEES = "Credit Card Fees"
     DIRECTORS_LOAN = "Directors Loan"
@@ -55,9 +56,10 @@ class PayeeCategory(StrEnum):
     INSURANCE_PAYOUT = "Insurance Payout"
     INTERNAL_TRANSFER = "Internal Transfer"
     KASHFLOW = "Kashflow"
+    LEGAL_ADVICE = "Legal Advice"
     MAILCHIMP = "Mailchimp"
     LICENSING = "Licensing"
-    MARKETING = "Marketing Direct"
+    MARKETING = "Marketing Direct"  # Deprecated, use ADVERTISING instead
     MEMBERSHIPS = "Memberships"
     MUSICIAN_COSTS = "Musician Costs"
     MUSICIAN_PAYMENTS = "Musician Payments"
@@ -75,13 +77,19 @@ class PayeeCategory(StrEnum):
     SUBSCRIPTIONS = "Subscriptions"
     TELEPHONE = "Telephone"
     THAMES_WATER = "Thames Water"
-    TICKET_SALES = "Ticketweb Credits"
+    TICKET_SALES = "Ticket Sales"
     UNCATEGORISED = "Uncategorised"
     UTILITIES = "Utilities"
     VAT = "VAT"
     VORTEX_MERCH = "Vortex Merch"
     WEB_HOST = "Web Host"
     WORK_PERMITS = "Work Permits"
+
+    @staticmethod
+    def from_text(text: str):
+        if text == "Ticketweb Credits":
+            return PayeeCategory.TICKET_SALES
+        return PayeeCategory(text)
 
     @staticmethod
     def is_subject_to_vat(category: 'PayeeCategory') -> bool:
@@ -113,7 +121,8 @@ class PayeeCategory(StrEnum):
 
         if category in [
             PayeeCategory.ACCOUNTANT,
-            PayeeCategory.AIRTABLE,
+            PayeeCategory.ADVERTISING,
+            PayeeCategory.AIRTABLE,         # Deprecated - use SUBSCRIPTIONS instead
             PayeeCategory.BAR_SNACKS,
             PayeeCategory.BAR_STOCK,
             PayeeCategory.BT,
@@ -129,7 +138,8 @@ class PayeeCategory(StrEnum):
             PayeeCategory.FIRE_ALARM,
             PayeeCategory.FLOOD,
             PayeeCategory.INSURANCE,
-            PayeeCategory.KASHFLOW,
+            PayeeCategory.KASHFLOW,         # Deprecated - use SUBSCRIPTIONS instead
+            PayeeCategory.LEGAL_ADVICE,
             PayeeCategory.LICENSING,
             PayeeCategory.MAILCHIMP,
             PayeeCategory.MARKETING,
@@ -137,7 +147,7 @@ class PayeeCategory(StrEnum):
             PayeeCategory.OPERATIONAL_COSTS,
             PayeeCategory.PRS,
             PayeeCategory.RENT,
-            PayeeCategory.SLACK,
+            PayeeCategory.SLACK,            # Deprecated - use SUBSCRIPTIONS instead
             PayeeCategory.SPACE_HIRE,
             PayeeCategory.SUBSCRIPTIONS,
             PayeeCategory.TELEPHONE,

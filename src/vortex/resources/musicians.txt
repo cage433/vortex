@@ -6,6 +6,7 @@ adrian kunstler
 aidan pearson
 aidan pope
 alan wilkinson
+alasdair pennington
 alex dmochowski
 alex munk
 alastair martin
@@ -43,6 +44,7 @@ anita wardell
 anna chandler
 annie whitehead
 ant law
+archie kidd
 art themen
 arun ghosh
 asha parkinson
@@ -75,6 +77,7 @@ cameron scott
 caroline kraabel
 carol grimes
 charlie nash
+charlie rees
 charlotte keeffe
 cheng xie
 chiara spigariol
@@ -144,12 +147,14 @@ emilia martensson
 emelia martensson
 emma rawicz
 evelyn hill
+fabienne ambuehl
 faith brackenbury
 ferg ireland
 filippo ieraci
 filomena campus
 fini bearman
 finn carter
+finnegan carter
 finn genockey
 florian arbenz
 f. ciniglio
@@ -167,6 +172,7 @@ gilad atzmon
 gilad hekselman
 graham costello
 greg sanders
+grifton forbesamos
 guido spannocchi
 gwilym jones
 hannes reipler
@@ -192,6 +198,7 @@ immy churchill
 imogen churchill
 ineza kerschkamp
 irini arabatzi
+isaac james
 ivo neame
 jack courtney
 jack wilson
@@ -216,6 +223,7 @@ jim howard
 jim mullen
 jim rattigan
 joe downard
+joe english
 joe williamson
 joel ross
 johanna bernard
@@ -243,6 +251,7 @@ julian woods
 julie sassoon
 julien durand
 karim saber
+karl bos
 kasper rietkerk
 kate shortt
 kevin figes
@@ -270,6 +279,7 @@ liran donin
 lise rossi
 lorenzobellini
 louise dodds
+louis wildi
 loz keystone
 loz speyer
 luca manning
@@ -289,8 +299,11 @@ mark holub
 mark kavuma
 mark lockheart
 mark sanders
+mark wastell
+marlon hibbert
 marta gornitzka
 martin speake
+mat martin
 matthew field
 matthew sulzmann
 matthew jacobs
@@ -299,6 +312,7 @@ matt carmichael
 matt cook
 matt hurley
 matt ridley
+matthew cook
 matthew herd
 max luthert
 maya caskie
@@ -337,6 +351,7 @@ nishla smith
 noah stoneman
 noga ritter
 norma winstone
+nuno carvalho
 nye banfield
 o artetto
 olie brice
@@ -346,6 +361,7 @@ olly chalk
 oren marshall
 orlando le fleming
 orphy robinson
+oscar lyons
 paul dunmall
 paul smyth
 paula rea gibson
@@ -393,6 +409,7 @@ sam duffy
 sam hogarth
 sam leak
 sam newbould
+sam nicholls
 sam norris
 samuel norris
 sara colman
@@ -406,6 +423,7 @@ sean gibbs
 sean payne
 seb rochford
 shane forbes
+shaney forbes
 sheila maurice
 sheldon agwu
 shirley smart
@@ -435,6 +453,7 @@ tereza catarov
 thomas ridout
 thomas riviere
 tim berne
+tim davies
 tim whitehead
 tineke postma
 tivon pennicott
@@ -469,7 +488,9 @@ v hawthorn-nelson
 wandering wires
 will barry
 will cleasby
+william cleasby
 will glaser
+will sach
 will vinson
 william hobson
 winston clifford

@@ -52,7 +52,7 @@ class DateRange(ABC):
             d += 1
         return ds
 
-    def split_into(self, period_type, split_type: SplitType) -> List["DateRange"]:
+    def split_into(self, period_type, split_type: SplitType) -> List["ContiguousDateRange"]:
         c = period_type.containing(self.first_day)
         split = [c]
         while c.last_day < self.last_day:

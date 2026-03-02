@@ -204,7 +204,7 @@ class StatementsTab(Tab):
         def to_payee_category(cell_value: str) -> PayeeCategory:
             if isinstance(cell_value, str) and cell_value.strip() == "":
                 return PayeeCategory.UNCATEGORISED
-            return PayeeCategory(cell_value)
+            return PayeeCategory.from_text(cell_value)
 
         def to_decimal(cell_value):
             if isinstance(cell_value, str):

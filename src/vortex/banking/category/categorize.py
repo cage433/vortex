@@ -58,9 +58,12 @@ def _maybe_work_permit(transaction: Transaction) -> Optional[PayeeCategory]:
         return PayeeCategory.WORK_PERMITS
 
 
-def _maybe_rates(transaction: Transaction) -> Optional[PayeeCategory]:
-    if matches_anywhere(transaction, ["lb hackney rates", "lbh rates", "l.b. hackney nndr"]):
+def _maybe_rates(tr: Transaction) -> Optional[PayeeCategory]:
+    if matches_anywhere(tr, ["lb hackney rates", "lbh rates", "l.b. hackney nndr"]):
         return PayeeCategory.RATES
+    if matches_start(tr, "lb hackney 601853394"):
+        return PayeeCategory.RATES
+
 
 
 def _maybe_electricity(transaction: Transaction) -> Optional[PayeeCategory]:
@@ -92,11 +95,6 @@ def _maybe_internal_transfer(transaction: Transaction) -> Optional[PayeeCategory
     for acc in ALL_BANK_ACCOUNTS:
         if matches_anywhere(transaction, f"{acc.id} internet transfer"):
             return PayeeCategory.INTERNAL_TRANSFER
-
-
-def _maybe_kashflow(transaction: Transaction) -> Optional[PayeeCategory]:
-    if matches_anywhere(transaction, "www.kashflow.com"):
-        return PayeeCategory.KASHFLOW
 
 
 def _maybe_cc_fees(transaction: Transaction) -> Optional[PayeeCategory]:
@@ -151,7 +149,9 @@ def _maybe_salaries(transaction: Transaction) -> Optional[PayeeCategory]:
                 "ted mitchell",
                 "k hingwan vortex",
                 "chloe xiao",
-                "hector tejero"
+                "hector tejero",
+                "grace agbohou",
+                "hmrc paye"
             ]
 
     ):
@@ -179,8 +179,14 @@ def _maybe_cash_sales(transaction: Transaction) -> Optional[PayeeCategory]:
 
 
 def _maybe_ticket_sales(transaction: Transaction) -> Optional[PayeeCategory]:
-    if transaction.amount > 0 and matches_start(transaction, ["ticketweb uk", "ticketco uk", "tw client gbp"]):
+    if transaction.amount > 0 and matches_start(transaction,
+                                                ["ticketweb uk", "ticketco uk", "tw client gbp", "uniiverse collabor"]):
         return PayeeCategory.TICKET_SALES
+
+
+def _maybe_vortex_merch(tr: Transaction) -> Optional[PayeeCategory]:
+    if matches_start(tr, "monster press"):
+        return PayeeCategory.VORTEX_MERCH
 
 
 def _maybe_bar_purchases(transaction: Transaction) -> Optional[PayeeCategory]:
@@ -197,7 +203,8 @@ def _maybe_bar_purchases(transaction: Transaction) -> Optional[PayeeCategory]:
                 "majestic wine",
                 "newcomer wines",
                 "sainsbury",
-                "food & wine"
+                "food & wine",
+                "queer brewing",
             ]
 
     ):
@@ -245,6 +252,7 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[PayeeCategory]:
         "ali ward",
         "andrei eliade",
         "andrew marriott",
+        "aofie daly",
         "bella cooper",
         "chris penty",
         "delphi mangan",
@@ -265,6 +273,7 @@ def _maybe_sound_engineer(tr: Transaction) -> Optional[PayeeCategory]:
         "milo mcguire",
         "ochuko okiemute",
         "thomas pew",
+        "tom o'brien",
     ]
     if matches_start(tr, known_engineers):
         return PayeeCategory.SOUND_ENGINEER
@@ -290,21 +299,9 @@ def _maybe_bt(tr: Transaction) -> Optional[PayeeCategory]:
         return PayeeCategory.BT
 
 
-def _maybe_slack(tr: Transaction) -> Optional[PayeeCategory]:
-    payee = tr.payee.lower()
-    if payee.startswith("int") and "slack" in payee:
-        return PayeeCategory.SLACK
-
-
 def _maybe_bar_snacks(tr: Transaction) -> Optional[PayeeCategory]:
     if matches_start(tr, "uk bar snacks"):
         return PayeeCategory.BAR_SNACKS
-
-
-def _maybe_airtable(tr: Transaction) -> Optional[PayeeCategory]:
-    payee = tr.payee.lower()
-    if payee.startswith("int") and "airtable" in payee:
-        return PayeeCategory.AIRTABLE
 
 
 def _maybe_accountant(tr: Transaction) -> Optional[PayeeCategory]:
@@ -386,9 +383,6 @@ def _maybe_operational_costs(tr: Transaction) -> Optional[PayeeCategory]:
             ]):
         return PayeeCategory.OPERATIONAL_COSTS
 
-    if matches_anywhere(tr, ["shopify", "amazon"]) and -50.0 < tr.amount < 0.0:
-        return PayeeCategory.OPERATIONAL_COSTS
-
 
 def _maybe_rent(tr: Transaction) -> Optional[PayeeCategory]:
     if matches_start(tr, "hcd vortex rent"):
@@ -433,6 +427,7 @@ def _maybe_space_hire(tr: Transaction) -> Optional[PayeeCategory]:
             "intothe void",
             "jewish music",
             "lise rossi",
+            "m tomassini"
             "m b dunlop",
             "mcloughlin d",
             "n charles",
@@ -447,6 +442,10 @@ def _maybe_space_hire(tr: Transaction) -> Optional[PayeeCategory]:
             "vortex jazz jazz connect",
             "w g b marrows",
             "yazz ahmed",
+            "room hire",
+            "roomhire",
+            "space hire",
+            "rehearsal"
         ]
         if matches_anywhere(tr, hirers):
             return PayeeCategory.SPACE_HIRE
@@ -459,10 +458,22 @@ def _maybe_space_hire(tr: Transaction) -> Optional[PayeeCategory]:
 def _maybe_subscriptions(tr: Transaction) -> Optional[PayeeCategory]:
     if matches_start(tr, ["music venues allia wimborne", "jazz in london vortex"]):
         return PayeeCategory.SUBSCRIPTIONS
+    if matches_anywhere(tr, "www.kashflow.com"):
+        return PayeeCategory.SUBSCRIPTIONS
+    payee = tr.payee.lower()
+    if matches_start(tr, "int"):
+        if matches_anywhere(tr, ["slack", "airtable", "shopify"]):
+            return PayeeCategory.SUBSCRIPTIONS
+
+
+def _maybe_advertising(tr: Transaction) -> Optional[PayeeCategory]:
+    if matches_start(tr, "int"):
+        if matches_anywhere(tr, ["facebk"]):
+            return PayeeCategory.ADVERTISING
 
 
 def category_for_transaction(transaction: Transaction) -> PayeeCategory:
-    return (_maybe_airtable(transaction) or
+    return (_maybe_advertising(transaction) or
             _maybe_accountant(transaction) or
             _maybe_bank_fees(transaction) or
             _maybe_bank_interest(transaction) or
@@ -484,7 +495,6 @@ def category_for_transaction(transaction: Transaction) -> PayeeCategory:
             _maybe_host(transaction) or
             _maybe_insurance(transaction) or
             _maybe_internal_transfer(transaction) or
-            _maybe_kashflow(transaction) or
             _maybe_license_renewal(transaction) or
             _maybe_mailchimp(transaction) or
             _maybe_memberships(transaction) or
@@ -498,7 +508,6 @@ def category_for_transaction(transaction: Transaction) -> PayeeCategory:
             _maybe_rates(transaction) or
             _maybe_rent(transaction) or
             _maybe_salaries(transaction) or
-            _maybe_slack(transaction) or
             _maybe_sound_engineer(transaction) or
             _maybe_space_hire(transaction) or
             _maybe_subscriptions(transaction) or
@@ -507,5 +516,6 @@ def category_for_transaction(transaction: Transaction) -> PayeeCategory:
             _maybe_tissues(transaction) or
             _maybe_vat(transaction) or
             _maybe_work_permit(transaction) or
+            _maybe_vortex_merch(transaction) or
             PayeeCategory.UNCATEGORISED
             )

@@ -7,10 +7,11 @@ from vortex.banking import BankActivity
 from vortex.banking.category.payee_categories import PayeeCategory
 from vortex.banking.transaction.transactions import Transactions
 from vortex.date_range import DateRange, ContiguousDateRange
+from vortex.date_range.date_range import SplitType
 from vortex.date_range.month import Month
 from vortex.google_sheets import Tab, Workbook
 from vortex.google_sheets.tab_range import TabRange, TabCell
-from vortex.google_sheets.vat.vat_returns_tab import RangesAndValues
+from vortex.google_sheets.vat.vat_returns_tab import RangesAndValues, BankCheckRange
 from vortex.utils import checked_list_type, checked_type
 from vortex.utils.collection_utils import group_into_dict
 
@@ -125,6 +126,7 @@ class IrregularCostsRange(CashFlowAnalysisRange):
             AnalysisColumn.from_category(PayeeCategory.FLOOD),
             AnalysisColumn.from_category(PayeeCategory.GRANT),
             AnalysisColumn.from_category(PayeeCategory.INSURANCE_PAYOUT),
+            AnalysisColumn.from_category(PayeeCategory.LEGAL_ADVICE),
         ]
 
 
@@ -174,6 +176,9 @@ class RegularCostsRange(CashFlowAnalysisRange):
             AnalysisColumn(
                 "Other",
                 [
+                    PayeeCategory.ACCOUNTANT,
+                    PayeeCategory.ADVERTISING,
+                    PayeeCategory.AIRTABLE,
                     PayeeCategory.BANK_FEES,
                     PayeeCategory.BANK_INTEREST,
                     PayeeCategory.BUILDING_SECURITY,
@@ -185,8 +190,6 @@ class RegularCostsRange(CashFlowAnalysisRange):
                     PayeeCategory.MARKETING,
                     PayeeCategory.SLACK,
                     PayeeCategory.SUBSCRIPTIONS,
-                    PayeeCategory.ACCOUNTANT,
-                    PayeeCategory.AIRTABLE,
                 ]
             )
         ]
@@ -361,12 +364,12 @@ class PeriodHeadingsRange(TabRange):
 
 
 class SummaryRange(TabRange):
-    def __init__(self, cash_flow_range: CashFlowAnalysisRange):
+    def __init__(self, cash_flow_range: TabRange):
         super().__init__(
             cash_flow_range.bottom_left_cell.offset(num_rows=2),
             num_rows=1,
             num_cols=cash_flow_range.num_cols)
-        self.cash_flow_range: CashFlowAnalysisRange = checked_type(cash_flow_range, CashFlowAnalysisRange)
+        self.cash_flow_range: TabRange = checked_type(cash_flow_range, TabRange)
 
     @property
     def values(self) -> RangesAndValues:
@@ -383,6 +386,10 @@ class SummaryRange(TabRange):
             self.set_rounded_currency_format_request(),
         ]
         return requests
+
+    @property
+    def categories(self) -> list[PayeeCategory]:
+        return []
 
 class SummaryHeadingsRange(TabRange):
     def __init__(self, top_left_cell: TabCell):
@@ -408,6 +415,147 @@ class SummaryHeadingsRange(TabRange):
         ]
         return requests
 
+    @property
+    def categories(self) -> list[PayeeCategory]:
+        return []
+
+class GigPnLRange(TabRange):
+    def __init__(self, top_left_cell: TabCell,
+                 transactions: Transactions,
+                 gigs_info: GigsInfo,
+                 periods: List[DateRange]
+                 ):
+        self.gig_income_range = TicketSalesRange(top_left_cell.offset(num_cols=1), transactions, gigs_info, periods)
+        self.gig_costs_range = GigCostsRange(self.gig_income_range.top_right_cell.offset(num_cols=1), transactions,
+                                             periods)
+        super().__init__(
+            top_left_cell,
+            num_cols=1 + self.gig_income_range.num_cols + self.gig_costs_range.num_cols,
+            num_rows=self.gig_income_range.num_rows
+        )
+
+    @property
+    def categories(self) -> list[PayeeCategory]:
+        return self.gig_costs_range.categories + self.gig_income_range.categories
+
+    @property
+    def values(self) -> RangesAndValues:
+        sum_values = RangesAndValues.single_range(
+            self,
+            [["Gig P&L"]] + [
+                [f"={self.gig_income_range[i_row, 0].in_a1_notation} + {self.gig_costs_range[i_row, 0].in_a1_notation}"]
+                for i_row in range(1, self.num_rows)
+            ]
+        )
+        return sum_values + self.gig_income_range.values + self.gig_costs_range.values
+
+    @property
+    def format_requests(self):
+        outer_requests = [
+            self[0, :].set_bold_text_request(),
+            self[0, :].border_request(["bottom"]),
+            self[0, :].right_align_text_request(),
+            self[1:, :].set_rounded_currency_format_request(),
+            self.tab.group_columns_request(self.i_first_col + 1, self.i_first_col + self.num_cols - 1),
+        ]
+        return outer_requests + self.gig_income_range.format_requests + self.gig_costs_range.format_requests
+
+class PnLRange(TabRange):
+    def __init__(self,
+                 top_left_cell: TabCell,
+                 ranges: list[TabRange],
+                 bank_activity: BankActivity,
+                 periods: List[DateRange]
+                 ):
+        self.bank_activity: BankActivity = checked_type(bank_activity, BankActivity)
+        self.periods: List[DateRange] = checked_list_type(periods, DateRange)
+        super().__init__(
+            top_left_cell,
+            num_cols=3,
+            num_rows=1 + len(periods)
+        )
+        self.ranges: list[TabRange] = checked_list_type(ranges, TabRange)
+
+    @property
+    def values(self) -> RangesAndValues:
+        def row_values(i_row):
+            terms = [f"{r[i_row, 0].in_a1_notation}" for r in self.ranges]
+            sum_value = "=" + "+".join(terms)
+            period = self.periods[i_row - 1]
+            activity = self.bank_activity.restrict_to_period(period)
+            initial_pnl = activity.initial_balance_across_accounts
+            terminal_pnl = activity.terminal_balance_across_accounts
+            pnl_change = terminal_pnl - initial_pnl
+            return [sum_value, terminal_pnl, pnl_change]
+
+        return RangesAndValues.single_range(
+            self,
+            [["P&L", "Balance", "Bank P&L"]] + [
+                row_values(i_row) for i_row in range(1, self.num_rows)
+            ]
+        )
+
+    @property
+    def format_requests(self):
+        outer_requests = [
+            self[0, :].set_bold_text_request(),
+            self[0, :].border_request(["bottom"]),
+            self[:, 0].border_request(["left"]),
+            self[0, :].right_align_text_request(),
+            self[1:, :].set_rounded_currency_format_request(),
+            self.tab.group_columns_request(self.i_first_col + 1, self.i_first_col + self.num_cols - 1),
+        ]
+        return outer_requests
+
+    @property
+    def categories(self) -> list[PayeeCategory]:
+        return []
+
+class TicketAnalysisRange(TabRange):
+    def __init__(self, top_left_cell: TabCell,
+                 gigs_info: GigsInfo,
+                 periods: List[DateRange]
+                 ):
+        super().__init__(
+            top_left_cell,
+            num_cols=3,
+            num_rows=1 + len(periods)
+        )
+        self.gigs_info: GigsInfo = checked_type(gigs_info, GigsInfo)
+        self.periods: list[DateRange] = checked_list_type(periods, DateRange)
+
+    @property
+    def categories(self) -> list[PayeeCategory]:
+        return []
+
+    @property
+    def values(self) -> RangesAndValues:
+        def row_for_period(period: DateRange):
+            months = period.split_into(Month, SplitType.EXACT)
+            gigs_by_month = [self.gigs_info.restrict_to_period(m) for m in months]
+            num_tickets = sum([g.total_tickets for g in gigs_by_month])
+            ticket_sales = sum([g.total_ticket_sales for g in gigs_by_month])
+            ave_price = ticket_sales / num_tickets
+            return [num_tickets, ticket_sales, ave_price]
+
+        sum_values = RangesAndValues.single_range(
+            self,
+            [["Num Tickets", "Sales", "Average Price"]] + [
+                row_for_period(period) for period in self.periods
+            ]
+        )
+        return sum_values
+
+    @property
+    def format_requests(self):
+        return [
+            self[0, :].set_bold_text_request(),
+            self[0, :].border_request(["bottom"]),
+            self[0, :].right_align_text_request(),
+            self[1:, 1].set_rounded_currency_format_request(),
+            self[1:, 2].set_currency_format_request(),
+        ]
+
 class CashFlowAnalysisTab(Tab):
     def __init__(self, workbook: Workbook, tab_name, periods: List[ContiguousDateRange]):
         super().__init__(workbook, tab_name=tab_name)
@@ -420,13 +568,10 @@ class CashFlowAnalysisTab(Tab):
                gigs_info: GigsInfo,
                bank_activity: BankActivity
                ):
-        month_headings_range = PeriodHeadingsRange(self.cell("B10"), self.periods)
+        month_headings_range = PeriodHeadingsRange(self.cell("B3"), self.periods)
         summary_headings_range = SummaryHeadingsRange(month_headings_range.bottom_left_cell.offset(num_rows=2))
-        ticket_range = TicketSalesRange(month_headings_range.top_right_cell.offset(num_cols=1), transactions,
-                                        gigs_info,
-                                        self.periods)
-        music_range = GigCostsRange(ticket_range.top_right_cell.offset(num_cols=1), transactions, self.periods)
-        other_income_range = OtherIncomeRange(music_range.top_right_cell.offset(num_cols=1), transactions,
+        gig_pnl_range = GigPnLRange(month_headings_range.top_right_cell.offset(num_cols=1), transactions, gigs_info, self.periods)
+        other_income_range = OtherIncomeRange(gig_pnl_range.top_right_cell.offset(num_cols=1), transactions,
                                               self.periods)
         drinks_range = DrinksRange(other_income_range.top_right_cell.offset(num_cols=1), transactions, gigs_info,
                                    self.periods)
@@ -435,13 +580,16 @@ class CashFlowAnalysisTab(Tab):
         irregular_costs_range = IrregularCostsRange(regular_costs_range.top_right_cell.offset(num_cols=1),
                                                     transactions,
                                                     self.periods)
-
-        value_ranges = [ticket_range, music_range, other_income_range, drinks_range,
+        value_ranges = [gig_pnl_range, other_income_range, drinks_range,
                         regular_costs_range,
-                        irregular_costs_range]
-        ranges = [month_headings_range, summary_headings_range] + value_ranges
+                        irregular_costs_range,
+                        ]
+        total_range = PnLRange(irregular_costs_range.top_right_cell.offset(num_cols=1), value_ranges, bank_activity, self.periods)
 
-        summary_ranges = [SummaryRange(v) for v in value_ranges]
+        ticket_analysis_range = TicketAnalysisRange(total_range.top_right_cell.offset(num_cols=2), gigs_info, self.periods)
+        ranges = [month_headings_range, summary_headings_range] + value_ranges + [total_range, ticket_analysis_range]
+
+        summary_ranges = [SummaryRange(v) for v in value_ranges + [total_range]]
         all_categories = []
         format_requests = self.delete_all_groups_requests() + self.clear_values_and_formats_requests() + [
             self.set_column_width_request(0, width=30)
@@ -450,8 +598,7 @@ class CashFlowAnalysisTab(Tab):
         for range in ranges + summary_ranges:
             format_requests += range.format_requests
             values += range.values
-            if isinstance(range, CashFlowAnalysisRange):
-                all_categories += range.categories
+            all_categories += range.categories
 
         assert len(set(all_categories)) == len(all_categories), "Duplicate categories"
         for v in PayeeCategory:

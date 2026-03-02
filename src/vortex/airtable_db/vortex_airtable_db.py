@@ -8,6 +8,7 @@ from vortex.airtable_db.events_table import EventsTable
 from vortex.airtable_db.table_columns import ContractsColumns, EventColumns, TicketCategory, TicketPriceLevel
 from vortex.date_range import DateRange
 from vortex.date_range.accounting_month import AccountingMonth
+from vortex.date_range.date_range import SplitType
 from vortex.date_range.month import Month
 from vortex.utils.collection_utils import group_into_dict, flatten
 
@@ -25,8 +26,8 @@ class VortexAirtableDB:
 
     SHELF = Path(__file__).parent / "_vortex_db.shelf"
 
-    def gigs_info_for_period(self, period: DateRange, force: bool) -> GigsInfo:
-        key = f"gig_info_{period}"
+    def gigs_info_for_month(self, month: DateRange, force: bool) -> GigsInfo:
+        key = f"gig_month_info_{month}"
         with shelve.open(str(VortexAirtableDB.SHELF)) as shelf:
             if key not in shelf or force:
                 contracts_columns = [
@@ -44,7 +45,7 @@ class VortexAirtableDB:
                     ContractsColumns.TYPE,
                 ]
                 contracts = self.contracts_table.records_for_date_range(
-                    period, contracts_columns
+                    month, contracts_columns
                 )
 
                 events_columns = [
@@ -79,6 +80,14 @@ class VortexAirtableDB:
                     for contract in contracts
                 ])
             return shelf[key]
+
+    def gigs_info_for_period(self, period: DateRange, force: bool) -> GigsInfo:
+        months = period.split_into(Month, SplitType.EXACT)
+        infos = [self.gigs_info_for_month(m, force) for m in months]
+        contract_and_events = []
+        for inf in infos:
+            contract_and_events += inf.contracts_and_events
+        return GigsInfo(contract_and_events)
 
 
 if __name__ == '__main__':
