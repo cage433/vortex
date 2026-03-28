@@ -14,14 +14,19 @@ from vortex.google_sheets.statements.statements_tab import StatementsTab
 def update_tab(first_day: Day, last_day: Day, force: bool):
 
     period = SimpleDateRange(first_day, last_day)
-    periods = period.split_into(Year, SplitType.OUTER)
     transactions = StatementsTab.transactions(period, force)
     bank_activity = BankActivity.build(force=force).restrict_to_period(period)
     gigs_info = VortexAirtableDB().gigs_info_for_period(period, force=force)
-    tab = CashFlowAnalysisTab(Workbook(CASHFLOW_ANALYSIS_ID), "Yearly", periods)
+
+    years = period.split_into(Year, SplitType.OUTER)
+    tab = CashFlowAnalysisTab(Workbook(CASHFLOW_ANALYSIS_ID), "Yearly", years)
+    tab.update(transactions, gigs_info, bank_activity)
+
+    quarters = period.split_into(Quarter, SplitType.OUTER)
+    tab = CashFlowAnalysisTab(Workbook(CASHFLOW_ANALYSIS_ID), "Quarterly", quarters)
     tab.update(transactions, gigs_info, bank_activity)
 
 if __name__ == '__main__':
     first_day = Month(2023, 1).first_day
-    last_day = Month(2025, 11).last_day
+    last_day = Month(2026, 1).last_day
     update_tab(first_day, last_day, force=False)
