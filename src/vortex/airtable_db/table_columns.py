@@ -46,6 +46,7 @@ class EventColumns:
     EVENING_PURCHASES = "Evening purchases"
     CONTRACT_TYPE = "Contract Type"
     HIRE_FEE = "Hire fee"
+    PRIMARY_EVENT_TYPE = "Primary Event Type"
 
     @staticmethod
     def num_tickets_column(category: TicketCategory, price_level: TicketPriceLevel):

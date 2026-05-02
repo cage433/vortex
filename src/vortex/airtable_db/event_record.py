@@ -13,8 +13,23 @@ class EventRecord(AirtableRecord):
         return self._airtable_value(EventColumns.EVENT_ID, allow_missing=False)
 
     @property
+    def event_date(self):
+        return self._airtable_value(EventColumns.EVENT_DATE, allow_missing=True)
+
+    @property
+    def vol_names(self) -> Optional[str]:
+        return [
+            self._airtable_value(col, allow_missing=True)
+            for col in [EventColumns.VOL_1, EventColumns.VOL_2, EventColumns.VOL_3]
+        ]
+
+    @property
+    def event_type(self):
+        return self._airtable_value(EventColumns.PRIMARY_EVENT_TYPE, allow_missing=True)
+
+    @property
     def title(self):
-        return self._airtable_value(EventColumns.SHEETS_EVENT_TITLE, allow_missing=False)
+        return self._airtable_value(EventColumns.SHEETS_EVENT_TITLE, allow_missing=True)
 
     def num_paid_tickets(self, category: Optional[TicketCategory] = None,
                          price_level: Optional[TicketPriceLevel] = None) -> int:
