@@ -36,6 +36,6 @@ def update_tab_for_month(month: Month, force: bool):
 
 
 if __name__ == '__main__':
-    m = Month(2025, 2)
+    m = Month(2026, 2)
     print(f"Updating VAT return for {m.month_name}")
     update_tab_for_month(m, force=True)
